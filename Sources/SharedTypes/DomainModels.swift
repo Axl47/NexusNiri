@@ -531,6 +531,7 @@ public struct StageGeometry: Codable, Equatable, Sendable {
     public var slotHeaderHeight: Double
     public var stripIndicatorHeight: Double
     public var slotGap: Double
+    public var edgePeekWidth: Double
 
     public init(
         viewportWidth: Double,
@@ -539,7 +540,8 @@ public struct StageGeometry: Codable, Equatable, Sendable {
         topbarHeight: Double = 36,
         slotHeaderHeight: Double = 28,
         stripIndicatorHeight: Double = 6,
-        slotGap: Double = 2
+        slotGap: Double = 2,
+        edgePeekWidth: Double = 16
     ) {
         self.viewportWidth = viewportWidth
         self.viewportHeight = viewportHeight
@@ -548,6 +550,7 @@ public struct StageGeometry: Codable, Equatable, Sendable {
         self.slotHeaderHeight = slotHeaderHeight
         self.stripIndicatorHeight = stripIndicatorHeight
         self.slotGap = slotGap
+        self.edgePeekWidth = edgePeekWidth
     }
 
     public var stageWidth: Double { max(viewportWidth - sidebarWidth, 320) }
@@ -568,28 +571,59 @@ public struct SlotLayout: Codable, Equatable, Identifiable, Sendable {
     }
 }
 
+public enum RevealedSlotFragmentKind: String, Codable, Sendable, CaseIterable {
+    case active
+    case leftPeek
+    case rightPeek
+}
+
+public struct RevealedSlotFragment: Codable, Equatable, Identifiable, Sendable {
+    public var id: String { "\(slotID)-\(kind.rawValue)" }
+    public var slotID: String
+    public var kind: RevealedSlotFragmentKind
+    public var frame: RectValue
+
+    public init(slotID: String, kind: RevealedSlotFragmentKind, frame: RectValue) {
+        self.slotID = slotID
+        self.kind = kind
+        self.frame = frame
+    }
+}
+
 public struct LayoutPlan: Codable, Equatable, Sendable {
     public var slotLayouts: [SlotLayout]
     public var contentWidth: Double
     public var scrollOffset: Double
+    public var leadingPadding: Double
+    public var trailingPadding: Double
     public var visibleSlotIDs: [String]
     public var parkedSlotIDs: [String]
     public var activeSlotIndex: Int
+    public var revealedFragments: [RevealedSlotFragment]
+    public var occlusionBands: [RectValue]
 
     public init(
         slotLayouts: [SlotLayout],
         contentWidth: Double,
         scrollOffset: Double,
+        leadingPadding: Double = 0,
+        trailingPadding: Double = 0,
         visibleSlotIDs: [String],
         parkedSlotIDs: [String],
-        activeSlotIndex: Int
+        activeSlotIndex: Int,
+        revealedFragments: [RevealedSlotFragment] = [],
+        occlusionBands: [RectValue] = []
     ) {
         self.slotLayouts = slotLayouts
         self.contentWidth = contentWidth
         self.scrollOffset = scrollOffset
+        self.leadingPadding = leadingPadding
+        self.trailingPadding = trailingPadding
         self.visibleSlotIDs = visibleSlotIDs
         self.parkedSlotIDs = parkedSlotIDs
         self.activeSlotIndex = activeSlotIndex
+        self.revealedFragments = revealedFragments
+        self.occlusionBands = occlusionBands
     }
 }
 

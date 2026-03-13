@@ -141,6 +141,162 @@ func visibleSlotStagingWritesFramesForEachVisibleWindowAndFocusesOnlyAtTheEnd() 
     #expect(focusIndex > lastFrameIndex)
 }
 
+@MainActor
+@Test
+func paddedLeadingLayoutStagesFirstSlotAtCenteredScreenPosition() async throws {
+    let registry = RecordingWindowRegistry(
+        snapshot: WindowRegistrySnapshot(
+            isAccessibilityTrusted: true,
+            windows: [
+                WindowCandidate(
+                    bundleID: "com.example.editor",
+                    appName: "Editor",
+                    windowTitle: "Project",
+                    processID: 101,
+                    windowID: 1,
+                    frame: .zero,
+                    source: .accessibility
+                ),
+                WindowCandidate(
+                    bundleID: "com.example.browser",
+                    appName: "Browser",
+                    windowTitle: "Docs",
+                    processID: 202,
+                    windowID: 2,
+                    frame: .zero,
+                    source: .accessibility
+                ),
+            ]
+        )
+    )
+    let service = WindowChoreographyService(
+        windowRegistry: registry,
+        visibilityCoordinator: VisibilityCoordinator(),
+        adapterRegistry: AdapterRegistry()
+    )
+    let slots = [
+        Slot(id: "editor", workspaceID: "workspace", kind: .externalWindow, label: "Editor", appBinding: AppBinding(bundleID: "com.example.editor"), widthPolicy: SizePolicy(mode: .fixed, value: 700), layoutRole: .primary),
+        Slot(id: "browser", workspaceID: "workspace", kind: .externalWindow, label: "Browser", appBinding: AppBinding(bundleID: "com.example.browser"), widthPolicy: SizePolicy(mode: .fixed, value: 600), layoutRole: .secondary),
+    ]
+    let workspace = Workspace(
+        id: "workspace",
+        name: "Main",
+        activeSlotID: "editor",
+        slotOrder: slots.map(\.id),
+        layoutState: LayoutState(activeIndex: 0, centeredSlotID: "editor", visibleSlotIDs: slots.map(\.id)),
+        slots: slots
+    )
+    let layout = LayoutPlan(
+        slotLayouts: [
+            SlotLayout(slotID: "editor", frame: RectValue(x: 250, y: 0, width: 700, height: 640), isFocused: true),
+            SlotLayout(slotID: "browser", frame: RectValue(x: 952, y: 0, width: 600, height: 640), isFocused: false),
+        ],
+        contentWidth: 1902,
+        scrollOffset: 0,
+        leadingPadding: 250,
+        trailingPadding: 300,
+        visibleSlotIDs: ["editor", "browser"],
+        parkedSlotIDs: [],
+        activeSlotIndex: 0
+    )
+    let viewportFrame = CGRect(x: 100, y: 200, width: 1200, height: 720)
+
+    _ = await service.apply(
+        workspace: workspace,
+        previousWorkspace: nil,
+        layout: layout,
+        stageViewportFrame: viewportFrame,
+        focusPolicy: .focusActiveSlot
+    )
+
+    let screenFrame = (NSScreen.screens.max { lhs, rhs in
+        lhs.frame.intersection(viewportFrame).area < rhs.frame.intersection(viewportFrame).area
+    } ?? NSScreen.main)?.frame ?? CGRect(x: 0, y: 0, width: 1512, height: 982)
+    let expectedTopEdge = viewportFrame.maxY - ChromeMetrics.slotHeaderHeight
+    let expectedAXY = Double(screenFrame.maxY - expectedTopEdge)
+
+    #expect(registry.operations.contains(.setFrame(processID: 101, windowID: 1, frame: RectValue(x: 350, y: expectedAXY, width: 700, height: 640))))
+    #expect(registry.operations.contains(.setFrame(processID: 202, windowID: 2, frame: RectValue(x: 1052, y: expectedAXY, width: 600, height: 640))))
+}
+
+@MainActor
+@Test
+func paddedTrailingLayoutStagesLastSlotAtCenteredScreenPosition() async throws {
+    let registry = RecordingWindowRegistry(
+        snapshot: WindowRegistrySnapshot(
+            isAccessibilityTrusted: true,
+            windows: [
+                WindowCandidate(
+                    bundleID: "com.example.editor",
+                    appName: "Editor",
+                    windowTitle: "Project",
+                    processID: 101,
+                    windowID: 1,
+                    frame: .zero,
+                    source: .accessibility
+                ),
+                WindowCandidate(
+                    bundleID: "com.example.browser",
+                    appName: "Browser",
+                    windowTitle: "Docs",
+                    processID: 202,
+                    windowID: 2,
+                    frame: .zero,
+                    source: .accessibility
+                ),
+            ]
+        )
+    )
+    let service = WindowChoreographyService(
+        windowRegistry: registry,
+        visibilityCoordinator: VisibilityCoordinator(),
+        adapterRegistry: AdapterRegistry()
+    )
+    let slots = [
+        Slot(id: "editor", workspaceID: "workspace", kind: .externalWindow, label: "Editor", appBinding: AppBinding(bundleID: "com.example.editor"), widthPolicy: SizePolicy(mode: .fixed, value: 700), layoutRole: .primary),
+        Slot(id: "browser", workspaceID: "workspace", kind: .externalWindow, label: "Browser", appBinding: AppBinding(bundleID: "com.example.browser"), widthPolicy: SizePolicy(mode: .fixed, value: 600), layoutRole: .secondary),
+    ]
+    let workspace = Workspace(
+        id: "workspace",
+        name: "Main",
+        activeSlotID: "browser",
+        slotOrder: slots.map(\.id),
+        layoutState: LayoutState(activeIndex: 1, centeredSlotID: "browser", visibleSlotIDs: slots.map(\.id)),
+        slots: slots
+    )
+    let layout = LayoutPlan(
+        slotLayouts: [
+            SlotLayout(slotID: "editor", frame: RectValue(x: 250, y: 0, width: 700, height: 640), isFocused: false),
+            SlotLayout(slotID: "browser", frame: RectValue(x: 952, y: 0, width: 600, height: 640), isFocused: true),
+        ],
+        contentWidth: 1902,
+        scrollOffset: 702,
+        leadingPadding: 250,
+        trailingPadding: 300,
+        visibleSlotIDs: ["editor", "browser"],
+        parkedSlotIDs: [],
+        activeSlotIndex: 1
+    )
+    let viewportFrame = CGRect(x: 100, y: 200, width: 1200, height: 720)
+
+    _ = await service.apply(
+        workspace: workspace,
+        previousWorkspace: nil,
+        layout: layout,
+        stageViewportFrame: viewportFrame,
+        focusPolicy: .focusActiveSlot
+    )
+
+    let screenFrame = (NSScreen.screens.max { lhs, rhs in
+        lhs.frame.intersection(viewportFrame).area < rhs.frame.intersection(viewportFrame).area
+    } ?? NSScreen.main)?.frame ?? CGRect(x: 0, y: 0, width: 1512, height: 982)
+    let expectedTopEdge = viewportFrame.maxY - ChromeMetrics.slotHeaderHeight
+    let expectedAXY = Double(screenFrame.maxY - expectedTopEdge)
+
+    #expect(registry.operations.contains(.setFrame(processID: 101, windowID: 1, frame: RectValue(x: -352, y: expectedAXY, width: 700, height: 640))))
+    #expect(registry.operations.contains(.setFrame(processID: 202, windowID: 2, frame: RectValue(x: 350, y: expectedAXY, width: 600, height: 640))))
+}
+
 private extension CGRect {
     var area: CGFloat {
         guard isNull == false, isEmpty == false else { return 0 }
@@ -214,7 +370,7 @@ func choreographyReturnsBlockedWhenAccessibilityIsDeniedForGenericWindows() asyn
 
 @MainActor
 @Test
-func preserveExternalFocusStagesVisibleWindowsWithoutFinalFocus() async throws {
+func preserveExternalFocusRefloatsVisibleWindowsAndRestoresClickedFocus() async throws {
     let registry = RecordingWindowRegistry(
         snapshot: WindowRegistrySnapshot(
             isAccessibilityTrusted: true,
@@ -228,38 +384,70 @@ func preserveExternalFocusStagesVisibleWindowsWithoutFinalFocus() async throws {
                     frame: .zero,
                     source: .accessibility
                 ),
+                WindowCandidate(
+                    bundleID: "com.example.browser",
+                    appName: "Browser",
+                    windowTitle: "Docs",
+                    processID: 202,
+                    windowID: 2,
+                    frame: .zero,
+                    source: .accessibility
+                ),
             ]
         )
+    )
+    registry.focusedCandidate = WindowCandidate(
+        bundleID: "com.example.browser",
+        appName: "Browser",
+        windowTitle: "Docs",
+        processID: 202,
+        windowID: 2,
+        frame: .zero,
+        source: .accessibility
     )
     let service = WindowChoreographyService(
         windowRegistry: registry,
         visibilityCoordinator: VisibilityCoordinator(),
         adapterRegistry: AdapterRegistry()
     )
-    let slot = Slot(
-        id: "editor",
-        workspaceID: "workspace",
-        kind: .externalWindow,
-        label: "Editor",
-        appBinding: AppBinding(bundleID: "com.example.editor"),
-        widthPolicy: SizePolicy(mode: .fraction, value: 1),
-        layoutRole: .primary
-    )
+    let slots = [
+        Slot(
+            id: "editor",
+            workspaceID: "workspace",
+            kind: .externalWindow,
+            label: "Editor",
+            appBinding: AppBinding(bundleID: "com.example.editor"),
+            widthPolicy: SizePolicy(mode: .fraction, value: 0.6),
+            layoutRole: .primary
+        ),
+        Slot(
+            id: "browser",
+            workspaceID: "workspace",
+            kind: .externalWindow,
+            label: "Browser",
+            appBinding: AppBinding(bundleID: "com.example.browser"),
+            widthPolicy: SizePolicy(mode: .fraction, value: 0.4),
+            layoutRole: .secondary
+        ),
+    ]
     let workspace = Workspace(
         id: "workspace",
         name: "Main",
-        activeSlotID: slot.id,
-        slotOrder: [slot.id],
-        layoutState: LayoutState(activeIndex: 0, centeredSlotID: slot.id, visibleSlotIDs: [slot.id]),
-        slots: [slot]
+        activeSlotID: "browser",
+        slotOrder: slots.map(\.id),
+        layoutState: LayoutState(activeIndex: 1, centeredSlotID: "browser", visibleSlotIDs: slots.map(\.id)),
+        slots: slots
     )
     let layout = LayoutPlan(
-        slotLayouts: [SlotLayout(slotID: slot.id, frame: RectValue(x: 0, y: 0, width: 720, height: 640), isFocused: true)],
-        contentWidth: 720,
+        slotLayouts: [
+            SlotLayout(slotID: "editor", frame: RectValue(x: 0, y: 0, width: 720, height: 640), isFocused: false),
+            SlotLayout(slotID: "browser", frame: RectValue(x: 722, y: 0, width: 478, height: 640), isFocused: true),
+        ],
+        contentWidth: 1200,
         scrollOffset: 0,
-        visibleSlotIDs: [slot.id],
+        visibleSlotIDs: ["editor", "browser"],
         parkedSlotIDs: [],
-        activeSlotIndex: 0
+        activeSlotIndex: 1
     )
 
     let outcome = await service.apply(
@@ -277,8 +465,84 @@ func preserveExternalFocusStagesVisibleWindowsWithoutFinalFocus() async throws {
         }
         return false
     }))
+    #expect(registry.operations.contains(where: { operation in
+        if case .setFrame(processID: 202, windowID: 2, frame: _) = operation {
+            return true
+        }
+        return false
+    }))
+    #expect(registry.operations.contains(.activate(processID: 101)))
     #expect(registry.operations.contains(.raise(processID: 101, windowID: 1)))
-    #expect(registry.operations.contains(.focus(processID: 101, windowID: 1)) == false)
+    #expect(registry.operations.contains(.activate(processID: 202)))
+    #expect(registry.operations.contains(.raise(processID: 202, windowID: 2)))
+    #expect(registry.operations.last == .focus(processID: 202, windowID: 2))
+}
+
+@MainActor
+@Test
+func adapterManagedParkAlsoFallsBackToNativeMinimize() async throws {
+    let registry = RecordingWindowRegistry(
+        snapshot: WindowRegistrySnapshot(
+            isAccessibilityTrusted: true,
+            windows: [
+                WindowCandidate(
+                    bundleID: "com.t3tools.tether",
+                    appName: "Tether",
+                    windowTitle: "RightTether",
+                    processID: 303,
+                    windowID: 3,
+                    frame: .zero,
+                    source: .accessibility
+                ),
+            ]
+        )
+    )
+    let adapterRegistry = AdapterRegistry()
+    let adapter = RecordingAdapter(id: "tether", supportedBundleIDs: ["com.t3tools.tether"])
+    adapterRegistry.register(adapter)
+    let service = WindowChoreographyService(
+        windowRegistry: registry,
+        visibilityCoordinator: VisibilityCoordinator(),
+        adapterRegistry: adapterRegistry
+    )
+    let slot = Slot(
+        id: "tether",
+        workspaceID: "workspace",
+        kind: .externalWindow,
+        label: "RightTether",
+        appBinding: AppBinding(bundleID: "com.t3tools.tether"),
+        widthPolicy: SizePolicy(mode: .fraction, value: 0.4),
+        layoutRole: .secondary,
+        adapterID: "tether"
+    )
+    let workspace = Workspace(
+        id: "workspace",
+        name: "Main",
+        activeSlotID: nil,
+        slotOrder: [slot.id],
+        layoutState: LayoutState(activeIndex: 0, centeredSlotID: nil, visibleSlotIDs: [], parkedSlotIDs: [slot.id]),
+        slots: [slot]
+    )
+    let layout = LayoutPlan(
+        slotLayouts: [],
+        contentWidth: 0,
+        scrollOffset: 0,
+        visibleSlotIDs: [],
+        parkedSlotIDs: [slot.id],
+        activeSlotIndex: 0
+    )
+
+    let outcome = await service.apply(
+        workspace: workspace,
+        previousWorkspace: nil,
+        layout: layout,
+        stageViewportFrame: CGRect(x: 100, y: 200, width: 1200, height: 720),
+        focusPolicy: .preserveExternalFocus
+    )
+
+    #expect(outcome == .applied)
+    #expect(adapter.parkedSlotIDs == [slot.id])
+    #expect(registry.operations.contains(.setMinimized(processID: 303, windowID: 3, minimized: true)))
 }
 
 @MainActor
@@ -336,6 +600,69 @@ func appEnvironmentRestagesWhenViewportFrameChangesButNotWhenItRepeats() async t
     try await Task.sleep(nanoseconds: 50_000_000)
 
     #expect(choreographyService.applyCalls.count == postMoveApplyCount)
+}
+
+@MainActor
+@Test
+func appEnvironmentFansLayoutStateOutToStageMasksAndRevealAllHidesThem() async throws {
+    let registry = RecordingWindowRegistry(snapshot: WindowRegistrySnapshot(isAccessibilityTrusted: false))
+    let choreographyService = RecordingChoreographyService()
+    let stageMaskCoordinator = RecordingStageMaskCoordinator()
+    let store = makeWorkspaceStore("AppEnvironmentStageMasks")
+    let environment = AppEnvironment(
+        workspaceStore: store,
+        windowRegistry: registry,
+        adapterRegistry: AdapterRegistry(),
+        diagnosticsCenter: DiagnosticsCenter(initialSnapshot: trustedDiagnosticsSnapshot()),
+        choreographyService: choreographyService,
+        stageMaskCoordinator: stageMaskCoordinator,
+        registerDefaultAdapters: false
+    )
+    let slot = Slot(
+        id: "editor",
+        workspaceID: "workspace",
+        kind: .externalWindow,
+        label: "Editor",
+        appBinding: AppBinding(bundleID: "com.example.editor"),
+        widthPolicy: SizePolicy(mode: .fraction, value: 1),
+        layoutRole: .primary
+    )
+    let workspace = Workspace(
+        id: "workspace",
+        name: "Main",
+        activeSlotID: slot.id,
+        slotOrder: [slot.id],
+        layoutState: LayoutState(activeIndex: 0, centeredSlotID: slot.id, visibleSlotIDs: [slot.id]),
+        slots: [slot]
+    )
+    let layout = LayoutPlan(
+        slotLayouts: [SlotLayout(slotID: slot.id, frame: RectValue(x: 120, y: 0, width: 720, height: 640), isFocused: true)],
+        contentWidth: 960,
+        scrollOffset: 0,
+        leadingPadding: 120,
+        trailingPadding: 120,
+        visibleSlotIDs: [slot.id],
+        parkedSlotIDs: [],
+        activeSlotIndex: 0,
+        occlusionBands: [RectValue(x: 0, y: 0, width: 120, height: 640)]
+    )
+
+    await environment.applyChoreography(for: workspace, layout: layout)
+    #expect(stageMaskCoordinator.updateCalls.count == 1)
+    #expect(stageMaskCoordinator.updateCalls.last?.frame == nil)
+
+    environment.updateShellWindow(NSWindow())
+    #expect(stageMaskCoordinator.attachedWindowWasSet)
+    #expect(stageMaskCoordinator.updateCalls.count == 2)
+
+    environment.updateStageViewportFrame(CGRect(x: 100, y: 200, width: 1200, height: 720))
+    #expect(stageMaskCoordinator.updateCalls.count == 3)
+    #expect(stageMaskCoordinator.updateCalls.last?.frame?.integral == CGRect(x: 100, y: 200, width: 1200, height: 720))
+    #expect(stageMaskCoordinator.updateCalls.last?.occlusionBands == [RectValue(x: 0, y: 0, width: 120, height: 640)])
+
+    environment.revealAll()
+    try await Task.sleep(nanoseconds: 50_000_000)
+    #expect(stageMaskCoordinator.hideAllCount == 1)
 }
 
 @MainActor
@@ -919,6 +1246,60 @@ private final class RecordingWindowRegistry: @unchecked Sendable, WindowRegistry
     }
 }
 
+private final class RecordingAdapter: @unchecked Sendable, NexusAdapter {
+    let id: String
+    let supportedBundleIDs: [String]
+
+    private(set) var stagedSlotIDs: [String] = []
+    private(set) var parkedSlotIDs: [String] = []
+    private(set) var activatedSlotIDs: [String] = []
+
+    init(id: String, supportedBundleIDs: [String]) {
+        self.id = id
+        self.supportedBundleIDs = supportedBundleIDs
+    }
+
+    func discover(in snapshot: WindowRegistrySnapshot) async -> [WindowCandidate] {
+        snapshot.windows.filter { supportedBundleIDs.contains($0.bundleID ?? "") }
+    }
+
+    func activate(slot: Slot) async throws {
+        activatedSlotIDs.append(slot.id)
+    }
+
+    func stage(slot: Slot, action: VisibilityAction) async throws {
+        _ = action
+        stagedSlotIDs.append(slot.id)
+    }
+
+    func park(slot: Slot) async throws {
+        parkedSlotIDs.append(slot.id)
+    }
+
+    func captureState(for slot: Slot) async throws -> AdapterState? {
+        _ = slot
+        return nil
+    }
+
+    func restoreState(for slot: Slot, state: AdapterState?) async throws -> RuntimeBinding? {
+        _ = slot
+        _ = state
+        return nil
+    }
+
+    func openTarget(for slot: Slot) async throws {
+        _ = slot
+    }
+
+    func healthCheck() async -> AdapterHealthReport {
+        AdapterHealthReport(adapterID: id, health: .healthy, detail: "ok")
+    }
+
+    func serializeState(_ state: AdapterState) throws -> Data {
+        try JSONEncoder().encode(state)
+    }
+}
+
 @MainActor
 private final class RecordingChoreographyService: WindowChoreographing {
     struct ApplyCall: Equatable {
@@ -951,6 +1332,35 @@ private final class RecordingChoreographyService: WindowChoreographing {
         _ = currentWorkspace
         _ = previousWorkspace
         _ = stageViewportFrame
+    }
+}
+
+@MainActor
+private final class RecordingStageMaskCoordinator: StageMaskCoordinating {
+    struct UpdateCall: Equatable {
+        let occlusionBands: [RectValue]
+        let frame: CGRect?
+    }
+
+    private(set) var updateCalls: [UpdateCall] = []
+    private(set) var hideAllCount = 0
+    private(set) var attachedWindowWasSet = false
+
+    func attach(to window: NSWindow?) {
+        attachedWindowWasSet = attachedWindowWasSet || window != nil
+    }
+
+    func update(layout: LayoutPlan?, stageViewportFrame: CGRect?) {
+        updateCalls.append(
+            UpdateCall(
+                occlusionBands: layout?.occlusionBands ?? [],
+                frame: stageViewportFrame?.integral
+            )
+        )
+    }
+
+    func hideAll() {
+        hideAllCount += 1
     }
 }
 

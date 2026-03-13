@@ -3,7 +3,7 @@ import SharedTypes
 @testable import LayoutEngine
 
 @Test
-func stripLayoutCentersActiveSlotAndParksOffstageNeighbors() throws {
+func stripLayoutCentersActiveSlotAndShowsOnlyImmediateNeighborsAsEdgePeeks() throws {
     let slots = [
         Slot(id: "a", workspaceID: "w", kind: .externalWindow, label: "Editor", widthPolicy: SizePolicy(mode: .fixed, value: 700), layoutRole: .primary),
         Slot(id: "b", workspaceID: "w", kind: .externalWindow, label: "Zen", widthPolicy: SizePolicy(mode: .fixed, value: 600), layoutRole: .secondary),
@@ -27,18 +27,31 @@ func stripLayoutCentersActiveSlotAndParksOffstageNeighbors() throws {
 
     let plan = engine.planLayout(for: workspace, in: geometry)
     let activeFrame = try #require(plan.slotLayouts.first(where: { $0.slotID == "b" })?.frame)
+    let leftPeek = try #require(plan.revealedFragments.first(where: { $0.kind == .leftPeek }))
+    let rightPeek = try #require(plan.revealedFragments.first(where: { $0.kind == .rightPeek }))
 
     #expect(plan.activeSlotIndex == 1)
-    #expect(plan.scrollOffset == 402)
+    #expect(plan.leadingPadding == 250)
+    #expect(plan.trailingPadding == 350)
+    #expect(plan.scrollOffset == 652)
     #expect(activeFrame.midX - plan.scrollOffset == geometry.stageWidth / 2)
-    #expect(plan.visibleSlotIDs.contains("b"))
     #expect(plan.visibleSlotIDs == ["a", "b", "c"])
     #expect(plan.parkedSlotIDs.isEmpty)
-    #expect(plan.contentWidth == 1804)
+    #expect(plan.contentWidth == 2404)
+    #expect(leftPeek.frame == RectValue(x: 284, y: 0, width: 14, height: 866))
+    #expect(leftPeek.frame.width == 14)
+    #expect(rightPeek.frame == RectValue(x: 902, y: 0, width: 14, height: 866))
+    #expect(rightPeek.frame.width == 14)
+    #expect(plan.occlusionBands == [
+        RectValue(x: 0, y: 0, width: 284, height: 866),
+        RectValue(x: 298, y: 0, width: 2, height: 866),
+        RectValue(x: 900, y: 0, width: 2, height: 866),
+        RectValue(x: 916, y: 0, width: 284, height: 866),
+    ])
 }
 
 @Test
-func stripLayoutClampsFirstSlotToLeadingEdge() {
+func stripLayoutCentersFirstSlotWithVirtualLeadingPadding() {
     let slots = [
         Slot(id: "a", workspaceID: "w", kind: .externalWindow, label: "Editor", widthPolicy: SizePolicy(mode: .fixed, value: 700), layoutRole: .primary),
         Slot(id: "b", workspaceID: "w", kind: .externalWindow, label: "Zen", widthPolicy: SizePolicy(mode: .fixed, value: 600), layoutRole: .secondary),
@@ -60,14 +73,20 @@ func stripLayoutClampsFirstSlotToLeadingEdge() {
     )
 
     let plan = StripLayoutEngine().planLayout(for: workspace, in: geometry)
+    let activeFragment = try! #require(plan.revealedFragments.first(where: { $0.kind == .active }))
+    let rightPeek = try! #require(plan.revealedFragments.first(where: { $0.kind == .rightPeek }))
 
     #expect(plan.scrollOffset == 0)
+    #expect(plan.leadingPadding == 250)
+    #expect(plan.trailingPadding == 350)
     #expect(plan.visibleSlotIDs == ["a", "b"])
     #expect(plan.parkedSlotIDs == ["c"])
+    #expect(activeFragment.frame == RectValue(x: 250, y: 0, width: 700, height: 866))
+    #expect(rightPeek.frame == RectValue(x: 952, y: 0, width: 14, height: 866))
 }
 
 @Test
-func stripLayoutClampsLastSlotToTrailingEdge() {
+func stripLayoutCentersLastSlotWithVirtualTrailingPadding() {
     let slots = [
         Slot(id: "a", workspaceID: "w", kind: .externalWindow, label: "Editor", widthPolicy: SizePolicy(mode: .fixed, value: 700), layoutRole: .primary),
         Slot(id: "b", workspaceID: "w", kind: .externalWindow, label: "Zen", widthPolicy: SizePolicy(mode: .fixed, value: 600), layoutRole: .secondary),
@@ -89,8 +108,12 @@ func stripLayoutClampsLastSlotToTrailingEdge() {
     )
 
     let plan = StripLayoutEngine().planLayout(for: workspace, in: geometry)
+    let leftPeek = try! #require(plan.revealedFragments.first(where: { $0.kind == .leftPeek }))
+    let activeFragment = try! #require(plan.revealedFragments.first(where: { $0.kind == .active }))
 
-    #expect(plan.scrollOffset == 604)
-    #expect(plan.visibleSlotIDs == ["a", "b", "c"])
-    #expect(plan.parkedSlotIDs.isEmpty)
+    #expect(plan.scrollOffset == 1204)
+    #expect(plan.visibleSlotIDs == ["b", "c"])
+    #expect(plan.parkedSlotIDs == ["a"])
+    #expect(leftPeek.frame == RectValue(x: 334, y: 0, width: 14, height: 866))
+    #expect(activeFragment.frame == RectValue(x: 350, y: 0, width: 500, height: 866))
 }

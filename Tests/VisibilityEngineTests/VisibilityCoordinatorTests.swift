@@ -34,8 +34,8 @@ func transitionStagesVisibleSlotsAndParksOutgoingWorkspaceSlots() async throws {
         ],
         contentWidth: 1202,
         scrollOffset: 0,
-        visibleSlotIDs: ["zed"],
-        parkedSlotIDs: ["docs"],
+        visibleSlotIDs: ["zed", "docs"],
+        parkedSlotIDs: [],
         activeSlotIndex: 0
     )
     let windows = [
@@ -58,7 +58,7 @@ func transitionStagesVisibleSlotsAndParksOutgoingWorkspaceSlots() async throws {
 
     #expect(zedAction?.kind == .show)
     #expect(zedAction?.windowID == nil)
-    #expect(docsAction?.kind == .park)
+    #expect(docsAction?.kind == .show)
     #expect(docsAction?.windowID == nil)
     #expect(editorAction?.kind == .park)
     #expect(browserAction?.kind == .park)
@@ -164,8 +164,8 @@ func panicRevealAllRewritesLastPlannedActionsAndNextTransitionResumesNormally() 
         ],
         contentWidth: 1202,
         scrollOffset: 0,
-        visibleSlotIDs: ["editor"],
-        parkedSlotIDs: ["browser"],
+        visibleSlotIDs: ["editor", "browser"],
+        parkedSlotIDs: [],
         activeSlotIndex: 0
     )
     let windows = [
@@ -183,5 +183,5 @@ func panicRevealAllRewritesLastPlannedActionsAndNextTransitionResumesNormally() 
 
     #expect(revealActions.allSatisfy { $0.kind == .reveal })
     #expect(resumedEditorAction?.kind == .show)
-    #expect(resumedBrowserAction?.kind == .park)
+    #expect(resumedBrowserAction?.kind == .show)
 }

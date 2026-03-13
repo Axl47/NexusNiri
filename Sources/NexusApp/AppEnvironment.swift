@@ -29,6 +29,7 @@ final class AppEnvironment {
     let diagnosticsCenter: DiagnosticsCenter
     let diagnosticsPanelController: DiagnosticsPanelController
     let choreographyService: any WindowChoreographing
+    let stageMaskCoordinator: any StageMaskCoordinating
 
     private(set) var diagnosticsSnapshot: DiagnosticsSnapshot
     private var started = false
@@ -54,6 +55,7 @@ final class AppEnvironment {
         diagnosticsCenter: DiagnosticsCenter = DiagnosticsCenter(),
         diagnosticsPanelController: DiagnosticsPanelController = DiagnosticsPanelController(),
         choreographyService: (any WindowChoreographing)? = nil,
+        stageMaskCoordinator: (any StageMaskCoordinating)? = nil,
         registerDefaultAdapters: Bool = true
     ) {
         self.workspaceStore = workspaceStore
@@ -69,6 +71,7 @@ final class AppEnvironment {
             visibilityCoordinator: visibilityCoordinator,
             adapterRegistry: adapterRegistry
         )
+        self.stageMaskCoordinator = stageMaskCoordinator ?? NoopStageMaskCoordinator()
         self.diagnosticsSnapshot = DiagnosticsSnapshot(
             stateDirectory: workspaceStore.stateDirectoryURL.path,
             logDirectory: workspaceStore.logDirectoryURL.path
@@ -149,6 +152,7 @@ final class AppEnvironment {
 
     func applyChoreography(for workspace: Workspace, layout: LayoutPlan) async {
         latestLayoutContext = LayoutContext(workspace: workspace, layout: layout)
+        stageMaskCoordinator.update(layout: layout, stageViewportFrame: stageViewportFrame)
         guard stageViewportFrame != nil || layout.visibleSlotIDs.isEmpty else { return }
         enqueueChoreographyRequest(
             workspace: workspace,
@@ -160,6 +164,7 @@ final class AppEnvironment {
 
     func revealAll() {
         Task {
+            stageMaskCoordinator.hideAll()
             await choreographyService.revealAll(
                 currentWorkspace: lastChoreographedWorkspace ?? session.selectedWorkspace,
                 previousWorkspace: lastTransitionSourceWorkspace,
@@ -175,6 +180,7 @@ final class AppEnvironment {
         guard integralFrame != stageViewportFrame?.integral else { return }
         stageViewportFrame = integralFrame
 
+        stageMaskCoordinator.update(layout: latestLayoutContext?.layout, stageViewportFrame: integralFrame)
         guard let latestLayoutContext else { return }
         enqueueChoreographyRequest(
             workspace: latestLayoutContext.workspace,
@@ -182,6 +188,11 @@ final class AppEnvironment {
             stageViewportFrame: integralFrame,
             focusPolicy: focusPolicy(for: session.lastSelectionOrigin)
         )
+    }
+
+    func updateShellWindow(_ window: NSWindow?) {
+        stageMaskCoordinator.attach(to: window)
+        stageMaskCoordinator.update(layout: latestLayoutContext?.layout, stageViewportFrame: stageViewportFrame)
     }
 
     func requestAccessibilityAccess() async {

@@ -295,6 +295,8 @@ Use a combination of:
 
 Avoid a monolithic transparent frame unless later testing proves it is clearly superior.
 
+For the current edge-sliver strip, the practical implementation is: keep the existing controller shell for sidebar, topbar, headers, and indicator, then add passive AppKit mask windows only over the staged app lane. This lets Nexus hide most of the neighboring windows without turning the full shell into one giant click-through hole.
+
 ### 7.3 Responsibilities
 
 The Stage Chrome should:
@@ -479,9 +481,12 @@ The stage viewport is conceptual. The engine should compute:
 
 - active slot index
 - scroll anchor
+- leading and trailing virtual padding for centered end slots
 - visible neighborhood
 - parked neighborhood
 - offstage neighborhood
+- revealed fragments for the active slot and edge peeks
+- occlusion bands for shell-owned masks
 
 ### 10.6 Initial v1 layout scope
 
@@ -534,6 +539,8 @@ Because macOS may relocate fully offscreen windows, the engine should support:
 - configurable edge slivers
 - safe bounds relative to the current display topology
 - a “do not park, minimize instead” rule for problematic apps
+
+The first working edge-sliver slice keeps the active slot and the immediate previous or next neighbor windows fully staged, then hides most of the neighbors behind Nexus-owned mask bands. Farther slots still use the normal parked behavior.
 
 ### 11.5 App-level hide vs window-level minimize
 

@@ -103,6 +103,8 @@ The strip is a horizontal sequence of app slots that extends beyond the viewport
 
 When a slot receives focus, the strip smoothly scrolls to **center** that slot in the viewport. This is the key interaction — the user doesn't scroll to find apps, they focus apps and the strip adjusts. The centering animation uses a cubic-bezier ease (`0.25, 0.1, 0.25, 1`) at 400ms — fast enough to feel responsive, slow enough to be trackable.
 
+In the live shell, the centered slot keeps its full configured width, but the immediate previous and next neighbors expose only a thin live sliver at the viewport edges. The initial implementation uses a fixed 16px edge peek on each side. At the beginning and end of the strip, virtual padding keeps the first or last slot centered and leaves an empty gutter on the missing-neighbor side instead of wrapping.
+
 ### Slot sizing
 
 Each app slot has a width defined as a percentage of the viewport. This is set per-app in the workspace configuration. Typical distributions:
@@ -233,6 +235,8 @@ Direct trackpad scrolling in the viewport should pass through to the focused app
 ### Pass-through
 
 The viewport area is not an interactive surface belonging to the frame — it belongs to the apps. All mouse events, scroll events, keyboard input within the viewport pass through to the underlying app window. The frame only captures input on its own chrome elements (sidebar, topbar, slot headers, strip indicator).
+
+Implementation note: the shell achieves this by keeping the real app windows full-size and placing passive Nexus-owned mask panels only over the hidden parts of the stage lane. Those mask panels ignore mouse events so input still reaches the revealed app regions underneath.
 
 ---
 

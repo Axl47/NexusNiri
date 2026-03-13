@@ -16,6 +16,7 @@ public struct StageChromeView: View {
     private let onRevealAll: () -> Void
     private let onLayoutDidUpdate: (Workspace, LayoutPlan) async -> Void
     private let onStageViewportFrameChanged: (CGRect) -> Void
+    private let onShellWindowChanged: (NSWindow?) -> Void
 
     public init(
         session: WorkspaceSession,
@@ -26,7 +27,8 @@ public struct StageChromeView: View {
         onRefreshDiagnostics: @escaping () -> Void,
         onRevealAll: @escaping () -> Void,
         onLayoutDidUpdate: @escaping (Workspace, LayoutPlan) async -> Void,
-        onStageViewportFrameChanged: @escaping (CGRect) -> Void
+        onStageViewportFrameChanged: @escaping (CGRect) -> Void,
+        onShellWindowChanged: @escaping (NSWindow?) -> Void
     ) {
         self.session = session
         self.layoutEngine = layoutEngine
@@ -37,6 +39,7 @@ public struct StageChromeView: View {
         self.onRevealAll = onRevealAll
         self.onLayoutDidUpdate = onLayoutDidUpdate
         self.onStageViewportFrameChanged = onStageViewportFrameChanged
+        self.onShellWindowChanged = onShellWindowChanged
     }
 
     public var body: some View {
@@ -54,8 +57,7 @@ public struct StageChromeView: View {
 
     private var sidebar: some View {
         ZStack(alignment: .leading) {
-            TranslucentChromeBackground()
-                .overlay(ChromeTheme.chromeBackground)
+            ChromeBackdrop()
 
             VStack(spacing: 10) {
                 VStack(spacing: 8) {
@@ -107,8 +109,7 @@ public struct StageChromeView: View {
 
     private var topbar: some View {
         ZStack {
-            TranslucentChromeBackground()
-                .overlay(ChromeTheme.chromeBackground)
+            ChromeBackdrop()
 
             HStack(spacing: 10) {
                 Text(session.selectedWorkspace?.name ?? "No Workspace")
@@ -182,7 +183,10 @@ public struct StageChromeView: View {
                 }
             }
             .background(
-                ScreenSpaceFrameReporter(onChange: onStageViewportFrameChanged)
+                ScreenSpaceFrameReporter(
+                    onChange: onStageViewportFrameChanged,
+                    onWindowChange: onShellWindowChanged
+                )
             )
             .frame(maxWidth: .infinity, maxHeight: .infinity)
         }
@@ -468,7 +472,10 @@ private struct SlotHeaderView: View {
             .padding(.horizontal, 12)
             .frame(maxWidth: .infinity, alignment: .leading)
             .frame(height: ChromeMetrics.slotHeaderHeight)
-            .background(isFocused ? ChromeTheme.surfaceHover : ChromeTheme.surface.opacity(0.82))
+            .background {
+                ChromeTheme.chromeOcclusion
+                    .overlay(isFocused ? ChromeTheme.surfaceHover : ChromeTheme.surface.opacity(0.82))
+            }
             .overlay(alignment: .bottom) {
                 Rectangle()
                     .fill(ChromeTheme.border)
@@ -556,26 +563,41 @@ private extension LayoutPlan {
 
 private struct ScreenSpaceFrameReporter: NSViewRepresentable {
     let onChange: (CGRect) -> Void
+    let onWindowChange: (NSWindow?) -> Void
 
     func makeNSView(context: Context) -> ReporterView {
         let view = ReporterView()
         view.onChange = onChange
+        view.onWindowChange = onWindowChange
         return view
     }
 
     func updateNSView(_ nsView: ReporterView, context: Context) {
         nsView.onChange = onChange
+        nsView.onWindowChange = onWindowChange
         nsView.reportFrameIfNeeded()
+    }
+}
+
+private struct ChromeBackdrop: View {
+    var body: some View {
+        ChromeTheme.chromeOcclusion
+            .overlay {
+                TranslucentChromeBackground()
+                    .overlay(ChromeTheme.chromeBackground)
+            }
     }
 }
 
 final class ReporterView: NSView {
     var onChange: ((CGRect) -> Void)?
+    var onWindowChange: ((NSWindow?) -> Void)?
     private var lastReportedFrame: CGRect = .null
     private var observationTokens: [NSObjectProtocol] = []
 
     override func viewWillMove(toWindow newWindow: NSWindow?) {
         super.viewWillMove(toWindow: newWindow)
+        onWindowChange?(newWindow)
         if newWindow == nil {
             tearDownObservers()
         }
@@ -583,6 +605,7 @@ final class ReporterView: NSView {
 
     override func viewDidMoveToWindow() {
         super.viewDidMoveToWindow()
+        onWindowChange?(window)
         setUpObservers()
         reportFrameIfNeeded()
     }

@@ -9,6 +9,7 @@ func chromeMetricsMatchUiSpec() {
     #expect(ChromeMetrics.slotHeaderHeight == 28)
     #expect(ChromeMetrics.stripIndicatorHeight == 6)
     #expect(ChromeMetrics.slotGap == 2)
+    #expect(ChromeMetrics.edgePeekWidth == 16)
 }
 
 @Test
@@ -18,6 +19,7 @@ func chromeMetricsStageGeometryUsesVisibleViewportSpace() {
     #expect(geometry.stageWidth == 1388)
     #expect(geometry.stageHeight == 864)
     #expect(geometry.stageContentHeight == 858)
+    #expect(geometry.edgePeekWidth == 16)
 }
 
 @Test

@@ -40,6 +40,7 @@
 		79C011C2606AF61FDDF148EC /* WorkspaceEngineTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = ABF982C5E5BA59795ADBD04F /* WorkspaceEngineTests.swift */; };
 		86CF1A04DA93842241A37D26 /* libAdapterBus.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 05CC05125F65EA32F39D933C /* libAdapterBus.a */; };
 		8837BD92F461AA7913B23D44 /* AdapterRegistry.swift in Sources */ = {isa = PBXBuildFile; fileRef = 870DD55CB57118B47349842D /* AdapterRegistry.swift */; };
+		8CBC3C3B9607A5E76B649B6B /* StageMaskCoordinator.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5AF77F8B4CC3AE3C532EAC05 /* StageMaskCoordinator.swift */; };
 		8DBD840EAA288A1F9B9824A8 /* default-workspaces.json in Resources */ = {isa = PBXBuildFile; fileRef = D35305EB92F2A478D5EAD72D /* default-workspaces.json */; };
 		91521DC08480A45227048F38 /* StageChromeView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7A2B71D1FE8EDC952DF44DE6 /* StageChromeView.swift */; };
 		953FD54C62F03FC27CEDFB35 /* WorkspaceSession.swift in Sources */ = {isa = PBXBuildFile; fileRef = E88850232A3EBE0D63A6D221 /* WorkspaceSession.swift */; };
@@ -440,6 +441,7 @@
 		40FD6B387246C750001342A4 /* GenericAXAdapter.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GenericAXAdapter.swift; sourceTree = "<group>"; };
 		597452858F14F0F425B7966E /* NexusApp.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = NexusApp.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		5A0BA3F98539F6C772DB7FEB /* dev-build.sh */ = {isa = PBXFileReference; lastKnownFileType = text.script.sh; path = "dev-build.sh"; sourceTree = "<group>"; };
+		5AF77F8B4CC3AE3C532EAC05 /* StageMaskCoordinator.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StageMaskCoordinator.swift; sourceTree = "<group>"; };
 		5C9E884AABCCD3D199C8F225 /* DomainModels.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DomainModels.swift; sourceTree = "<group>"; };
 		5D6B8E6D0221E268D84D0253 /* VisibilityEngineTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = VisibilityEngineTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		5E7C4DD289F7471AD2FC39B7 /* NexusApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NexusApp.swift; sourceTree = "<group>"; };
@@ -790,6 +792,7 @@
 				B36E8DB0A43A1502BFAFC102 /* AppDelegate.swift */,
 				BD2FCEB5FF7E413243E580FC /* AppEnvironment.swift */,
 				5E7C4DD289F7471AD2FC39B7 /* NexusApp.swift */,
+				5AF77F8B4CC3AE3C532EAC05 /* StageMaskCoordinator.swift */,
 				ADD8B96390872C8012000F63 /* WindowChoreographyService.swift */,
 				0AAC62664E34816C73FF44CE /* WindowSlotMatcher.swift */,
 			);
@@ -1721,6 +1724,7 @@
 				B3A83AF9ECBF59EC8A3696E2 /* AppDelegate.swift in Sources */,
 				5F3B59B9BE32EE408F5F45C6 /* AppEnvironment.swift in Sources */,
 				29A695697796115145F7598D /* NexusApp.swift in Sources */,
+				8CBC3C3B9607A5E76B649B6B /* StageMaskCoordinator.swift in Sources */,
 				C580F174675813078FE547A4 /* WindowChoreographyService.swift in Sources */,
 				ADC3951FD82C83171222C082 /* WindowSlotMatcher.swift in Sources */,
 			);

@@ -123,6 +123,16 @@ final class WindowChoreographyService: WindowChoreographing {
         focusPolicy: ChoreographyFocusPolicy
     ) async {
         var focusTarget: FocusTarget?
+        var visibleNativeCandidates: [WindowCandidate] = []
+        let preservedExternalFocusTarget: FocusTarget?
+
+        if focusPolicy == .preserveExternalFocus,
+           let candidate = (try? await windowRegistry.focusedWindowCandidate()) ?? nil,
+           candidate.processID != Int(ProcessInfo.processInfo.processIdentifier) {
+            preservedExternalFocusTarget = .native(candidate)
+        } else {
+            preservedExternalFocusTarget = nil
+        }
 
         for action in actions {
             guard let slot = slot(
@@ -145,13 +155,26 @@ final class WindowChoreographyService: WindowChoreographing {
             )
 
             if action.kind == .show || action.kind == .reveal,
+               let visibleCandidate = stageResult.visibleNativeCandidate {
+                visibleNativeCandidates.append(visibleCandidate)
+            }
+
+            if action.kind == .show || action.kind == .reveal,
                slot.id == currentWorkspace?.activeSlotID {
                 focusTarget = stageResult.focusTarget
             }
         }
 
-        if focusPolicy == .focusActiveSlot, let focusTarget {
-            await focus(focusTarget)
+        switch focusPolicy {
+        case .focusActiveSlot:
+            if let focusTarget {
+                await focus(focusTarget)
+            }
+        case .preserveExternalFocus:
+            await bringVisibleWindowsForward(
+                visibleNativeCandidates,
+                restoringFocusTo: preservedExternalFocusTarget
+            )
         }
     }
 
@@ -217,11 +240,43 @@ final class WindowChoreographyService: WindowChoreographing {
                 shouldFocus: false
             )
             if didHandle {
-                if action.kind == .show || action.kind == .reveal,
-                   slot.id == activeSlotID {
-                    return StageResult(focusTarget: .adapter(adapter, slot))
+                switch action.kind {
+                case .show, .reveal:
+                    if slot.id == activeSlotID {
+                        return StageResult(
+                            focusTarget: .adapter(adapter, slot),
+                            visibleNativeCandidate: candidate
+                        )
+                    }
+                    return StageResult(visibleNativeCandidate: candidate)
+                case .park:
+                    await parkWindow(slot: slot, action: action, candidate: candidate)
+                    return StageResult()
+                case .minimize:
+                    if let candidate {
+                        do {
+                            try await windowRegistry.setWindowMinimized(
+                                processID: candidate.processID,
+                                windowID: candidate.windowID,
+                                to: true
+                            )
+                        } catch {
+                            logger.debug("Unable to minimize adapter-managed window for slot \(slot.id, privacy: .public): \(error.localizedDescription, privacy: .public)")
+                        }
+                    }
+                    return StageResult()
+                case .hideApp:
+                    if let candidate {
+                        do {
+                            try await windowRegistry.setApplicationHidden(processID: candidate.processID, to: true)
+                        } catch {
+                            logger.debug("Unable to hide adapter-managed app for slot \(slot.id, privacy: .public): \(error.localizedDescription, privacy: .public)")
+                        }
+                    }
+                    return StageResult()
+                case .detach:
+                    return StageResult()
                 }
-                return StageResult()
             }
         }
 
@@ -235,7 +290,13 @@ final class WindowChoreographyService: WindowChoreographing {
                 stageViewportFrame: stageViewportFrame
             )
             if slot.id == activeSlotID, let resolvedCandidate {
-                return StageResult(focusTarget: .native(resolvedCandidate))
+                return StageResult(
+                    focusTarget: .native(resolvedCandidate),
+                    visibleNativeCandidate: resolvedCandidate
+                )
+            }
+            if let resolvedCandidate {
+                return StageResult(visibleNativeCandidate: resolvedCandidate)
             }
         case .park:
             await parkWindow(slot: slot, action: action, candidate: candidate)
@@ -423,10 +484,7 @@ final class WindowChoreographyService: WindowChoreographing {
     }
 
     private func shouldMinimizeWhenParking(slot: Slot, targetFrame: RectValue) -> Bool {
-        if slot.adapterID == "tether" {
-            return false
-        }
-
+        _ = slot
         return targetFrame.width <= 24 || targetFrame.height <= 280
     }
 
@@ -570,6 +628,35 @@ final class WindowChoreographyService: WindowChoreographing {
             }
         }
     }
+
+    private func bringVisibleWindowsForward(
+        _ candidates: [WindowCandidate],
+        restoringFocusTo focusTarget: FocusTarget?
+    ) async {
+        var seenWindowKeys: Set<String> = []
+        let orderedCandidates = candidates.filter { candidate in
+            let key = "\(candidate.processID):\(candidate.windowID ?? -1)"
+            return seenWindowKeys.insert(key).inserted
+        }
+
+        for candidate in orderedCandidates {
+            do {
+                try await windowRegistry.activateApplication(processID: candidate.processID)
+            } catch {
+                logger.debug("Unable to activate visible app for process \(candidate.processID, privacy: .public): \(error.localizedDescription, privacy: .public)")
+            }
+
+            do {
+                try await windowRegistry.raiseWindow(processID: candidate.processID, windowID: candidate.windowID)
+            } catch {
+                logger.debug("Unable to bring visible window forward for candidate \(candidate.id, privacy: .public): \(error.localizedDescription, privacy: .public)")
+            }
+        }
+
+        if let focusTarget {
+            await focus(focusTarget)
+        }
+    }
 }
 
 private extension CGRect {
@@ -581,6 +668,7 @@ private extension CGRect {
 
 private struct StageResult {
     var focusTarget: FocusTarget?
+    var visibleNativeCandidate: WindowCandidate?
 }
 
 private enum FocusTarget {

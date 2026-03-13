@@ -8,6 +8,7 @@ public enum ChromeMetrics {
     public static let slotHeaderHeight: CGFloat = 28
     public static let stripIndicatorHeight: CGFloat = 6
     public static let slotGap: CGFloat = 2
+    public static let edgePeekWidth: CGFloat = 16
     public static let workspaceIndicatorSize: CGFloat = 34
 
     public static func stageGeometry(for size: CGSize) -> StageGeometry {
@@ -18,13 +19,15 @@ public enum ChromeMetrics {
             topbarHeight: topbarHeight,
             slotHeaderHeight: slotHeaderHeight,
             stripIndicatorHeight: stripIndicatorHeight,
-            slotGap: slotGap
+            slotGap: slotGap,
+            edgePeekWidth: edgePeekWidth
         )
     }
 }
 
 public enum ChromeTheme {
     public static let chromeBackground = Color.white.opacity(0.07)
+    public static let chromeOcclusion = Color(nsColor: NSColor(calibratedWhite: 0.08, alpha: 0.96))
     public static let surface = Color.white.opacity(0.04)
     public static let surfaceHover = Color.white.opacity(0.08)
     public static let textPrimary = Color.white.opacity(0.92)
