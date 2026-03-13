@@ -165,17 +165,17 @@ final class WindowChoreographyService: WindowChoreographing {
             }
         }
 
-        switch focusPolicy {
+        let finalFocusTarget: FocusTarget? = switch focusPolicy {
         case .focusActiveSlot:
-            if let focusTarget {
-                await focus(focusTarget)
-            }
+            focusTarget
         case .preserveExternalFocus:
-            await bringVisibleWindowsForward(
-                visibleNativeCandidates,
-                restoringFocusTo: preservedExternalFocusTarget
-            )
+            preservedExternalFocusTarget
         }
+
+        await bringVisibleWindowsForward(
+            visibleNativeCandidates,
+            restoringFocusTo: finalFocusTarget
+        )
     }
 
     private func filterActionsForPermissions(

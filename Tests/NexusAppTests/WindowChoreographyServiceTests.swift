@@ -110,6 +110,8 @@ func visibleSlotStagingWritesFramesForEachVisibleWindowAndFocusesOnlyAtTheEnd() 
     #expect(frameOperations.count == 2)
     #expect(frameOperations.contains(.setFrame(processID: 101, windowID: 1, frame: RectValue(x: 100, y: expectedAXY, width: 720, height: 640))))
     #expect(frameOperations.contains(.setFrame(processID: 202, windowID: 2, frame: RectValue(x: 822, y: expectedAXY, width: 478, height: 640))))
+    #expect(operations.contains(.activate(processID: 101)))
+    #expect(operations.contains(.activate(processID: 202)))
 
     let raiseOperations = operations.compactMap { operation -> RecordingWindowRegistry.Operation? in
         if case .raise = operation {
@@ -118,10 +120,8 @@ func visibleSlotStagingWritesFramesForEachVisibleWindowAndFocusesOnlyAtTheEnd() 
         return nil
     }
 
-    #expect(raiseOperations == [
-        .raise(processID: 101, windowID: 1),
-        .raise(processID: 202, windowID: 2),
-    ])
+    #expect(raiseOperations.contains(.raise(processID: 101, windowID: 1)))
+    #expect(raiseOperations.contains(.raise(processID: 202, windowID: 2)))
 
     let focusOperations = operations.compactMap { operation -> RecordingWindowRegistry.Operation? in
         if case .focus = operation {
@@ -131,14 +131,116 @@ func visibleSlotStagingWritesFramesForEachVisibleWindowAndFocusesOnlyAtTheEnd() 
     }
 
     #expect(focusOperations == [.focus(processID: 101, windowID: 1)])
-    let lastFrameIndex = try #require(operations.lastIndex(where: { operation in
-        if case .setFrame = operation {
+    let lastRefloatIndex = try #require(operations.lastIndex(where: { operation in
+        if case .activate = operation {
+            return true
+        }
+        if case .raise = operation {
             return true
         }
         return false
     }))
     let focusIndex = try #require(operations.firstIndex(of: .focus(processID: 101, windowID: 1)))
-    #expect(focusIndex > lastFrameIndex)
+    #expect(focusIndex > lastRefloatIndex)
+}
+
+@MainActor
+@Test
+func focusActiveSlotRefloatsVisibleWindowsBeforeFinalFocus() async throws {
+    let registry = RecordingWindowRegistry(
+        snapshot: WindowRegistrySnapshot(
+            isAccessibilityTrusted: true,
+            windows: [
+                WindowCandidate(
+                    bundleID: "com.example.editor",
+                    appName: "Editor",
+                    windowTitle: "Project",
+                    processID: 101,
+                    windowID: 1,
+                    frame: .zero,
+                    source: .accessibility
+                ),
+                WindowCandidate(
+                    bundleID: "com.example.browser",
+                    appName: "Browser",
+                    windowTitle: "Docs",
+                    processID: 202,
+                    windowID: 2,
+                    frame: .zero,
+                    source: .accessibility
+                ),
+            ]
+        )
+    )
+    let service = WindowChoreographyService(
+        windowRegistry: registry,
+        visibilityCoordinator: VisibilityCoordinator(),
+        adapterRegistry: AdapterRegistry()
+    )
+    let slots = [
+        Slot(
+            id: "editor",
+            workspaceID: "workspace",
+            kind: .externalWindow,
+            label: "Editor",
+            appBinding: AppBinding(bundleID: "com.example.editor"),
+            widthPolicy: SizePolicy(mode: .fraction, value: 0.6),
+            layoutRole: .primary
+        ),
+        Slot(
+            id: "browser",
+            workspaceID: "workspace",
+            kind: .externalWindow,
+            label: "Browser",
+            appBinding: AppBinding(bundleID: "com.example.browser"),
+            widthPolicy: SizePolicy(mode: .fraction, value: 0.4),
+            layoutRole: .secondary
+        ),
+    ]
+    let workspace = Workspace(
+        id: "workspace",
+        name: "Main",
+        activeSlotID: "browser",
+        slotOrder: slots.map(\.id),
+        layoutState: LayoutState(activeIndex: 1, centeredSlotID: "browser", visibleSlotIDs: slots.map(\.id)),
+        slots: slots
+    )
+    let layout = LayoutPlan(
+        slotLayouts: [
+            SlotLayout(slotID: "editor", frame: RectValue(x: 0, y: 0, width: 720, height: 640), isFocused: false),
+            SlotLayout(slotID: "browser", frame: RectValue(x: 722, y: 0, width: 478, height: 640), isFocused: true),
+        ],
+        contentWidth: 1200,
+        scrollOffset: 0,
+        visibleSlotIDs: ["editor", "browser"],
+        parkedSlotIDs: [],
+        activeSlotIndex: 1
+    )
+
+    let outcome = await service.apply(
+        workspace: workspace,
+        previousWorkspace: nil,
+        layout: layout,
+        stageViewportFrame: CGRect(x: 100, y: 200, width: 1200, height: 720),
+        focusPolicy: .focusActiveSlot
+    )
+
+    #expect(outcome == .applied)
+    #expect(registry.operations.contains(.activate(processID: 101)))
+    #expect(registry.operations.contains(.activate(processID: 202)))
+    #expect(registry.operations.contains(.raise(processID: 101, windowID: 1)))
+    #expect(registry.operations.contains(.raise(processID: 202, windowID: 2)))
+    let focusIndex = try #require(registry.operations.firstIndex(of: .focus(processID: 202, windowID: 2)))
+    let lastRefloatIndex = try #require(registry.operations.lastIndex(where: { operation in
+        if case .activate = operation {
+            return true
+        }
+        if case .raise = operation {
+            return true
+        }
+        return false
+    }))
+    #expect(focusIndex > lastRefloatIndex)
 }
 
 @MainActor
