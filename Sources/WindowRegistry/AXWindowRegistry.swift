@@ -72,12 +72,40 @@ public actor AXWindowRegistry: WindowRegistryService {
         }
     }
 
+    public func activateApplication(processID: Int) throws {
+        guard let application = NSRunningApplication(processIdentifier: pid_t(processID)) else {
+            throw NexusError.notFound("No running application found for process \(processID).")
+        }
+
+        application.activate(options: [.activateAllWindows])
+    }
+
     public func raiseWindow(processID: Int, windowID: Int?) throws {
         let windowElement = try matchingWindowElement(processID: processID, windowID: windowID)
         let error = AXUIElementPerformAction(windowElement, kAXRaiseAction as CFString)
         guard error == .success else {
             throw NexusError.invalidState("Unable to raise window \(windowID.map(String.init) ?? "unknown") for process \(processID): \(error.rawValue)")
         }
+    }
+
+    public func focusWindow(processID: Int, windowID: Int?) throws {
+        try activateApplication(processID: processID)
+
+        let windowElement = try matchingWindowElement(processID: processID, windowID: windowID)
+
+        do {
+            try setAttributeValue(kCFBooleanTrue, for: windowElement, attribute: kAXMainAttribute as CFString)
+        } catch {
+            // Some apps reject AXMainAttribute writes; raising is still a useful fallback.
+        }
+
+        do {
+            try setAttributeValue(kCFBooleanTrue, for: windowElement, attribute: kAXFocusedAttribute as CFString)
+        } catch {
+            // Some windows do not expose focus writes even when they support raise.
+        }
+
+        try raiseWindow(processID: processID, windowID: windowID)
     }
 
     private func quartzWindows() -> [WindowCandidate] {

@@ -133,34 +133,49 @@ final class WindowChoreographyService {
         candidate: WindowCandidate?,
         shouldFocus: Bool
     ) async {
-        if let candidate {
+        guard let candidate else {
             do {
-                try await windowRegistry.setApplicationHidden(processID: candidate.processID, to: false)
-                try await windowRegistry.setWindowMinimized(
-                    processID: candidate.processID,
-                    windowID: candidate.windowID,
-                    to: false
-                )
-                if let targetFrame = action.targetFrame {
-                    try await windowRegistry.setWindowFrame(
-                        processID: candidate.processID,
-                        windowID: candidate.windowID,
-                        to: targetFrame
-                    )
-                }
-                if shouldFocus {
-                    try await windowRegistry.raiseWindow(processID: candidate.processID, windowID: candidate.windowID)
-                }
-                return
+                try openTarget(for: slot)
             } catch {
-                logger.debug("Window staging fallback engaged for slot \(slot.id, privacy: .public): \(error.localizedDescription, privacy: .public)")
+                logger.debug("Unable to open target for slot \(slot.id, privacy: .public): \(error.localizedDescription, privacy: .public)")
             }
+            return
         }
 
         do {
-            try openTarget(for: slot)
+            try await windowRegistry.setApplicationHidden(processID: candidate.processID, to: false)
         } catch {
-            logger.debug("Unable to open target for slot \(slot.id, privacy: .public): \(error.localizedDescription, privacy: .public)")
+            logger.debug("Unable to unhide app for slot \(slot.id, privacy: .public): \(error.localizedDescription, privacy: .public)")
+        }
+
+        do {
+            try await windowRegistry.setWindowMinimized(
+                processID: candidate.processID,
+                windowID: candidate.windowID,
+                to: false
+            )
+        } catch {
+            logger.debug("Unable to restore minimized window for slot \(slot.id, privacy: .public): \(error.localizedDescription, privacy: .public)")
+        }
+
+        if let targetFrame = action.targetFrame {
+            do {
+                try await windowRegistry.setWindowFrame(
+                    processID: candidate.processID,
+                    windowID: candidate.windowID,
+                    to: targetFrame
+                )
+            } catch {
+                logger.debug("Unable to set frame for slot \(slot.id, privacy: .public): \(error.localizedDescription, privacy: .public)")
+            }
+        }
+
+        if shouldFocus {
+            do {
+                try await windowRegistry.focusWindow(processID: candidate.processID, windowID: candidate.windowID)
+            } catch {
+                logger.debug("Unable to focus window for slot \(slot.id, privacy: .public): \(error.localizedDescription, privacy: .public)")
+            }
         }
     }
 
