@@ -1,0 +1,331 @@
+name: Nexus
+
+options:
+  minimumXcodeGenVersion: 2.45.3
+  createIntermediateGroups: true
+  groupSortPosition: top
+  developmentLanguage: en
+  deploymentTarget:
+    macOS: "14.0"
+  defaultConfig: Debug
+
+settings:
+  base:
+    SWIFT_VERSION: "6.0"
+    MACOSX_DEPLOYMENT_TARGET: "14.0"
+    CODE_SIGN_STYLE: Automatic
+    ENABLE_USER_SCRIPT_SANDBOXING: NO
+    CLANG_ENABLE_MODULES: YES
+    SUPPORTS_MAC_DESIGNED_FOR_IPHONE_IPAD: NO
+
+fileGroups:
+  - AppResources
+  - scripts
+  - README.md
+  - AGENTS.md
+  - Package.swift
+  - working_list.md
+
+targetTemplates:
+  module:
+    platform: macOS
+    type: library.static
+    settings:
+      base:
+        SKIP_INSTALL: YES
+        DEFINES_MODULE: YES
+        GENERATE_INFOPLIST_FILE: YES
+  unitTest:
+    platform: macOS
+    type: bundle.unit-test
+    settings:
+      base:
+        GENERATE_INFOPLIST_FILE: YES
+        CODE_SIGNING_ALLOWED: NO
+
+targets:
+  SharedTypes:
+    templates:
+      - module
+    platform: macOS
+    sources:
+      - path: Sources/SharedTypes
+
+  WorkspaceEngine:
+    templates:
+      - module
+    platform: macOS
+    sources:
+      - path: Sources/WorkspaceEngine
+    dependencies:
+      - target: SharedTypes
+
+  WindowRegistry:
+    templates:
+      - module
+    platform: macOS
+    sources:
+      - path: Sources/WindowRegistry
+    dependencies:
+      - target: SharedTypes
+
+  LayoutEngine:
+    templates:
+      - module
+    platform: macOS
+    sources:
+      - path: Sources/LayoutEngine
+    dependencies:
+      - target: SharedTypes
+
+  VisibilityEngine:
+    templates:
+      - module
+    platform: macOS
+    sources:
+      - path: Sources/VisibilityEngine
+    dependencies:
+      - target: SharedTypes
+      - target: LayoutEngine
+
+  AdapterBus:
+    templates:
+      - module
+    platform: macOS
+    sources:
+      - path: Sources/AdapterBus
+    dependencies:
+      - target: SharedTypes
+
+  Diagnostics:
+    templates:
+      - module
+    platform: macOS
+    sources:
+      - path: Sources/Diagnostics
+    dependencies:
+      - target: SharedTypes
+
+  GenericAXAdapter:
+    templates:
+      - module
+    platform: macOS
+    sources:
+      - path: Sources/GenericAXAdapter
+    dependencies:
+      - target: SharedTypes
+      - target: AdapterBus
+
+  TetherAdapter:
+    templates:
+      - module
+    platform: macOS
+    sources:
+      - path: Sources/TetherAdapter
+    dependencies:
+      - target: SharedTypes
+      - target: AdapterBus
+
+  StageChrome:
+    templates:
+      - module
+    platform: macOS
+    sources:
+      - path: Sources/StageChrome
+    dependencies:
+      - target: SharedTypes
+      - target: WorkspaceEngine
+      - target: LayoutEngine
+
+  NexusApp:
+    platform: macOS
+    type: application
+    sources:
+      - path: Sources/NexusApp
+        excludes:
+          - Resources/**
+      - path: Sources/NexusApp/Resources
+        buildPhase: resources
+    dependencies:
+      - target: SharedTypes
+      - target: WorkspaceEngine
+      - target: WindowRegistry
+      - target: LayoutEngine
+      - target: VisibilityEngine
+      - target: AdapterBus
+      - target: Diagnostics
+      - target: GenericAXAdapter
+      - target: TetherAdapter
+      - target: StageChrome
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: dev.nexusniri.Nexus
+        PRODUCT_NAME: Nexus
+        PRODUCT_MODULE_NAME: NexusApp
+        EXECUTABLE_NAME: NexusApp
+        WRAPPER_NAME: Nexus.app
+        INFOPLIST_FILE: AppResources/Info.plist
+        CODE_SIGN_ENTITLEMENTS: AppResources/Nexus.entitlements
+        GENERATE_INFOPLIST_FILE: NO
+        LD_RUNPATH_SEARCH_PATHS:
+          - "$(inherited)"
+          - "@executable_path/../Frameworks"
+          - "@loader_path/../Frameworks"
+    postBuildScripts:
+      - name: Install Stable Dev App
+        basedOnDependencyAnalysis: false
+        showEnvVars: false
+        script: |
+          set -euo pipefail
+
+          if [ "${CODE_SIGNING_ALLOWED:-NO}" != "YES" ] || [ -z "${EXPANDED_CODE_SIGN_IDENTITY_NAME:-}" ]; then
+            echo "Skipping stable install because Xcode signing is not configured."
+            exit 0
+          fi
+
+          INSTALL_PATH="${NEXUS_DEV_INSTALL_PATH:-$HOME/Applications/Nexus.app}"
+          APP_PATH="$TARGET_BUILD_DIR/$FULL_PRODUCT_NAME"
+          ENTITLEMENTS_PATH="$SRCROOT/AppResources/Nexus.entitlements"
+          TEMP_INSTALL_PATH="${INSTALL_PATH}.tmp"
+
+          json_escape() {
+            printf '%s' "$1" | sed 's/\\/\\\\/g; s/"/\\"/g'
+          }
+
+          if pgrep -f "$INSTALL_PATH/Contents/MacOS/" >/dev/null 2>&1; then
+            echo "Skipping stable install because $INSTALL_PATH is currently running."
+            exit 0
+          fi
+
+          mkdir -p "$(dirname "$INSTALL_PATH")"
+          rm -rf "$TEMP_INSTALL_PATH"
+          ditto "$APP_PATH" "$TEMP_INSTALL_PATH"
+
+          if security find-identity -v -p codesigning | grep -F "\"${EXPANDED_CODE_SIGN_IDENTITY_NAME}\"" >/dev/null 2>&1; then
+            RESOURCES_PATH="$TEMP_INSTALL_PATH/Contents/Resources"
+            mkdir -p "$RESOURCES_PATH"
+
+            printf '%s\n' \
+              '{' \
+              "  \"bundleIdentifier\": \"$(json_escape "${PRODUCT_BUNDLE_IDENTIFIER}")\"," \
+              '  "signingMode": "selfSigned",' \
+              "  \"signingIdentityLabel\": \"$(json_escape "${EXPANDED_CODE_SIGN_IDENTITY_NAME}")\"," \
+              "  \"expectedInstallPath\": \"$(json_escape "${INSTALL_PATH}")\"," \
+              "  \"buildTimestamp\": \"$(date -u +"%Y-%m-%dT%H:%M:%SZ")\"" \
+              '}' > "$RESOURCES_PATH/dev-build-metadata.json"
+
+            codesign \
+              --force \
+              --deep \
+              --sign "${EXPANDED_CODE_SIGN_IDENTITY_NAME}" \
+              --entitlements "$ENTITLEMENTS_PATH" \
+              "$TEMP_INSTALL_PATH"
+          else
+            echo "Standalone codesign cannot reuse '${EXPANDED_CODE_SIGN_IDENTITY_NAME}'. Installing the Xcode-signed app without dev-build-metadata."
+          fi
+
+          rm -rf "$INSTALL_PATH"
+          mv "$TEMP_INSTALL_PATH" "$INSTALL_PATH"
+
+          echo "Installed signed Nexus.app to $INSTALL_PATH"
+    scheme:
+      testTargets:
+        - SharedTypesTests
+        - WorkspaceEngineTests
+        - LayoutEngineTests
+        - TetherAdapterTests
+        - StageChromeTests
+        - VisibilityEngineTests
+        - DiagnosticsTests
+        - NexusAppTests
+
+  SharedTypesTests:
+    templates:
+      - unitTest
+    platform: macOS
+    sources:
+      - path: Tests/SharedTypesTests
+    dependencies:
+      - target: SharedTypes
+
+  WorkspaceEngineTests:
+    templates:
+      - unitTest
+    platform: macOS
+    sources:
+      - path: Tests/WorkspaceEngineTests
+    dependencies:
+      - target: WorkspaceEngine
+      - target: SharedTypes
+
+  LayoutEngineTests:
+    templates:
+      - unitTest
+    platform: macOS
+    sources:
+      - path: Tests/LayoutEngineTests
+    dependencies:
+      - target: LayoutEngine
+      - target: SharedTypes
+
+  TetherAdapterTests:
+    templates:
+      - unitTest
+    platform: macOS
+    sources:
+      - path: Tests/TetherAdapterTests
+    dependencies:
+      - target: TetherAdapter
+      - target: SharedTypes
+      - target: AdapterBus
+
+  StageChromeTests:
+    templates:
+      - unitTest
+    platform: macOS
+    sources:
+      - path: Tests/StageChromeTests
+    dependencies:
+      - target: StageChrome
+      - target: SharedTypes
+      - target: WorkspaceEngine
+      - target: LayoutEngine
+
+  VisibilityEngineTests:
+    templates:
+      - unitTest
+    platform: macOS
+    sources:
+      - path: Tests/VisibilityEngineTests
+    dependencies:
+      - target: VisibilityEngine
+      - target: SharedTypes
+
+  DiagnosticsTests:
+    templates:
+      - unitTest
+    platform: macOS
+    sources:
+      - path: Tests/DiagnosticsTests
+    dependencies:
+      - target: Diagnostics
+      - target: SharedTypes
+
+  NexusAppTests:
+    templates:
+      - unitTest
+    platform: macOS
+    sources:
+      - path: Tests/NexusAppTests
+    dependencies:
+      - target: NexusApp
+      - target: SharedTypes
+      - target: AdapterBus
+      - target: VisibilityEngine
+      - target: LayoutEngine
+      - target: WorkspaceEngine
+      - target: Diagnostics
+    settings:
+      base:
+        TEST_HOST: "$(BUILT_PRODUCTS_DIR)/Nexus.app/Contents/MacOS/NexusApp"
+        BUNDLE_LOADER: "$(TEST_HOST)"

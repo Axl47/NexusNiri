@@ -29,6 +29,7 @@ That command should build the Swift package, bundle the executable, sign it with
 - [x] (2026-03-13 02:56Z) Remove stage-level resize handles and direct strip dragging from the shell UI for this v1 slice, leaving width-policy mutation dormant in the model layer for a later geometry pass.
 - [x] (2026-03-13 03:31Z) Implement visible-slot native geometry conformance so every `LayoutPlan.visibleSlotIDs` window stages into its slot rect, the active slot regains focus after the geometry pass, and viewport moves reapply the latest staged layout.
 - [x] (2026-03-13 05:42Z) Move local TCC-sensitive development off disposable ad-hoc bundles to stable signing defaults, add runtime build identity diagnostics, and explicitly block generic choreography when Accessibility trust is denied.
+- [x] (2026-03-13 16:45Z) Add a checked-in XcodeGen project so developers can inspect signing and capabilities in Xcode while keeping the same stable installed-app identity used by the CLI flow.
 - [ ] Harden window rematching and runtime binding persistence across live multi-workspace switching against the registry.
 - [ ] Implement the first fully working deep Tether restore flow once the sibling app exposes the `nexus.*` contract.
 
@@ -60,6 +61,8 @@ That command should build the Swift package, bundle the executable, sign it with
   Evidence: local follow-up fix on 2026-03-13 only made visible-slot viewport tracking work after `ReporterView` began observing `NSWindow.didMove`, `didResize`, `didChangeScreen`, and `didEndLiveResize`.
 - Observation: Rebuilding and relaunching a freshly ad-hoc signed `build/Nexus.app` can keep `AXIsProcessTrusted()` denied even after users believe they already granted Accessibility.
   Evidence: local debugging showed the app could still activate targets while generic AX window mutation stayed blocked; moving to a stable signing identity and stable installed launch path resolved the mismatch between TCC trust expectations and runtime process identity.
+- Observation: SwiftPM alone is not enough when you need to inspect signing, capabilities, and entitlements interactively; an Xcode project is still the practical debugging surface for local TCC issues.
+  Evidence: local debugging on 2026-03-13 required checking signing behavior in an IDE-friendly app target, so the repo now carries an XcodeGen spec and checked-in `.xcodeproj` alongside the package workflow.
 
 ## Decision Log
 
@@ -96,6 +99,9 @@ That command should build the Swift package, bundle the executable, sign it with
 - Decision: Make stable local signing and installed-path launches the default for TCC-sensitive development, and treat denied Accessibility as an explicit choreography block state.
   Rationale: ad-hoc rebuilds at transient paths produce unreliable TCC identity continuity, while explicit blocked-state UX prevents misleading "app activated but window did not move" behavior.
   Date/Author: 2026-03-13 / Codex
+- Decision: Check in an XcodeGen-backed `Nexus.xcodeproj` and keep `project.yml` as the editable source of truth.
+  Rationale: contributors still need Xcode for certificate selection, entitlement inspection, and signing verification, but the project structure should stay reproducible from the package target graph rather than becoming a hand-edited parallel build system.
+  Date/Author: 2026-03-13 / Codex
 
 ## Outcomes & Retrospective
 
@@ -104,6 +110,8 @@ The repository is no longer empty. It now has a native CLI-first app shape, a wo
 The latest shell slice replaces the old horizontally scrollable card prototype with a focus-driven stage model. The active slot is centered by layout state, the strip indicator and header movement are driven directly by `LayoutPlan.scrollOffset`, and the viewport no longer behaves like a user-draggable `ScrollView`. Native size conformance for every visible slot is now implemented: visible windows receive the slot rects computed by the layout engine, the active slot is focused only after the geometry pass completes, and moving the Nexus window replays the latest staged layout.
 
 This revision also closes the largest diagnostics and trust gap: local development now defaults to stable signing and a stable installed app path, diagnostics surfaces runtime build identity details, and generic window choreography reports an explicit blocked state when Accessibility is denied instead of silently degrading into app-only activation. Transparent embedding, deeper runtime rematching, and adapter-specific restore remain follow-up work.
+
+The repo also now carries a reproducible Xcode workflow for signing-sensitive debugging. `project.yml` generates `Nexus.xcodeproj`, the app target builds `Nexus.app` with the checked-in entitlements and Info.plist, and signed Xcode runs install back into the same stable app path used by the CLI scripts so TCC debugging stays consistent across both workflows.
 
 ## Context and Orientation
 
@@ -128,6 +136,11 @@ From the repository root, use these commands:
     rtk swift test
     rtk proxy bash ./scripts/dev-run.sh
 
+To inspect signing or run from Xcode, use:
+
+    rtk proxy bash ./scripts/dev-generate-xcodeproj.sh
+    open Nexus.xcodeproj
+
 The expected build flow is:
 
     > rtk proxy bash ./scripts/dev-build.sh
@@ -137,6 +150,14 @@ The expected build flow is:
     Installing Nexus.app to ~/Applications/Nexus.app...
     Nexus.app ready at .../Applications/Nexus.app
     (Use NEXUS_ALLOW_ADHOC=1 only for explicit non-TCC debugging fallback.)
+
+The expected Xcode flow is:
+
+    > rtk proxy bash ./scripts/dev-generate-xcodeproj.sh
+    Generated .../Nexus.xcodeproj
+    > open Nexus.xcodeproj
+    Select the NexusApp target, choose a real code-signing identity, and Run.
+    The post-build script installs the signed app to ~/Applications/Nexus.app and refreshes dev-build-metadata.json.
 
 ## Validation and Acceptance
 
@@ -156,8 +177,11 @@ Important files added by this plan:
     AppResources/Info.plist
     AppResources/Nexus.entitlements
     scripts/dev-build.sh
+    scripts/dev-generate-xcodeproj.sh
     scripts/dev-run.sh
     scripts/make-app-bundle.sh
+    project.yml
+    Nexus.xcodeproj/
     Sources/NexusApp/
     Sources/SharedTypes/
     Sources/WorkspaceEngine/

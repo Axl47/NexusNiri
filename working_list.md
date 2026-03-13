@@ -3,6 +3,7 @@
 - [ ] Harden workspace rematching and runtime binding persistence across live multi-workspace switches
 
 ## Done
+- [x] Add a checked-in XcodeGen-based `Nexus.xcodeproj` workflow so signing and entitlements can be inspected and managed from Xcode without losing the stable installed-app path
 - [x] Document and lock the stable local signing workflow (`NEXUS_CODESIGN_IDENTITY` + `~/Applications/Nexus.app`) for Accessibility-sensitive choreography testing
 - [x] Document explicit ad-hoc fallback (`NEXUS_ALLOW_ADHOC=1`) and diagnostics messaging for blocked generic choreography when Accessibility is denied
 - [x] Implement visible-slot native geometry conformance with live viewport follow

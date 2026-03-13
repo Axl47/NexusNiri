@@ -1,0 +1,2904 @@
+// !$*UTF8*$!
+{
+	archiveVersion = 1;
+	classes = {
+	};
+	objectVersion = 77;
+	objects = {
+
+/* Begin PBXBuildFile section */
+		0012BE21E954B326E1897C89 /* libLayoutEngine.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 97F79F3A6B26B745BC6D78D2 /* libLayoutEngine.a */; };
+		0C57877959078D98A2E17DDB /* libSharedTypes.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 1EECF3EF38E390AA92C7CEA1 /* libSharedTypes.a */; };
+		13607A5BC10CFA6EED415BBD /* libSharedTypes.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 1EECF3EF38E390AA92C7CEA1 /* libSharedTypes.a */; };
+		1610166A53F786EC473C631C /* AppBootstrap.swift in Sources */ = {isa = PBXBuildFile; fileRef = 31F350A9617D8AC426A8452E /* AppBootstrap.swift */; };
+		17B2B2179FF416CF71409B60 /* libTetherAdapter.a in Frameworks */ = {isa = PBXBuildFile; fileRef = EC9A7D6163591348C95B873F /* libTetherAdapter.a */; };
+		29A695697796115145F7598D /* NexusApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5E7C4DD289F7471AD2FC39B7 /* NexusApp.swift */; };
+		33734EE6A89BCD612ED1539A /* DiagnosticsCenter.swift in Sources */ = {isa = PBXBuildFile; fileRef = F1FAEEC43979A39625B24B05 /* DiagnosticsCenter.swift */; };
+		3EA5327F0CEF7C103C8454C8 /* libSharedTypes.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 1EECF3EF38E390AA92C7CEA1 /* libSharedTypes.a */; };
+		435C7548C89F55FD5F559C9E /* libDiagnostics.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 9BFB6060B38A95BE87355D5E /* libDiagnostics.a */; };
+		46DFA771C8CE90FA5A0098DF /* libStageChrome.a in Frameworks */ = {isa = PBXBuildFile; fileRef = A49624C5727B36CC623F61F0 /* libStageChrome.a */; };
+		472B0BFBC026958D582E71CC /* libSharedTypes.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 1EECF3EF38E390AA92C7CEA1 /* libSharedTypes.a */; };
+		4834A0A14675362277145FAE /* libVisibilityEngine.a in Frameworks */ = {isa = PBXBuildFile; fileRef = F5D447A4A639BCEB6BBF25CC /* libVisibilityEngine.a */; };
+		4840446A1DCB3BB68338AEC3 /* libLayoutEngine.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 97F79F3A6B26B745BC6D78D2 /* libLayoutEngine.a */; };
+		4F31C89BFB87FDB369C19928 /* libWorkspaceEngine.a in Frameworks */ = {isa = PBXBuildFile; fileRef = DCE56EB9979E483A8533429B /* libWorkspaceEngine.a */; };
+		500620E216C9A26629662EAE /* TetherAdapterTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7697AFCC3839646890421A1F /* TetherAdapterTests.swift */; };
+		55502A856E005BCE65D4D5E9 /* libSharedTypes.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 1EECF3EF38E390AA92C7CEA1 /* libSharedTypes.a */; };
+		5569F0BA04B7FEC050B07BCB /* libTetherAdapter.a in Frameworks */ = {isa = PBXBuildFile; fileRef = EC9A7D6163591348C95B873F /* libTetherAdapter.a */; };
+		5B3D28535540D55591B64AF7 /* SharedTypesTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = CCA36D42CBB05CE4EEA49CFD /* SharedTypesTests.swift */; };
+		5F3B59B9BE32EE408F5F45C6 /* AppEnvironment.swift in Sources */ = {isa = PBXBuildFile; fileRef = BD2FCEB5FF7E413243E580FC /* AppEnvironment.swift */; };
+		6096CCBF9DB52AEB48F25CDB /* LayoutEngineTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = F9B5C42C27BB41BF4A6EAA81 /* LayoutEngineTests.swift */; };
+		61AC3C1D0F4566FC770BC317 /* libVisibilityEngine.a in Frameworks */ = {isa = PBXBuildFile; fileRef = F5D447A4A639BCEB6BBF25CC /* libVisibilityEngine.a */; };
+		66603AAE739B8BCD9DE35F16 /* libWorkspaceEngine.a in Frameworks */ = {isa = PBXBuildFile; fileRef = DCE56EB9979E483A8533429B /* libWorkspaceEngine.a */; };
+		693232A6B3DC5414A2DC9C08 /* libDiagnostics.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 9BFB6060B38A95BE87355D5E /* libDiagnostics.a */; };
+		6AF2C197E887A66A69FE5CB6 /* ServiceProtocols.swift in Sources */ = {isa = PBXBuildFile; fileRef = E8F936D7BE7E08C2F83A9AF5 /* ServiceProtocols.swift */; };
+		6F17F83D288A2BA5D164D5FA /* libWindowRegistry.a in Frameworks */ = {isa = PBXBuildFile; fileRef = D0E546FCC1D43F7F194B80BC /* libWindowRegistry.a */; };
+		796BBAECE25E3546EDD9EAA1 /* libAdapterBus.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 05CC05125F65EA32F39D933C /* libAdapterBus.a */; };
+		79C011C2606AF61FDDF148EC /* WorkspaceEngineTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = ABF982C5E5BA59795ADBD04F /* WorkspaceEngineTests.swift */; };
+		86CF1A04DA93842241A37D26 /* libAdapterBus.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 05CC05125F65EA32F39D933C /* libAdapterBus.a */; };
+		8837BD92F461AA7913B23D44 /* AdapterRegistry.swift in Sources */ = {isa = PBXBuildFile; fileRef = 870DD55CB57118B47349842D /* AdapterRegistry.swift */; };
+		8DBD840EAA288A1F9B9824A8 /* default-workspaces.json in Resources */ = {isa = PBXBuildFile; fileRef = D35305EB92F2A478D5EAD72D /* default-workspaces.json */; };
+		91521DC08480A45227048F38 /* StageChromeView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7A2B71D1FE8EDC952DF44DE6 /* StageChromeView.swift */; };
+		953FD54C62F03FC27CEDFB35 /* WorkspaceSession.swift in Sources */ = {isa = PBXBuildFile; fileRef = E88850232A3EBE0D63A6D221 /* WorkspaceSession.swift */; };
+		97AEA5A168CCAB2E75FF3FA2 /* DiagnosticsCenterTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = CEE429B2EB7BE8575886A500 /* DiagnosticsCenterTests.swift */; };
+		97FDEAB1C7144CFA6BA32362 /* TetherAdapter.swift in Sources */ = {isa = PBXBuildFile; fileRef = 91E8CC1281F737A4AFC6EFCC /* TetherAdapter.swift */; };
+		A26F88246DD5BEBB92D25F21 /* libSharedTypes.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 1EECF3EF38E390AA92C7CEA1 /* libSharedTypes.a */; };
+		A575C686AE9C57680E36253D /* JSONWorkspaceStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = 35E05CB2947451426DEC9A14 /* JSONWorkspaceStore.swift */; };
+		A76DF07AE83F1D9F02C2701C /* libVisibilityEngine.a in Frameworks */ = {isa = PBXBuildFile; fileRef = F5D447A4A639BCEB6BBF25CC /* libVisibilityEngine.a */; };
+		A89FE544DC4D10B1249BF2AC /* libSharedTypes.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 1EECF3EF38E390AA92C7CEA1 /* libSharedTypes.a */; };
+		B092BA9233B4FD6D47C0B4FC /* libWorkspaceEngine.a in Frameworks */ = {isa = PBXBuildFile; fileRef = DCE56EB9979E483A8533429B /* libWorkspaceEngine.a */; };
+		B0B5AAEF2F5F724360D8B7BE /* DomainModels.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5C9E884AABCCD3D199C8F225 /* DomainModels.swift */; };
+		B2B7470C7711E12DAEEFD9F2 /* StripLayoutEngine.swift in Sources */ = {isa = PBXBuildFile; fileRef = F67CB730FBF639FAFF89AC88 /* StripLayoutEngine.swift */; };
+		B377D92010CBFA2887C147DE /* libLayoutEngine.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 97F79F3A6B26B745BC6D78D2 /* libLayoutEngine.a */; };
+		B3A83AF9ECBF59EC8A3696E2 /* AppDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = B36E8DB0A43A1502BFAFC102 /* AppDelegate.swift */; };
+		B625F4C723B5A015ECED4F60 /* AXWindowRegistry.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3BA798C18AC0C5FC607C7965 /* AXWindowRegistry.swift */; };
+		B8C3FA38412F20289D6B4FBE /* libStageChrome.a in Frameworks */ = {isa = PBXBuildFile; fileRef = A49624C5727B36CC623F61F0 /* libStageChrome.a */; };
+		BC0DFE484C49CAF3106F35C5 /* ChromeTheme.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8692C4C4B7851CB9F1459DAD /* ChromeTheme.swift */; };
+		BE53A4B7D65D176DAD3DFF73 /* libSharedTypes.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 1EECF3EF38E390AA92C7CEA1 /* libSharedTypes.a */; };
+		C56A3E994E806DCBDC01361D /* libGenericAXAdapter.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 01D00732FAFF41EE051F1747 /* libGenericAXAdapter.a */; };
+		C580F174675813078FE547A4 /* WindowChoreographyService.swift in Sources */ = {isa = PBXBuildFile; fileRef = ADD8B96390872C8012000F63 /* WindowChoreographyService.swift */; };
+		CB8337D1CBC94648FC7C79D5 /* WindowChoreographyServiceTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1A01E41DF5E86B332CBCDB74 /* WindowChoreographyServiceTests.swift */; };
+		CF908E40F4485B02D9244DBE /* VisibilityCoordinator.swift in Sources */ = {isa = PBXBuildFile; fileRef = B4EA293DBCC5E2C4B70980DC /* VisibilityCoordinator.swift */; };
+		D33082C2B5C276A5A636734D /* ChromeThemeTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 15EC86B903D2DE076FF9A061 /* ChromeThemeTests.swift */; };
+		D40DE56BDBB68C5E0B73116D /* libLayoutEngine.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 97F79F3A6B26B745BC6D78D2 /* libLayoutEngine.a */; };
+		EBE77E6A319E3A68FF0FB667 /* libAdapterBus.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 05CC05125F65EA32F39D933C /* libAdapterBus.a */; };
+		F5583A916A0E1166F8D45C2A /* GenericAXAdapter.swift in Sources */ = {isa = PBXBuildFile; fileRef = 40FD6B387246C750001342A4 /* GenericAXAdapter.swift */; };
+		F672C8606CA168B4397ECF65 /* libWorkspaceEngine.a in Frameworks */ = {isa = PBXBuildFile; fileRef = DCE56EB9979E483A8533429B /* libWorkspaceEngine.a */; };
+		F7D1F39FE59B30D494EE61D8 /* libDiagnostics.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 9BFB6060B38A95BE87355D5E /* libDiagnostics.a */; };
+		FAD66241E88441F487EA6678 /* libSharedTypes.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 1EECF3EF38E390AA92C7CEA1 /* libSharedTypes.a */; };
+		FECEEB2C8C6AC75BA39198E3 /* VisibilityCoordinatorTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = C93BA106E782C321CC9FB6B0 /* VisibilityCoordinatorTests.swift */; };
+/* End PBXBuildFile section */
+
+/* Begin PBXContainerItemProxy section */
+		03D4F1EB6720B5D398B86552 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 6E0546D7A1020B804447C56B /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = F73B2D3FD6C1BBB1233CFE0C;
+			remoteInfo = LayoutEngine;
+		};
+		0582478CB34C74EA3A3367F1 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 6E0546D7A1020B804447C56B /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = 4478A37190115038CDF6B598;
+			remoteInfo = StageChrome;
+		};
+		1253E9E6E386FF78D7D55774 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 6E0546D7A1020B804447C56B /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = D779145BDDFD824DCCC63CB4;
+			remoteInfo = VisibilityEngine;
+		};
+		180A65A705825AD55966E036 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 6E0546D7A1020B804447C56B /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = 004CB375DDD297E6A3F18D39;
+			remoteInfo = Diagnostics;
+		};
+		1DD138D737DCCD48C5620226 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 6E0546D7A1020B804447C56B /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = FD9C734DBBA59D93CD833737;
+			remoteInfo = SharedTypes;
+		};
+		1EEBD82B26CDB9D716BD6965 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 6E0546D7A1020B804447C56B /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = 004CB375DDD297E6A3F18D39;
+			remoteInfo = Diagnostics;
+		};
+		21D02771EBD6A36F8CCE5CB7 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 6E0546D7A1020B804447C56B /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = 7E444424216D38C14D3625D9;
+			remoteInfo = AdapterBus;
+		};
+		2B0ED7EB3226D8C4C0984852 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 6E0546D7A1020B804447C56B /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = FD9C734DBBA59D93CD833737;
+			remoteInfo = SharedTypes;
+		};
+		2D33D3636488EE3061612AD0 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 6E0546D7A1020B804447C56B /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = D779145BDDFD824DCCC63CB4;
+			remoteInfo = VisibilityEngine;
+		};
+		2D8D4B8AD544DA5C059E792E /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 6E0546D7A1020B804447C56B /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = 7E444424216D38C14D3625D9;
+			remoteInfo = AdapterBus;
+		};
+		2DA4444405F9DAE287DE997D /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 6E0546D7A1020B804447C56B /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = 55F671F02D3BB79A707C6B4D;
+			remoteInfo = NexusApp;
+		};
+		2F7DF9255CFF06EE80A731C1 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 6E0546D7A1020B804447C56B /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = 6438DDBBA8BB07A870B3D2AA;
+			remoteInfo = WindowRegistry;
+		};
+		326AB28DE51FBA5FA92F0AE0 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 6E0546D7A1020B804447C56B /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = FD9C734DBBA59D93CD833737;
+			remoteInfo = SharedTypes;
+		};
+		3758B03489EB2289C3671FAB /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 6E0546D7A1020B804447C56B /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = FD9C734DBBA59D93CD833737;
+			remoteInfo = SharedTypes;
+		};
+		40A6B2597D2B988510741873 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 6E0546D7A1020B804447C56B /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = FD9C734DBBA59D93CD833737;
+			remoteInfo = SharedTypes;
+		};
+		41D7AD8E8F1573CB4F171006 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 6E0546D7A1020B804447C56B /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = 004CB375DDD297E6A3F18D39;
+			remoteInfo = Diagnostics;
+		};
+		4FFB802D733AA38415C65FA3 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 6E0546D7A1020B804447C56B /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = FD9C734DBBA59D93CD833737;
+			remoteInfo = SharedTypes;
+		};
+		652BBE39A035E3B6F0A7A892 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 6E0546D7A1020B804447C56B /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = 633D380179F57E798C337409;
+			remoteInfo = TetherAdapter;
+		};
+		680A9763D4D423C3B974E97C /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 6E0546D7A1020B804447C56B /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = C89CB1A2CB17BB3911539313;
+			remoteInfo = WorkspaceEngine;
+		};
+		6B08227E650C93F880F50581 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 6E0546D7A1020B804447C56B /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = FD9C734DBBA59D93CD833737;
+			remoteInfo = SharedTypes;
+		};
+		6C1E321D7B33903C47BD8540 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 6E0546D7A1020B804447C56B /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = FD9C734DBBA59D93CD833737;
+			remoteInfo = SharedTypes;
+		};
+		6EE7267A952B4B6707AE8FFC /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 6E0546D7A1020B804447C56B /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = 4478A37190115038CDF6B598;
+			remoteInfo = StageChrome;
+		};
+		712C4D046AEFADABA4A50815 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 6E0546D7A1020B804447C56B /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = 7E444424216D38C14D3625D9;
+			remoteInfo = AdapterBus;
+		};
+		866C4C203FA247E006A44379 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 6E0546D7A1020B804447C56B /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = FD9C734DBBA59D93CD833737;
+			remoteInfo = SharedTypes;
+		};
+		893DBA06F566C0E6E75F8621 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 6E0546D7A1020B804447C56B /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = C89CB1A2CB17BB3911539313;
+			remoteInfo = WorkspaceEngine;
+		};
+		8B797C1BCD60A3B4870F357B /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 6E0546D7A1020B804447C56B /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = FD9C734DBBA59D93CD833737;
+			remoteInfo = SharedTypes;
+		};
+		8FA31226F698DD06B243DF91 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 6E0546D7A1020B804447C56B /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = FD9C734DBBA59D93CD833737;
+			remoteInfo = SharedTypes;
+		};
+		95B593F2CD7103142F0D52F9 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 6E0546D7A1020B804447C56B /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = C89CB1A2CB17BB3911539313;
+			remoteInfo = WorkspaceEngine;
+		};
+		9B6E2BB7123C1A6025FA4FFC /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 6E0546D7A1020B804447C56B /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = FD9C734DBBA59D93CD833737;
+			remoteInfo = SharedTypes;
+		};
+		9BA55841EBF45D90CD97EA6B /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 6E0546D7A1020B804447C56B /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = F73B2D3FD6C1BBB1233CFE0C;
+			remoteInfo = LayoutEngine;
+		};
+		A05FC3675078CB7A2D5B97FE /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 6E0546D7A1020B804447C56B /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = 7E444424216D38C14D3625D9;
+			remoteInfo = AdapterBus;
+		};
+		A25E46610538F1D54609663A /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 6E0546D7A1020B804447C56B /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = FD9C734DBBA59D93CD833737;
+			remoteInfo = SharedTypes;
+		};
+		AA7457A562CECB3D3B26B39F /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 6E0546D7A1020B804447C56B /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = FD9C734DBBA59D93CD833737;
+			remoteInfo = SharedTypes;
+		};
+		AD5D67F65D1E066C52F2B701 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 6E0546D7A1020B804447C56B /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = C89CB1A2CB17BB3911539313;
+			remoteInfo = WorkspaceEngine;
+		};
+		CB69102DD869C5698AAB6424 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 6E0546D7A1020B804447C56B /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = F73B2D3FD6C1BBB1233CFE0C;
+			remoteInfo = LayoutEngine;
+		};
+		D0110DC99BA7A389AF5272A6 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 6E0546D7A1020B804447C56B /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = F73B2D3FD6C1BBB1233CFE0C;
+			remoteInfo = LayoutEngine;
+		};
+		D0ECBA3B8D3D357299736D83 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 6E0546D7A1020B804447C56B /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = FD9C734DBBA59D93CD833737;
+			remoteInfo = SharedTypes;
+		};
+		D5A0875D0E7DAD4364CB17CF /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 6E0546D7A1020B804447C56B /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = F73B2D3FD6C1BBB1233CFE0C;
+			remoteInfo = LayoutEngine;
+		};
+		DAB67716CB34A94832BF0653 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 6E0546D7A1020B804447C56B /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = C6CF5B50349DD8BBE07135D6;
+			remoteInfo = GenericAXAdapter;
+		};
+		DB45F5AFBC8C08E842D4AFBE /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 6E0546D7A1020B804447C56B /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = F73B2D3FD6C1BBB1233CFE0C;
+			remoteInfo = LayoutEngine;
+		};
+		DFCA785E1E0BA0F5CF8E9A74 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 6E0546D7A1020B804447C56B /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = FD9C734DBBA59D93CD833737;
+			remoteInfo = SharedTypes;
+		};
+		E0C36196017DE8724969D3A5 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 6E0546D7A1020B804447C56B /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = FD9C734DBBA59D93CD833737;
+			remoteInfo = SharedTypes;
+		};
+		E8461439F635C7810B0DCEBC /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 6E0546D7A1020B804447C56B /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = D779145BDDFD824DCCC63CB4;
+			remoteInfo = VisibilityEngine;
+		};
+		EAD70E0B04479F92253106C0 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 6E0546D7A1020B804447C56B /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = C89CB1A2CB17BB3911539313;
+			remoteInfo = WorkspaceEngine;
+		};
+		EB97ED7016B2B3002B0EF989 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 6E0546D7A1020B804447C56B /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = 633D380179F57E798C337409;
+			remoteInfo = TetherAdapter;
+		};
+		EDDD3614D3F09A63CED1A649 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 6E0546D7A1020B804447C56B /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = FD9C734DBBA59D93CD833737;
+			remoteInfo = SharedTypes;
+		};
+		F7726622177F10889938A173 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 6E0546D7A1020B804447C56B /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = 7E444424216D38C14D3625D9;
+			remoteInfo = AdapterBus;
+		};
+/* End PBXContainerItemProxy section */
+
+/* Begin PBXFileReference section */
+		01D00732FAFF41EE051F1747 /* libGenericAXAdapter.a */ = {isa = PBXFileReference; explicitFileType = archive.ar; includeInIndex = 0; path = libGenericAXAdapter.a; sourceTree = BUILT_PRODUCTS_DIR; };
+		05CC05125F65EA32F39D933C /* libAdapterBus.a */ = {isa = PBXFileReference; explicitFileType = archive.ar; includeInIndex = 0; path = libAdapterBus.a; sourceTree = BUILT_PRODUCTS_DIR; };
+		11A5F47A418AD924DC64F3B2 /* Nexus.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = Nexus.entitlements; sourceTree = "<group>"; };
+		15EC86B903D2DE076FF9A061 /* ChromeThemeTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ChromeThemeTests.swift; sourceTree = "<group>"; };
+		1A01E41DF5E86B332CBCDB74 /* WindowChoreographyServiceTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WindowChoreographyServiceTests.swift; sourceTree = "<group>"; };
+		1D0BA48F117A6CCCF9467FE6 /* dev-run.sh */ = {isa = PBXFileReference; lastKnownFileType = text.script.sh; path = "dev-run.sh"; sourceTree = "<group>"; };
+		1EECF3EF38E390AA92C7CEA1 /* libSharedTypes.a */ = {isa = PBXFileReference; explicitFileType = archive.ar; includeInIndex = 0; path = libSharedTypes.a; sourceTree = BUILT_PRODUCTS_DIR; };
+		2665DF48D43D30409B565989 /* TetherAdapterTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = TetherAdapterTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
+		31F350A9617D8AC426A8452E /* AppBootstrap.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppBootstrap.swift; sourceTree = "<group>"; };
+		328A9A1651AB3CBDE8BF766F /* dev-clean.sh */ = {isa = PBXFileReference; lastKnownFileType = text.script.sh; path = "dev-clean.sh"; sourceTree = "<group>"; };
+		343523500ACFFBE9002B922D /* DiagnosticsTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = DiagnosticsTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
+		35E05CB2947451426DEC9A14 /* JSONWorkspaceStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = JSONWorkspaceStore.swift; sourceTree = "<group>"; };
+		3B707F8B7E402381AFC95A90 /* README.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = README.md; sourceTree = "<group>"; };
+		3BA798C18AC0C5FC607C7965 /* AXWindowRegistry.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AXWindowRegistry.swift; sourceTree = "<group>"; };
+		40FD6B387246C750001342A4 /* GenericAXAdapter.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GenericAXAdapter.swift; sourceTree = "<group>"; };
+		597452858F14F0F425B7966E /* NexusApp.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = NexusApp.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		5A0BA3F98539F6C772DB7FEB /* dev-build.sh */ = {isa = PBXFileReference; lastKnownFileType = text.script.sh; path = "dev-build.sh"; sourceTree = "<group>"; };
+		5C9E884AABCCD3D199C8F225 /* DomainModels.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DomainModels.swift; sourceTree = "<group>"; };
+		5D6B8E6D0221E268D84D0253 /* VisibilityEngineTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = VisibilityEngineTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
+		5E7C4DD289F7471AD2FC39B7 /* NexusApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NexusApp.swift; sourceTree = "<group>"; };
+		6592F365725917A2E0B8BD0A /* WorkspaceEngineTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = WorkspaceEngineTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
+		70B719F52774959EAD37CB6B /* working_list.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = working_list.md; sourceTree = "<group>"; };
+		7697AFCC3839646890421A1F /* TetherAdapterTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TetherAdapterTests.swift; sourceTree = "<group>"; };
+		7A2B71D1FE8EDC952DF44DE6 /* StageChromeView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StageChromeView.swift; sourceTree = "<group>"; };
+		7B8E726EC1C8BE661EE6FB0F /* dev-generate-xcodeproj.sh */ = {isa = PBXFileReference; lastKnownFileType = text.script.sh; path = "dev-generate-xcodeproj.sh"; sourceTree = "<group>"; };
+		8692C4C4B7851CB9F1459DAD /* ChromeTheme.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ChromeTheme.swift; sourceTree = "<group>"; };
+		870DD55CB57118B47349842D /* AdapterRegistry.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AdapterRegistry.swift; sourceTree = "<group>"; };
+		8CC7277B420ACB1B4DA91BCF /* Package.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Package.swift; sourceTree = "<group>"; };
+		91E8CC1281F737A4AFC6EFCC /* TetherAdapter.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TetherAdapter.swift; sourceTree = "<group>"; };
+		97F79F3A6B26B745BC6D78D2 /* libLayoutEngine.a */ = {isa = PBXFileReference; explicitFileType = archive.ar; includeInIndex = 0; path = libLayoutEngine.a; sourceTree = BUILT_PRODUCTS_DIR; };
+		9BFB6060B38A95BE87355D5E /* libDiagnostics.a */ = {isa = PBXFileReference; explicitFileType = archive.ar; includeInIndex = 0; path = libDiagnostics.a; sourceTree = BUILT_PRODUCTS_DIR; };
+		9CE1FAB394EBCD7EC201B2E6 /* NexusAppTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = NexusAppTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
+		A2A2264F9266F5536FEC37C6 /* LayoutEngineTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = LayoutEngineTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
+		A49624C5727B36CC623F61F0 /* libStageChrome.a */ = {isa = PBXFileReference; explicitFileType = archive.ar; includeInIndex = 0; path = libStageChrome.a; sourceTree = BUILT_PRODUCTS_DIR; };
+		ABF982C5E5BA59795ADBD04F /* WorkspaceEngineTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WorkspaceEngineTests.swift; sourceTree = "<group>"; };
+		ADD8B96390872C8012000F63 /* WindowChoreographyService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WindowChoreographyService.swift; sourceTree = "<group>"; };
+		B36E8DB0A43A1502BFAFC102 /* AppDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppDelegate.swift; sourceTree = "<group>"; };
+		B4EA293DBCC5E2C4B70980DC /* VisibilityCoordinator.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VisibilityCoordinator.swift; sourceTree = "<group>"; };
+		B87FAB6666B481B8D6572407 /* SharedTypesTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = SharedTypesTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
+		BD2FCEB5FF7E413243E580FC /* AppEnvironment.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppEnvironment.swift; sourceTree = "<group>"; };
+		C93BA106E782C321CC9FB6B0 /* VisibilityCoordinatorTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VisibilityCoordinatorTests.swift; sourceTree = "<group>"; };
+		CB42F7AB03B39C3B6C9DD94C /* StageChromeTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = StageChromeTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
+		CCA36D42CBB05CE4EEA49CFD /* SharedTypesTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SharedTypesTests.swift; sourceTree = "<group>"; };
+		CEE429B2EB7BE8575886A500 /* DiagnosticsCenterTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DiagnosticsCenterTests.swift; sourceTree = "<group>"; };
+		D0E546FCC1D43F7F194B80BC /* libWindowRegistry.a */ = {isa = PBXFileReference; explicitFileType = archive.ar; includeInIndex = 0; path = libWindowRegistry.a; sourceTree = BUILT_PRODUCTS_DIR; };
+		D35305EB92F2A478D5EAD72D /* default-workspaces.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; path = "default-workspaces.json"; sourceTree = "<group>"; };
+		DCE56EB9979E483A8533429B /* libWorkspaceEngine.a */ = {isa = PBXFileReference; explicitFileType = archive.ar; includeInIndex = 0; path = libWorkspaceEngine.a; sourceTree = BUILT_PRODUCTS_DIR; };
+		E88850232A3EBE0D63A6D221 /* WorkspaceSession.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WorkspaceSession.swift; sourceTree = "<group>"; };
+		E8F936D7BE7E08C2F83A9AF5 /* ServiceProtocols.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ServiceProtocols.swift; sourceTree = "<group>"; };
+		EB54D1DEEA6D8663E593ABEF /* make-app-bundle.sh */ = {isa = PBXFileReference; lastKnownFileType = text.script.sh; path = "make-app-bundle.sh"; sourceTree = "<group>"; };
+		EC9A7D6163591348C95B873F /* libTetherAdapter.a */ = {isa = PBXFileReference; explicitFileType = archive.ar; includeInIndex = 0; path = libTetherAdapter.a; sourceTree = BUILT_PRODUCTS_DIR; };
+		EE4854E442333DA40720E217 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist; path = Info.plist; sourceTree = "<group>"; };
+		F1FAEEC43979A39625B24B05 /* DiagnosticsCenter.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DiagnosticsCenter.swift; sourceTree = "<group>"; };
+		F5D447A4A639BCEB6BBF25CC /* libVisibilityEngine.a */ = {isa = PBXFileReference; explicitFileType = archive.ar; includeInIndex = 0; path = libVisibilityEngine.a; sourceTree = BUILT_PRODUCTS_DIR; };
+		F67CB730FBF639FAFF89AC88 /* StripLayoutEngine.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StripLayoutEngine.swift; sourceTree = "<group>"; };
+		F9B5C42C27BB41BF4A6EAA81 /* LayoutEngineTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LayoutEngineTests.swift; sourceTree = "<group>"; };
+		FD9A168F3BA2ADE3F9147347 /* AGENTS.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = AGENTS.md; sourceTree = "<group>"; };
+/* End PBXFileReference section */
+
+/* Begin PBXFrameworksBuildPhase section */
+		0D50F810FB50C9B008C9F421 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				55502A856E005BCE65D4D5E9 /* libSharedTypes.a in Frameworks */,
+				4F31C89BFB87FDB369C19928 /* libWorkspaceEngine.a in Frameworks */,
+				6F17F83D288A2BA5D164D5FA /* libWindowRegistry.a in Frameworks */,
+				4840446A1DCB3BB68338AEC3 /* libLayoutEngine.a in Frameworks */,
+				A76DF07AE83F1D9F02C2701C /* libVisibilityEngine.a in Frameworks */,
+				796BBAECE25E3546EDD9EAA1 /* libAdapterBus.a in Frameworks */,
+				693232A6B3DC5414A2DC9C08 /* libDiagnostics.a in Frameworks */,
+				C56A3E994E806DCBDC01361D /* libGenericAXAdapter.a in Frameworks */,
+				17B2B2179FF416CF71409B60 /* libTetherAdapter.a in Frameworks */,
+				46DFA771C8CE90FA5A0098DF /* libStageChrome.a in Frameworks */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		1ABA175B7552528ED950882A /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				B8C3FA38412F20289D6B4FBE /* libStageChrome.a in Frameworks */,
+				3EA5327F0CEF7C103C8454C8 /* libSharedTypes.a in Frameworks */,
+				B092BA9233B4FD6D47C0B4FC /* libWorkspaceEngine.a in Frameworks */,
+				0012BE21E954B326E1897C89 /* libLayoutEngine.a in Frameworks */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		7DCCFE0A42ED4FF852231121 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				435C7548C89F55FD5F559C9E /* libDiagnostics.a in Frameworks */,
+				13607A5BC10CFA6EED415BBD /* libSharedTypes.a in Frameworks */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		813A73B900185368DBC3BC08 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				61AC3C1D0F4566FC770BC317 /* libVisibilityEngine.a in Frameworks */,
+				0C57877959078D98A2E17DDB /* libSharedTypes.a in Frameworks */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		9F3B70E738A69AF6FF4F124E /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				B377D92010CBFA2887C147DE /* libLayoutEngine.a in Frameworks */,
+				FAD66241E88441F487EA6678 /* libSharedTypes.a in Frameworks */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		A0EBF2B87EAA35ADCADB214E /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				5569F0BA04B7FEC050B07BCB /* libTetherAdapter.a in Frameworks */,
+				472B0BFBC026958D582E71CC /* libSharedTypes.a in Frameworks */,
+				86CF1A04DA93842241A37D26 /* libAdapterBus.a in Frameworks */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		A7134D9C1C259B0FB1785838 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				66603AAE739B8BCD9DE35F16 /* libWorkspaceEngine.a in Frameworks */,
+				A89FE544DC4D10B1249BF2AC /* libSharedTypes.a in Frameworks */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		BA134C4EFA0BC3DDCFB90263 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				A26F88246DD5BEBB92D25F21 /* libSharedTypes.a in Frameworks */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		DC61DFF84AF6877C5AEAC6EE /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				BE53A4B7D65D176DAD3DFF73 /* libSharedTypes.a in Frameworks */,
+				EBE77E6A319E3A68FF0FB667 /* libAdapterBus.a in Frameworks */,
+				4834A0A14675362277145FAE /* libVisibilityEngine.a in Frameworks */,
+				D40DE56BDBB68C5E0B73116D /* libLayoutEngine.a in Frameworks */,
+				F672C8606CA168B4397ECF65 /* libWorkspaceEngine.a in Frameworks */,
+				F7D1F39FE59B30D494EE61D8 /* libDiagnostics.a in Frameworks */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXFrameworksBuildPhase section */
+
+/* Begin PBXGroup section */
+		01FE439A14DB7BB85C77A455 /* SharedTypes */ = {
+			isa = PBXGroup;
+			children = (
+				5C9E884AABCCD3D199C8F225 /* DomainModels.swift */,
+				E8F936D7BE7E08C2F83A9AF5 /* ServiceProtocols.swift */,
+			);
+			path = SharedTypes;
+			sourceTree = "<group>";
+		};
+		05175EFFE1500D4D639E95A7 /* WindowRegistry */ = {
+			isa = PBXGroup;
+			children = (
+				3BA798C18AC0C5FC607C7965 /* AXWindowRegistry.swift */,
+			);
+			path = WindowRegistry;
+			sourceTree = "<group>";
+		};
+		11E3CC88B7BCE0F356595ACA /* Products */ = {
+			isa = PBXGroup;
+			children = (
+				343523500ACFFBE9002B922D /* DiagnosticsTests.xctest */,
+				A2A2264F9266F5536FEC37C6 /* LayoutEngineTests.xctest */,
+				05CC05125F65EA32F39D933C /* libAdapterBus.a */,
+				9BFB6060B38A95BE87355D5E /* libDiagnostics.a */,
+				01D00732FAFF41EE051F1747 /* libGenericAXAdapter.a */,
+				97F79F3A6B26B745BC6D78D2 /* libLayoutEngine.a */,
+				1EECF3EF38E390AA92C7CEA1 /* libSharedTypes.a */,
+				A49624C5727B36CC623F61F0 /* libStageChrome.a */,
+				EC9A7D6163591348C95B873F /* libTetherAdapter.a */,
+				F5D447A4A639BCEB6BBF25CC /* libVisibilityEngine.a */,
+				D0E546FCC1D43F7F194B80BC /* libWindowRegistry.a */,
+				DCE56EB9979E483A8533429B /* libWorkspaceEngine.a */,
+				597452858F14F0F425B7966E /* NexusApp.app */,
+				9CE1FAB394EBCD7EC201B2E6 /* NexusAppTests.xctest */,
+				B87FAB6666B481B8D6572407 /* SharedTypesTests.xctest */,
+				CB42F7AB03B39C3B6C9DD94C /* StageChromeTests.xctest */,
+				2665DF48D43D30409B565989 /* TetherAdapterTests.xctest */,
+				5D6B8E6D0221E268D84D0253 /* VisibilityEngineTests.xctest */,
+				6592F365725917A2E0B8BD0A /* WorkspaceEngineTests.xctest */,
+			);
+			name = Products;
+			sourceTree = "<group>";
+		};
+		3160593EBB5E36D3D5C79434 /* LayoutEngineTests */ = {
+			isa = PBXGroup;
+			children = (
+				F9B5C42C27BB41BF4A6EAA81 /* LayoutEngineTests.swift */,
+			);
+			path = LayoutEngineTests;
+			sourceTree = "<group>";
+		};
+		3AE1B85D9E7DC680FF81B930 /* WorkspaceEngine */ = {
+			isa = PBXGroup;
+			children = (
+				35E05CB2947451426DEC9A14 /* JSONWorkspaceStore.swift */,
+				E88850232A3EBE0D63A6D221 /* WorkspaceSession.swift */,
+			);
+			path = WorkspaceEngine;
+			sourceTree = "<group>";
+		};
+		3BCCB1E3B209284FB25101F4 /* Tests */ = {
+			isa = PBXGroup;
+			children = (
+				E94516A29A5AC8528044AEA6 /* DiagnosticsTests */,
+				3160593EBB5E36D3D5C79434 /* LayoutEngineTests */,
+				5A5EE7603D46EB4DB9335723 /* NexusAppTests */,
+				65684804C80A60AFBE22AD62 /* SharedTypesTests */,
+				7A4CB12389717BE21E9A5ED4 /* StageChromeTests */,
+				E595F4F08FC88921CCAB2D9A /* TetherAdapterTests */,
+				6C44521E50FFB779DFC7BDF7 /* VisibilityEngineTests */,
+				F21694CAC3455EA8314A5ED8 /* WorkspaceEngineTests */,
+			);
+			path = Tests;
+			sourceTree = "<group>";
+		};
+		440D2E216AAF40672B12B901 /* VisibilityEngine */ = {
+			isa = PBXGroup;
+			children = (
+				B4EA293DBCC5E2C4B70980DC /* VisibilityCoordinator.swift */,
+			);
+			path = VisibilityEngine;
+			sourceTree = "<group>";
+		};
+		46003C268AD0B6199BE7A18B /* Resources */ = {
+			isa = PBXGroup;
+			children = (
+				D35305EB92F2A478D5EAD72D /* default-workspaces.json */,
+			);
+			path = Resources;
+			sourceTree = "<group>";
+		};
+		4C1E6137A6EA9FA191EB9AA8 = {
+			isa = PBXGroup;
+			children = (
+				CBC10775964BA03341D80E0D /* AppResources */,
+				526A463C9C8B26E06D574962 /* scripts */,
+				BE33EB23F8FD8D046B8F5F83 /* Sources */,
+				3BCCB1E3B209284FB25101F4 /* Tests */,
+				FD9A168F3BA2ADE3F9147347 /* AGENTS.md */,
+				8CC7277B420ACB1B4DA91BCF /* Package.swift */,
+				3B707F8B7E402381AFC95A90 /* README.md */,
+				70B719F52774959EAD37CB6B /* working_list.md */,
+				11E3CC88B7BCE0F356595ACA /* Products */,
+			);
+			sourceTree = "<group>";
+		};
+		526A463C9C8B26E06D574962 /* scripts */ = {
+			isa = PBXGroup;
+			children = (
+				5A0BA3F98539F6C772DB7FEB /* dev-build.sh */,
+				328A9A1651AB3CBDE8BF766F /* dev-clean.sh */,
+				7B8E726EC1C8BE661EE6FB0F /* dev-generate-xcodeproj.sh */,
+				1D0BA48F117A6CCCF9467FE6 /* dev-run.sh */,
+				EB54D1DEEA6D8663E593ABEF /* make-app-bundle.sh */,
+			);
+			path = scripts;
+			sourceTree = "<group>";
+		};
+		57E2127A2FF03BBDB96896C6 /* GenericAXAdapter */ = {
+			isa = PBXGroup;
+			children = (
+				40FD6B387246C750001342A4 /* GenericAXAdapter.swift */,
+			);
+			path = GenericAXAdapter;
+			sourceTree = "<group>";
+		};
+		5A5EE7603D46EB4DB9335723 /* NexusAppTests */ = {
+			isa = PBXGroup;
+			children = (
+				1A01E41DF5E86B332CBCDB74 /* WindowChoreographyServiceTests.swift */,
+			);
+			path = NexusAppTests;
+			sourceTree = "<group>";
+		};
+		65684804C80A60AFBE22AD62 /* SharedTypesTests */ = {
+			isa = PBXGroup;
+			children = (
+				CCA36D42CBB05CE4EEA49CFD /* SharedTypesTests.swift */,
+			);
+			path = SharedTypesTests;
+			sourceTree = "<group>";
+		};
+		659C2E7D03C1922D21629458 /* LayoutEngine */ = {
+			isa = PBXGroup;
+			children = (
+				F67CB730FBF639FAFF89AC88 /* StripLayoutEngine.swift */,
+			);
+			path = LayoutEngine;
+			sourceTree = "<group>";
+		};
+		6C44521E50FFB779DFC7BDF7 /* VisibilityEngineTests */ = {
+			isa = PBXGroup;
+			children = (
+				C93BA106E782C321CC9FB6B0 /* VisibilityCoordinatorTests.swift */,
+			);
+			path = VisibilityEngineTests;
+			sourceTree = "<group>";
+		};
+		7A4CB12389717BE21E9A5ED4 /* StageChromeTests */ = {
+			isa = PBXGroup;
+			children = (
+				15EC86B903D2DE076FF9A061 /* ChromeThemeTests.swift */,
+			);
+			path = StageChromeTests;
+			sourceTree = "<group>";
+		};
+		95F41733D2723B4377918AA8 /* StageChrome */ = {
+			isa = PBXGroup;
+			children = (
+				8692C4C4B7851CB9F1459DAD /* ChromeTheme.swift */,
+				7A2B71D1FE8EDC952DF44DE6 /* StageChromeView.swift */,
+			);
+			path = StageChrome;
+			sourceTree = "<group>";
+		};
+		B532E25E09842F7D8BE28D24 /* AdapterBus */ = {
+			isa = PBXGroup;
+			children = (
+				870DD55CB57118B47349842D /* AdapterRegistry.swift */,
+			);
+			path = AdapterBus;
+			sourceTree = "<group>";
+		};
+		B5CDC628C6659C94265AD033 /* NexusApp */ = {
+			isa = PBXGroup;
+			children = (
+				46003C268AD0B6199BE7A18B /* Resources */,
+				31F350A9617D8AC426A8452E /* AppBootstrap.swift */,
+				B36E8DB0A43A1502BFAFC102 /* AppDelegate.swift */,
+				BD2FCEB5FF7E413243E580FC /* AppEnvironment.swift */,
+				5E7C4DD289F7471AD2FC39B7 /* NexusApp.swift */,
+				ADD8B96390872C8012000F63 /* WindowChoreographyService.swift */,
+			);
+			path = NexusApp;
+			sourceTree = "<group>";
+		};
+		BE33EB23F8FD8D046B8F5F83 /* Sources */ = {
+			isa = PBXGroup;
+			children = (
+				B532E25E09842F7D8BE28D24 /* AdapterBus */,
+				F9765818B3F6D5EBAC0A1B0F /* Diagnostics */,
+				57E2127A2FF03BBDB96896C6 /* GenericAXAdapter */,
+				659C2E7D03C1922D21629458 /* LayoutEngine */,
+				B5CDC628C6659C94265AD033 /* NexusApp */,
+				01FE439A14DB7BB85C77A455 /* SharedTypes */,
+				95F41733D2723B4377918AA8 /* StageChrome */,
+				C429799F82CC0135BCE3A29A /* TetherAdapter */,
+				440D2E216AAF40672B12B901 /* VisibilityEngine */,
+				05175EFFE1500D4D639E95A7 /* WindowRegistry */,
+				3AE1B85D9E7DC680FF81B930 /* WorkspaceEngine */,
+			);
+			path = Sources;
+			sourceTree = "<group>";
+		};
+		C429799F82CC0135BCE3A29A /* TetherAdapter */ = {
+			isa = PBXGroup;
+			children = (
+				91E8CC1281F737A4AFC6EFCC /* TetherAdapter.swift */,
+			);
+			path = TetherAdapter;
+			sourceTree = "<group>";
+		};
+		CBC10775964BA03341D80E0D /* AppResources */ = {
+			isa = PBXGroup;
+			children = (
+				EE4854E442333DA40720E217 /* Info.plist */,
+				11A5F47A418AD924DC64F3B2 /* Nexus.entitlements */,
+			);
+			path = AppResources;
+			sourceTree = "<group>";
+		};
+		E595F4F08FC88921CCAB2D9A /* TetherAdapterTests */ = {
+			isa = PBXGroup;
+			children = (
+				7697AFCC3839646890421A1F /* TetherAdapterTests.swift */,
+			);
+			path = TetherAdapterTests;
+			sourceTree = "<group>";
+		};
+		E94516A29A5AC8528044AEA6 /* DiagnosticsTests */ = {
+			isa = PBXGroup;
+			children = (
+				CEE429B2EB7BE8575886A500 /* DiagnosticsCenterTests.swift */,
+			);
+			path = DiagnosticsTests;
+			sourceTree = "<group>";
+		};
+		F21694CAC3455EA8314A5ED8 /* WorkspaceEngineTests */ = {
+			isa = PBXGroup;
+			children = (
+				ABF982C5E5BA59795ADBD04F /* WorkspaceEngineTests.swift */,
+			);
+			path = WorkspaceEngineTests;
+			sourceTree = "<group>";
+		};
+		F9765818B3F6D5EBAC0A1B0F /* Diagnostics */ = {
+			isa = PBXGroup;
+			children = (
+				F1FAEEC43979A39625B24B05 /* DiagnosticsCenter.swift */,
+			);
+			path = Diagnostics;
+			sourceTree = "<group>";
+		};
+/* End PBXGroup section */
+
+/* Begin PBXNativeTarget section */
+		004CB375DDD297E6A3F18D39 /* Diagnostics */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 0D9FE304E806F80925BB1D77 /* Build configuration list for PBXNativeTarget "Diagnostics" */;
+			buildPhases = (
+				84C1FA03B15423825322FE8F /* Sources */,
+				F2FEEF5354589D405F6BA6D9 /* Copy Swift Objective-C Interface Header */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+				9768AF9D0C724721064BBF82 /* PBXTargetDependency */,
+			);
+			name = Diagnostics;
+			packageProductDependencies = (
+			);
+			productName = Diagnostics;
+			productReference = 9BFB6060B38A95BE87355D5E /* libDiagnostics.a */;
+			productType = "com.apple.product-type.library.static";
+		};
+		006F692DCD862A52C708B650 /* NexusAppTests */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = A720CB6BC04E93CF85DBFAB5 /* Build configuration list for PBXNativeTarget "NexusAppTests" */;
+			buildPhases = (
+				4BC97C2CCB181891A1A45AD0 /* Sources */,
+				DC61DFF84AF6877C5AEAC6EE /* Frameworks */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+				93D2204EE098302BE4B7AE8C /* PBXTargetDependency */,
+				41E17F5874E6AD043DF0D9E7 /* PBXTargetDependency */,
+				A3BD2FE07553C2712EF22C22 /* PBXTargetDependency */,
+				DD40541982AFB2FEFCCA6E9D /* PBXTargetDependency */,
+				2DCAF68E263035A5E70D9706 /* PBXTargetDependency */,
+				F89C3413D0C652061E4D97B4 /* PBXTargetDependency */,
+				D7BEF08D7D8B99EC2A50D967 /* PBXTargetDependency */,
+			);
+			name = NexusAppTests;
+			packageProductDependencies = (
+			);
+			productName = NexusAppTests;
+			productReference = 9CE1FAB394EBCD7EC201B2E6 /* NexusAppTests.xctest */;
+			productType = "com.apple.product-type.bundle.unit-test";
+		};
+		05EFB018D322294977FDCF67 /* TetherAdapterTests */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 2B68088442398640BE83DE0D /* Build configuration list for PBXNativeTarget "TetherAdapterTests" */;
+			buildPhases = (
+				F0DF24A021B7C9DFE998F1EC /* Sources */,
+				A0EBF2B87EAA35ADCADB214E /* Frameworks */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+				9C16F7713C19CD1E6A85EDF7 /* PBXTargetDependency */,
+				F05BB0CA81598458721B8C90 /* PBXTargetDependency */,
+				EA46D736D882C0CCFE27BF00 /* PBXTargetDependency */,
+			);
+			name = TetherAdapterTests;
+			packageProductDependencies = (
+			);
+			productName = TetherAdapterTests;
+			productReference = 2665DF48D43D30409B565989 /* TetherAdapterTests.xctest */;
+			productType = "com.apple.product-type.bundle.unit-test";
+		};
+		12949BD7C1314A797DE2253C /* DiagnosticsTests */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 7535769157AC819D60705A58 /* Build configuration list for PBXNativeTarget "DiagnosticsTests" */;
+			buildPhases = (
+				B70546CDB339F51DB3789F64 /* Sources */,
+				7DCCFE0A42ED4FF852231121 /* Frameworks */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+				61358580DA77514C52FD1D68 /* PBXTargetDependency */,
+				56264BDB1961C65CF02C4564 /* PBXTargetDependency */,
+			);
+			name = DiagnosticsTests;
+			packageProductDependencies = (
+			);
+			productName = DiagnosticsTests;
+			productReference = 343523500ACFFBE9002B922D /* DiagnosticsTests.xctest */;
+			productType = "com.apple.product-type.bundle.unit-test";
+		};
+		1C844FF7AEDECF47C0E9D5A4 /* LayoutEngineTests */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 177E3B1712C1FE4C51EB1C27 /* Build configuration list for PBXNativeTarget "LayoutEngineTests" */;
+			buildPhases = (
+				0B4D3FEB65678C3B81AF4624 /* Sources */,
+				9F3B70E738A69AF6FF4F124E /* Frameworks */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+				269A0D7798182A58C4F2B23E /* PBXTargetDependency */,
+				7F1DB1E689D68931908FA731 /* PBXTargetDependency */,
+			);
+			name = LayoutEngineTests;
+			packageProductDependencies = (
+			);
+			productName = LayoutEngineTests;
+			productReference = A2A2264F9266F5536FEC37C6 /* LayoutEngineTests.xctest */;
+			productType = "com.apple.product-type.bundle.unit-test";
+		};
+		4478A37190115038CDF6B598 /* StageChrome */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = E63ABC10FE1B2B078FF11684 /* Build configuration list for PBXNativeTarget "StageChrome" */;
+			buildPhases = (
+				EB7F09C10B82ACE20E0EADC2 /* Sources */,
+				F6090BDCB8206FBD3544D34F /* Copy Swift Objective-C Interface Header */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+				788562503C0430032B9659B6 /* PBXTargetDependency */,
+				A9C0F9B0584FB7056904B072 /* PBXTargetDependency */,
+				0201101D7793BA5E9DAA67EB /* PBXTargetDependency */,
+			);
+			name = StageChrome;
+			packageProductDependencies = (
+			);
+			productName = StageChrome;
+			productReference = A49624C5727B36CC623F61F0 /* libStageChrome.a */;
+			productType = "com.apple.product-type.library.static";
+		};
+		55F671F02D3BB79A707C6B4D /* NexusApp */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 749D1457B9A3D0CB13806C20 /* Build configuration list for PBXNativeTarget "NexusApp" */;
+			buildPhases = (
+				C6F0B7591D127C44B40E587C /* Sources */,
+				6D7484FE6CA149A9D41114D8 /* Resources */,
+				0D50F810FB50C9B008C9F421 /* Frameworks */,
+				C86E50105D8E0ECAC48F0FF3 /* Install Stable Dev App */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+				057D76E43B639C961145ECCB /* PBXTargetDependency */,
+				0EA545EB57DD54BD28C5C44B /* PBXTargetDependency */,
+				DF62EB8C75EE997E6F13A4CC /* PBXTargetDependency */,
+				FC443353F822CCBA56C531F1 /* PBXTargetDependency */,
+				975B4B4AEE7D6D743BEEA634 /* PBXTargetDependency */,
+				B21AF02ACA361D6CFB5C7D3E /* PBXTargetDependency */,
+				868F1CDFA19381E814847687 /* PBXTargetDependency */,
+				0C9CE7E37AD0A82D77D75B07 /* PBXTargetDependency */,
+				6C36EB4B74EDDF1C7F06EC02 /* PBXTargetDependency */,
+				39AF95D054859755A0CB3E6A /* PBXTargetDependency */,
+			);
+			name = NexusApp;
+			packageProductDependencies = (
+			);
+			productName = NexusApp;
+			productReference = 597452858F14F0F425B7966E /* NexusApp.app */;
+			productType = "com.apple.product-type.application";
+		};
+		5B797E8C5CB641E1E789227A /* SharedTypesTests */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = A05F684681EC865A83345607 /* Build configuration list for PBXNativeTarget "SharedTypesTests" */;
+			buildPhases = (
+				B19B125C784BACB13D78D465 /* Sources */,
+				BA134C4EFA0BC3DDCFB90263 /* Frameworks */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+				6608620B6D0344A73BF97A92 /* PBXTargetDependency */,
+			);
+			name = SharedTypesTests;
+			packageProductDependencies = (
+			);
+			productName = SharedTypesTests;
+			productReference = B87FAB6666B481B8D6572407 /* SharedTypesTests.xctest */;
+			productType = "com.apple.product-type.bundle.unit-test";
+		};
+		633D380179F57E798C337409 /* TetherAdapter */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 131FA4237AD25929D1EEA4F4 /* Build configuration list for PBXNativeTarget "TetherAdapter" */;
+			buildPhases = (
+				EC68807084D3FF72C78D89FD /* Sources */,
+				A1580DD665DD4C3065EE04E5 /* Copy Swift Objective-C Interface Header */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+				A0FDFF036FF28A2138FD88EC /* PBXTargetDependency */,
+				B0A070FD477001E9BF953A21 /* PBXTargetDependency */,
+			);
+			name = TetherAdapter;
+			packageProductDependencies = (
+			);
+			productName = TetherAdapter;
+			productReference = EC9A7D6163591348C95B873F /* libTetherAdapter.a */;
+			productType = "com.apple.product-type.library.static";
+		};
+		6438DDBBA8BB07A870B3D2AA /* WindowRegistry */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = C29DF852EC1D39E58FB4261F /* Build configuration list for PBXNativeTarget "WindowRegistry" */;
+			buildPhases = (
+				0E961DDE165D859305B6AD16 /* Sources */,
+				D0D8A24973D96FCE6A4B46CB /* Copy Swift Objective-C Interface Header */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+				A8EDEF97A6A07AB97B726B37 /* PBXTargetDependency */,
+			);
+			name = WindowRegistry;
+			packageProductDependencies = (
+			);
+			productName = WindowRegistry;
+			productReference = D0E546FCC1D43F7F194B80BC /* libWindowRegistry.a */;
+			productType = "com.apple.product-type.library.static";
+		};
+		7E444424216D38C14D3625D9 /* AdapterBus */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 73827E35AE25CE0A34DFDF50 /* Build configuration list for PBXNativeTarget "AdapterBus" */;
+			buildPhases = (
+				09D8571A41F808BE1D57EAD3 /* Sources */,
+				CB43452591CFFF2698AB3ACE /* Copy Swift Objective-C Interface Header */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+				E254650D13536DD4E8F2BBBA /* PBXTargetDependency */,
+			);
+			name = AdapterBus;
+			packageProductDependencies = (
+			);
+			productName = AdapterBus;
+			productReference = 05CC05125F65EA32F39D933C /* libAdapterBus.a */;
+			productType = "com.apple.product-type.library.static";
+		};
+		C6CF5B50349DD8BBE07135D6 /* GenericAXAdapter */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = BAC0A1D39E038383BF2E5EFB /* Build configuration list for PBXNativeTarget "GenericAXAdapter" */;
+			buildPhases = (
+				7192372C43D9519B42429941 /* Sources */,
+				730278E19051A0DB1B3E6108 /* Copy Swift Objective-C Interface Header */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+				8EBF510C517A8758B7D721DC /* PBXTargetDependency */,
+				9124726DBA3BC5FB2074118B /* PBXTargetDependency */,
+			);
+			name = GenericAXAdapter;
+			packageProductDependencies = (
+			);
+			productName = GenericAXAdapter;
+			productReference = 01D00732FAFF41EE051F1747 /* libGenericAXAdapter.a */;
+			productType = "com.apple.product-type.library.static";
+		};
+		C89CB1A2CB17BB3911539313 /* WorkspaceEngine */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 0A10C52AD609B2728310F0E5 /* Build configuration list for PBXNativeTarget "WorkspaceEngine" */;
+			buildPhases = (
+				0FDEEF2B980104B94D5C301B /* Sources */,
+				A8392A72644999528A48BA13 /* Copy Swift Objective-C Interface Header */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+				009E1D7727EB2CE504DD5342 /* PBXTargetDependency */,
+			);
+			name = WorkspaceEngine;
+			packageProductDependencies = (
+			);
+			productName = WorkspaceEngine;
+			productReference = DCE56EB9979E483A8533429B /* libWorkspaceEngine.a */;
+			productType = "com.apple.product-type.library.static";
+		};
+		CCB163B81A6E705E77537E48 /* WorkspaceEngineTests */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 036D9E87073E25E929EC8F69 /* Build configuration list for PBXNativeTarget "WorkspaceEngineTests" */;
+			buildPhases = (
+				55CF1B1A5A299BD1D14D389A /* Sources */,
+				A7134D9C1C259B0FB1785838 /* Frameworks */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+				C2D50C71E9CA3A80B99481B7 /* PBXTargetDependency */,
+				AD3C1D3332D29657E81BDD44 /* PBXTargetDependency */,
+			);
+			name = WorkspaceEngineTests;
+			packageProductDependencies = (
+			);
+			productName = WorkspaceEngineTests;
+			productReference = 6592F365725917A2E0B8BD0A /* WorkspaceEngineTests.xctest */;
+			productType = "com.apple.product-type.bundle.unit-test";
+		};
+		D779145BDDFD824DCCC63CB4 /* VisibilityEngine */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = F89EAF1E606CDA06A018CAC6 /* Build configuration list for PBXNativeTarget "VisibilityEngine" */;
+			buildPhases = (
+				88A591AD11C1F44CB5B59F62 /* Sources */,
+				CE1A0D6E45A6A5C9BE13BDD7 /* Copy Swift Objective-C Interface Header */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+				A6CD1D60169622922FCC5F96 /* PBXTargetDependency */,
+				A4B7EE92C2DE36E74C3FF66C /* PBXTargetDependency */,
+			);
+			name = VisibilityEngine;
+			packageProductDependencies = (
+			);
+			productName = VisibilityEngine;
+			productReference = F5D447A4A639BCEB6BBF25CC /* libVisibilityEngine.a */;
+			productType = "com.apple.product-type.library.static";
+		};
+		EE42CE97004E15725C5B0A14 /* VisibilityEngineTests */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 1E848C2D6B61EA22700D1BC0 /* Build configuration list for PBXNativeTarget "VisibilityEngineTests" */;
+			buildPhases = (
+				97FC5FB90422B4DA2167F1FA /* Sources */,
+				813A73B900185368DBC3BC08 /* Frameworks */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+				66F5E360D8EE5417AE57EAC4 /* PBXTargetDependency */,
+				F12FFE39B233BCE41D1DE262 /* PBXTargetDependency */,
+			);
+			name = VisibilityEngineTests;
+			packageProductDependencies = (
+			);
+			productName = VisibilityEngineTests;
+			productReference = 5D6B8E6D0221E268D84D0253 /* VisibilityEngineTests.xctest */;
+			productType = "com.apple.product-type.bundle.unit-test";
+		};
+		F73B2D3FD6C1BBB1233CFE0C /* LayoutEngine */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 53ED5E44B7A1670ED43D52CC /* Build configuration list for PBXNativeTarget "LayoutEngine" */;
+			buildPhases = (
+				C184A9EF2342C8D5F10B20F4 /* Sources */,
+				316689C91C75AACA4148CF3C /* Copy Swift Objective-C Interface Header */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+				0E6CC780E423F567C8F85488 /* PBXTargetDependency */,
+			);
+			name = LayoutEngine;
+			packageProductDependencies = (
+			);
+			productName = LayoutEngine;
+			productReference = 97F79F3A6B26B745BC6D78D2 /* libLayoutEngine.a */;
+			productType = "com.apple.product-type.library.static";
+		};
+		FC0DEC15827D94330B1288BD /* StageChromeTests */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 286C37B8B3D7EFF2DF011939 /* Build configuration list for PBXNativeTarget "StageChromeTests" */;
+			buildPhases = (
+				27E1E208EC8C46746389DA7E /* Sources */,
+				1ABA175B7552528ED950882A /* Frameworks */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+				8823A2B1859AE6B86F29EB1D /* PBXTargetDependency */,
+				6BB03C4799FFDE72A037C1E8 /* PBXTargetDependency */,
+				A68B826542F2458EBC47017B /* PBXTargetDependency */,
+				55EA0656325294514AB2D003 /* PBXTargetDependency */,
+			);
+			name = StageChromeTests;
+			packageProductDependencies = (
+			);
+			productName = StageChromeTests;
+			productReference = CB42F7AB03B39C3B6C9DD94C /* StageChromeTests.xctest */;
+			productType = "com.apple.product-type.bundle.unit-test";
+		};
+		FD9C734DBBA59D93CD833737 /* SharedTypes */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 047A27437250CA3898228C8C /* Build configuration list for PBXNativeTarget "SharedTypes" */;
+			buildPhases = (
+				6FA30972C0156ABFEAA0B9CD /* Sources */,
+				BBB790E7DBC25A2AB683FA9F /* Copy Swift Objective-C Interface Header */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			name = SharedTypes;
+			packageProductDependencies = (
+			);
+			productName = SharedTypes;
+			productReference = 1EECF3EF38E390AA92C7CEA1 /* libSharedTypes.a */;
+			productType = "com.apple.product-type.library.static";
+		};
+/* End PBXNativeTarget section */
+
+/* Begin PBXProject section */
+		6E0546D7A1020B804447C56B /* Project object */ = {
+			isa = PBXProject;
+			attributes = {
+				BuildIndependentTargetsInParallel = YES;
+				LastUpgradeCheck = 1430;
+				TargetAttributes = {
+					004CB375DDD297E6A3F18D39 = {
+						ProvisioningStyle = Automatic;
+					};
+					006F692DCD862A52C708B650 = {
+						ProvisioningStyle = Automatic;
+					};
+					05EFB018D322294977FDCF67 = {
+						ProvisioningStyle = Automatic;
+					};
+					12949BD7C1314A797DE2253C = {
+						ProvisioningStyle = Automatic;
+					};
+					1C844FF7AEDECF47C0E9D5A4 = {
+						ProvisioningStyle = Automatic;
+					};
+					4478A37190115038CDF6B598 = {
+						ProvisioningStyle = Automatic;
+					};
+					55F671F02D3BB79A707C6B4D = {
+						ProvisioningStyle = Automatic;
+					};
+					5B797E8C5CB641E1E789227A = {
+						ProvisioningStyle = Automatic;
+					};
+					633D380179F57E798C337409 = {
+						ProvisioningStyle = Automatic;
+					};
+					6438DDBBA8BB07A870B3D2AA = {
+						ProvisioningStyle = Automatic;
+					};
+					7E444424216D38C14D3625D9 = {
+						ProvisioningStyle = Automatic;
+					};
+					C6CF5B50349DD8BBE07135D6 = {
+						ProvisioningStyle = Automatic;
+					};
+					C89CB1A2CB17BB3911539313 = {
+						ProvisioningStyle = Automatic;
+					};
+					CCB163B81A6E705E77537E48 = {
+						ProvisioningStyle = Automatic;
+					};
+					D779145BDDFD824DCCC63CB4 = {
+						ProvisioningStyle = Automatic;
+					};
+					EE42CE97004E15725C5B0A14 = {
+						ProvisioningStyle = Automatic;
+					};
+					F73B2D3FD6C1BBB1233CFE0C = {
+						ProvisioningStyle = Automatic;
+					};
+					FC0DEC15827D94330B1288BD = {
+						ProvisioningStyle = Automatic;
+					};
+					FD9C734DBBA59D93CD833737 = {
+						ProvisioningStyle = Automatic;
+					};
+				};
+			};
+			buildConfigurationList = 17896972B6EAD3EB1C3E2233 /* Build configuration list for PBXProject "Nexus" */;
+			developmentRegion = en;
+			hasScannedForEncodings = 0;
+			knownRegions = (
+				Base,
+				en,
+			);
+			mainGroup = 4C1E6137A6EA9FA191EB9AA8;
+			minimizedProjectReferenceProxies = 1;
+			preferredProjectObjectVersion = 77;
+			productRefGroup = 11E3CC88B7BCE0F356595ACA /* Products */;
+			projectDirPath = "";
+			projectRoot = "";
+			targets = (
+				7E444424216D38C14D3625D9 /* AdapterBus */,
+				004CB375DDD297E6A3F18D39 /* Diagnostics */,
+				12949BD7C1314A797DE2253C /* DiagnosticsTests */,
+				C6CF5B50349DD8BBE07135D6 /* GenericAXAdapter */,
+				F73B2D3FD6C1BBB1233CFE0C /* LayoutEngine */,
+				1C844FF7AEDECF47C0E9D5A4 /* LayoutEngineTests */,
+				55F671F02D3BB79A707C6B4D /* NexusApp */,
+				006F692DCD862A52C708B650 /* NexusAppTests */,
+				FD9C734DBBA59D93CD833737 /* SharedTypes */,
+				5B797E8C5CB641E1E789227A /* SharedTypesTests */,
+				4478A37190115038CDF6B598 /* StageChrome */,
+				FC0DEC15827D94330B1288BD /* StageChromeTests */,
+				633D380179F57E798C337409 /* TetherAdapter */,
+				05EFB018D322294977FDCF67 /* TetherAdapterTests */,
+				D779145BDDFD824DCCC63CB4 /* VisibilityEngine */,
+				EE42CE97004E15725C5B0A14 /* VisibilityEngineTests */,
+				6438DDBBA8BB07A870B3D2AA /* WindowRegistry */,
+				C89CB1A2CB17BB3911539313 /* WorkspaceEngine */,
+				CCB163B81A6E705E77537E48 /* WorkspaceEngineTests */,
+			);
+		};
+/* End PBXProject section */
+
+/* Begin PBXResourcesBuildPhase section */
+		6D7484FE6CA149A9D41114D8 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				8DBD840EAA288A1F9B9824A8 /* default-workspaces.json in Resources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXResourcesBuildPhase section */
+
+/* Begin PBXShellScriptBuildPhase section */
+		316689C91C75AACA4148CF3C /* Copy Swift Objective-C Interface Header */ = {
+			isa = PBXShellScriptBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			inputPaths = (
+				"$(DERIVED_SOURCES_DIR)/$(SWIFT_OBJC_INTERFACE_HEADER_NAME)",
+			);
+			name = "Copy Swift Objective-C Interface Header";
+			outputPaths = (
+				"$(BUILT_PRODUCTS_DIR)/include/$(PRODUCT_MODULE_NAME)/$(SWIFT_OBJC_INTERFACE_HEADER_NAME)",
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+			shellPath = /bin/sh;
+			shellScript = "ditto \"${SCRIPT_INPUT_FILE_0}\" \"${SCRIPT_OUTPUT_FILE_0}\"\n";
+		};
+		730278E19051A0DB1B3E6108 /* Copy Swift Objective-C Interface Header */ = {
+			isa = PBXShellScriptBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			inputPaths = (
+				"$(DERIVED_SOURCES_DIR)/$(SWIFT_OBJC_INTERFACE_HEADER_NAME)",
+			);
+			name = "Copy Swift Objective-C Interface Header";
+			outputPaths = (
+				"$(BUILT_PRODUCTS_DIR)/include/$(PRODUCT_MODULE_NAME)/$(SWIFT_OBJC_INTERFACE_HEADER_NAME)",
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+			shellPath = /bin/sh;
+			shellScript = "ditto \"${SCRIPT_INPUT_FILE_0}\" \"${SCRIPT_OUTPUT_FILE_0}\"\n";
+		};
+		A1580DD665DD4C3065EE04E5 /* Copy Swift Objective-C Interface Header */ = {
+			isa = PBXShellScriptBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			inputPaths = (
+				"$(DERIVED_SOURCES_DIR)/$(SWIFT_OBJC_INTERFACE_HEADER_NAME)",
+			);
+			name = "Copy Swift Objective-C Interface Header";
+			outputPaths = (
+				"$(BUILT_PRODUCTS_DIR)/include/$(PRODUCT_MODULE_NAME)/$(SWIFT_OBJC_INTERFACE_HEADER_NAME)",
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+			shellPath = /bin/sh;
+			shellScript = "ditto \"${SCRIPT_INPUT_FILE_0}\" \"${SCRIPT_OUTPUT_FILE_0}\"\n";
+		};
+		A8392A72644999528A48BA13 /* Copy Swift Objective-C Interface Header */ = {
+			isa = PBXShellScriptBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			inputPaths = (
+				"$(DERIVED_SOURCES_DIR)/$(SWIFT_OBJC_INTERFACE_HEADER_NAME)",
+			);
+			name = "Copy Swift Objective-C Interface Header";
+			outputPaths = (
+				"$(BUILT_PRODUCTS_DIR)/include/$(PRODUCT_MODULE_NAME)/$(SWIFT_OBJC_INTERFACE_HEADER_NAME)",
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+			shellPath = /bin/sh;
+			shellScript = "ditto \"${SCRIPT_INPUT_FILE_0}\" \"${SCRIPT_OUTPUT_FILE_0}\"\n";
+		};
+		BBB790E7DBC25A2AB683FA9F /* Copy Swift Objective-C Interface Header */ = {
+			isa = PBXShellScriptBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			inputPaths = (
+				"$(DERIVED_SOURCES_DIR)/$(SWIFT_OBJC_INTERFACE_HEADER_NAME)",
+			);
+			name = "Copy Swift Objective-C Interface Header";
+			outputPaths = (
+				"$(BUILT_PRODUCTS_DIR)/include/$(PRODUCT_MODULE_NAME)/$(SWIFT_OBJC_INTERFACE_HEADER_NAME)",
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+			shellPath = /bin/sh;
+			shellScript = "ditto \"${SCRIPT_INPUT_FILE_0}\" \"${SCRIPT_OUTPUT_FILE_0}\"\n";
+		};
+		C86E50105D8E0ECAC48F0FF3 /* Install Stable Dev App */ = {
+			isa = PBXShellScriptBuildPhase;
+			alwaysOutOfDate = 1;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			inputFileListPaths = (
+			);
+			inputPaths = (
+			);
+			name = "Install Stable Dev App";
+			outputFileListPaths = (
+			);
+			outputPaths = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+			shellPath = /bin/sh;
+			shellScript = "set -euo pipefail\n\nif [ \"${CODE_SIGNING_ALLOWED:-NO}\" != \"YES\" ] || [ -z \"${EXPANDED_CODE_SIGN_IDENTITY_NAME:-}\" ]; then\n  echo \"Skipping stable install because Xcode signing is not configured.\"\n  exit 0\nfi\n\nINSTALL_PATH=\"${NEXUS_DEV_INSTALL_PATH:-$HOME/Applications/Nexus.app}\"\nAPP_PATH=\"$TARGET_BUILD_DIR/$FULL_PRODUCT_NAME\"\nENTITLEMENTS_PATH=\"$SRCROOT/AppResources/Nexus.entitlements\"\nTEMP_INSTALL_PATH=\"${INSTALL_PATH}.tmp\"\n\njson_escape() {\n  printf '%s' \"$1\" | sed 's/\\\\/\\\\\\\\/g; s/\"/\\\\\"/g'\n}\n\nif pgrep -f \"$INSTALL_PATH/Contents/MacOS/\" >/dev/null 2>&1; then\n  echo \"Skipping stable install because $INSTALL_PATH is currently running.\"\n  exit 0\nfi\n\nmkdir -p \"$(dirname \"$INSTALL_PATH\")\"\nrm -rf \"$TEMP_INSTALL_PATH\"\nditto \"$APP_PATH\" \"$TEMP_INSTALL_PATH\"\n\nif security find-identity -v -p codesigning | grep -F \"\\\"${EXPANDED_CODE_SIGN_IDENTITY_NAME}\\\"\" >/dev/null 2>&1; then\n  RESOURCES_PATH=\"$TEMP_INSTALL_PATH/Contents/Resources\"\n  mkdir -p \"$RESOURCES_PATH\"\n\n  printf '%s\\n' \\\n    '{' \\\n    \"  \\\"bundleIdentifier\\\": \\\"$(json_escape \"${PRODUCT_BUNDLE_IDENTIFIER}\")\\\",\" \\\n    '  \"signingMode\": \"selfSigned\",' \\\n    \"  \\\"signingIdentityLabel\\\": \\\"$(json_escape \"${EXPANDED_CODE_SIGN_IDENTITY_NAME}\")\\\",\" \\\n    \"  \\\"expectedInstallPath\\\": \\\"$(json_escape \"${INSTALL_PATH}\")\\\",\" \\\n    \"  \\\"buildTimestamp\\\": \\\"$(date -u +\"%Y-%m-%dT%H:%M:%SZ\")\\\"\" \\\n    '}' > \"$RESOURCES_PATH/dev-build-metadata.json\"\n\n  codesign \\\n    --force \\\n    --deep \\\n    --sign \"${EXPANDED_CODE_SIGN_IDENTITY_NAME}\" \\\n    --entitlements \"$ENTITLEMENTS_PATH\" \\\n    \"$TEMP_INSTALL_PATH\"\nelse\n  echo \"Standalone codesign cannot reuse '${EXPANDED_CODE_SIGN_IDENTITY_NAME}'. Installing the Xcode-signed app without dev-build-metadata.\"\nfi\n\nrm -rf \"$INSTALL_PATH\"\nmv \"$TEMP_INSTALL_PATH\" \"$INSTALL_PATH\"\n\necho \"Installed signed Nexus.app to $INSTALL_PATH\"\n";
+			showEnvVarsInLog = 0;
+		};
+		CB43452591CFFF2698AB3ACE /* Copy Swift Objective-C Interface Header */ = {
+			isa = PBXShellScriptBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			inputPaths = (
+				"$(DERIVED_SOURCES_DIR)/$(SWIFT_OBJC_INTERFACE_HEADER_NAME)",
+			);
+			name = "Copy Swift Objective-C Interface Header";
+			outputPaths = (
+				"$(BUILT_PRODUCTS_DIR)/include/$(PRODUCT_MODULE_NAME)/$(SWIFT_OBJC_INTERFACE_HEADER_NAME)",
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+			shellPath = /bin/sh;
+			shellScript = "ditto \"${SCRIPT_INPUT_FILE_0}\" \"${SCRIPT_OUTPUT_FILE_0}\"\n";
+		};
+		CE1A0D6E45A6A5C9BE13BDD7 /* Copy Swift Objective-C Interface Header */ = {
+			isa = PBXShellScriptBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			inputPaths = (
+				"$(DERIVED_SOURCES_DIR)/$(SWIFT_OBJC_INTERFACE_HEADER_NAME)",
+			);
+			name = "Copy Swift Objective-C Interface Header";
+			outputPaths = (
+				"$(BUILT_PRODUCTS_DIR)/include/$(PRODUCT_MODULE_NAME)/$(SWIFT_OBJC_INTERFACE_HEADER_NAME)",
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+			shellPath = /bin/sh;
+			shellScript = "ditto \"${SCRIPT_INPUT_FILE_0}\" \"${SCRIPT_OUTPUT_FILE_0}\"\n";
+		};
+		D0D8A24973D96FCE6A4B46CB /* Copy Swift Objective-C Interface Header */ = {
+			isa = PBXShellScriptBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			inputPaths = (
+				"$(DERIVED_SOURCES_DIR)/$(SWIFT_OBJC_INTERFACE_HEADER_NAME)",
+			);
+			name = "Copy Swift Objective-C Interface Header";
+			outputPaths = (
+				"$(BUILT_PRODUCTS_DIR)/include/$(PRODUCT_MODULE_NAME)/$(SWIFT_OBJC_INTERFACE_HEADER_NAME)",
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+			shellPath = /bin/sh;
+			shellScript = "ditto \"${SCRIPT_INPUT_FILE_0}\" \"${SCRIPT_OUTPUT_FILE_0}\"\n";
+		};
+		F2FEEF5354589D405F6BA6D9 /* Copy Swift Objective-C Interface Header */ = {
+			isa = PBXShellScriptBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			inputPaths = (
+				"$(DERIVED_SOURCES_DIR)/$(SWIFT_OBJC_INTERFACE_HEADER_NAME)",
+			);
+			name = "Copy Swift Objective-C Interface Header";
+			outputPaths = (
+				"$(BUILT_PRODUCTS_DIR)/include/$(PRODUCT_MODULE_NAME)/$(SWIFT_OBJC_INTERFACE_HEADER_NAME)",
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+			shellPath = /bin/sh;
+			shellScript = "ditto \"${SCRIPT_INPUT_FILE_0}\" \"${SCRIPT_OUTPUT_FILE_0}\"\n";
+		};
+		F6090BDCB8206FBD3544D34F /* Copy Swift Objective-C Interface Header */ = {
+			isa = PBXShellScriptBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			inputPaths = (
+				"$(DERIVED_SOURCES_DIR)/$(SWIFT_OBJC_INTERFACE_HEADER_NAME)",
+			);
+			name = "Copy Swift Objective-C Interface Header";
+			outputPaths = (
+				"$(BUILT_PRODUCTS_DIR)/include/$(PRODUCT_MODULE_NAME)/$(SWIFT_OBJC_INTERFACE_HEADER_NAME)",
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+			shellPath = /bin/sh;
+			shellScript = "ditto \"${SCRIPT_INPUT_FILE_0}\" \"${SCRIPT_OUTPUT_FILE_0}\"\n";
+		};
+/* End PBXShellScriptBuildPhase section */
+
+/* Begin PBXSourcesBuildPhase section */
+		09D8571A41F808BE1D57EAD3 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				8837BD92F461AA7913B23D44 /* AdapterRegistry.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		0B4D3FEB65678C3B81AF4624 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				6096CCBF9DB52AEB48F25CDB /* LayoutEngineTests.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		0E961DDE165D859305B6AD16 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				B625F4C723B5A015ECED4F60 /* AXWindowRegistry.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		0FDEEF2B980104B94D5C301B /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				A575C686AE9C57680E36253D /* JSONWorkspaceStore.swift in Sources */,
+				953FD54C62F03FC27CEDFB35 /* WorkspaceSession.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		27E1E208EC8C46746389DA7E /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				D33082C2B5C276A5A636734D /* ChromeThemeTests.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		4BC97C2CCB181891A1A45AD0 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				CB8337D1CBC94648FC7C79D5 /* WindowChoreographyServiceTests.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		55CF1B1A5A299BD1D14D389A /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				79C011C2606AF61FDDF148EC /* WorkspaceEngineTests.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		6FA30972C0156ABFEAA0B9CD /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				B0B5AAEF2F5F724360D8B7BE /* DomainModels.swift in Sources */,
+				6AF2C197E887A66A69FE5CB6 /* ServiceProtocols.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		7192372C43D9519B42429941 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				F5583A916A0E1166F8D45C2A /* GenericAXAdapter.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		84C1FA03B15423825322FE8F /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				33734EE6A89BCD612ED1539A /* DiagnosticsCenter.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		88A591AD11C1F44CB5B59F62 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				CF908E40F4485B02D9244DBE /* VisibilityCoordinator.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		97FC5FB90422B4DA2167F1FA /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				FECEEB2C8C6AC75BA39198E3 /* VisibilityCoordinatorTests.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		B19B125C784BACB13D78D465 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				5B3D28535540D55591B64AF7 /* SharedTypesTests.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		B70546CDB339F51DB3789F64 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				97AEA5A168CCAB2E75FF3FA2 /* DiagnosticsCenterTests.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		C184A9EF2342C8D5F10B20F4 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				B2B7470C7711E12DAEEFD9F2 /* StripLayoutEngine.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		C6F0B7591D127C44B40E587C /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				1610166A53F786EC473C631C /* AppBootstrap.swift in Sources */,
+				B3A83AF9ECBF59EC8A3696E2 /* AppDelegate.swift in Sources */,
+				5F3B59B9BE32EE408F5F45C6 /* AppEnvironment.swift in Sources */,
+				29A695697796115145F7598D /* NexusApp.swift in Sources */,
+				C580F174675813078FE547A4 /* WindowChoreographyService.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		EB7F09C10B82ACE20E0EADC2 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				BC0DFE484C49CAF3106F35C5 /* ChromeTheme.swift in Sources */,
+				91521DC08480A45227048F38 /* StageChromeView.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		EC68807084D3FF72C78D89FD /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				97FDEAB1C7144CFA6BA32362 /* TetherAdapter.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		F0DF24A021B7C9DFE998F1EC /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				500620E216C9A26629662EAE /* TetherAdapterTests.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXSourcesBuildPhase section */
+
+/* Begin PBXTargetDependency section */
+		009E1D7727EB2CE504DD5342 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = FD9C734DBBA59D93CD833737 /* SharedTypes */;
+			targetProxy = 3758B03489EB2289C3671FAB /* PBXContainerItemProxy */;
+		};
+		0201101D7793BA5E9DAA67EB /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = F73B2D3FD6C1BBB1233CFE0C /* LayoutEngine */;
+			targetProxy = DB45F5AFBC8C08E842D4AFBE /* PBXContainerItemProxy */;
+		};
+		057D76E43B639C961145ECCB /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = FD9C734DBBA59D93CD833737 /* SharedTypes */;
+			targetProxy = 9B6E2BB7123C1A6025FA4FFC /* PBXContainerItemProxy */;
+		};
+		0C9CE7E37AD0A82D77D75B07 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = C6CF5B50349DD8BBE07135D6 /* GenericAXAdapter */;
+			targetProxy = DAB67716CB34A94832BF0653 /* PBXContainerItemProxy */;
+		};
+		0E6CC780E423F567C8F85488 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = FD9C734DBBA59D93CD833737 /* SharedTypes */;
+			targetProxy = E0C36196017DE8724969D3A5 /* PBXContainerItemProxy */;
+		};
+		0EA545EB57DD54BD28C5C44B /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = C89CB1A2CB17BB3911539313 /* WorkspaceEngine */;
+			targetProxy = AD5D67F65D1E066C52F2B701 /* PBXContainerItemProxy */;
+		};
+		269A0D7798182A58C4F2B23E /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = F73B2D3FD6C1BBB1233CFE0C /* LayoutEngine */;
+			targetProxy = D5A0875D0E7DAD4364CB17CF /* PBXContainerItemProxy */;
+		};
+		2DCAF68E263035A5E70D9706 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = F73B2D3FD6C1BBB1233CFE0C /* LayoutEngine */;
+			targetProxy = 9BA55841EBF45D90CD97EA6B /* PBXContainerItemProxy */;
+		};
+		39AF95D054859755A0CB3E6A /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = 4478A37190115038CDF6B598 /* StageChrome */;
+			targetProxy = 0582478CB34C74EA3A3367F1 /* PBXContainerItemProxy */;
+		};
+		41E17F5874E6AD043DF0D9E7 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = FD9C734DBBA59D93CD833737 /* SharedTypes */;
+			targetProxy = 8B797C1BCD60A3B4870F357B /* PBXContainerItemProxy */;
+		};
+		55EA0656325294514AB2D003 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = F73B2D3FD6C1BBB1233CFE0C /* LayoutEngine */;
+			targetProxy = CB69102DD869C5698AAB6424 /* PBXContainerItemProxy */;
+		};
+		56264BDB1961C65CF02C4564 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = FD9C734DBBA59D93CD833737 /* SharedTypes */;
+			targetProxy = 2B0ED7EB3226D8C4C0984852 /* PBXContainerItemProxy */;
+		};
+		61358580DA77514C52FD1D68 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = 004CB375DDD297E6A3F18D39 /* Diagnostics */;
+			targetProxy = 1EEBD82B26CDB9D716BD6965 /* PBXContainerItemProxy */;
+		};
+		6608620B6D0344A73BF97A92 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = FD9C734DBBA59D93CD833737 /* SharedTypes */;
+			targetProxy = AA7457A562CECB3D3B26B39F /* PBXContainerItemProxy */;
+		};
+		66F5E360D8EE5417AE57EAC4 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = D779145BDDFD824DCCC63CB4 /* VisibilityEngine */;
+			targetProxy = 2D33D3636488EE3061612AD0 /* PBXContainerItemProxy */;
+		};
+		6BB03C4799FFDE72A037C1E8 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = FD9C734DBBA59D93CD833737 /* SharedTypes */;
+			targetProxy = 6B08227E650C93F880F50581 /* PBXContainerItemProxy */;
+		};
+		6C36EB4B74EDDF1C7F06EC02 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = 633D380179F57E798C337409 /* TetherAdapter */;
+			targetProxy = 652BBE39A035E3B6F0A7A892 /* PBXContainerItemProxy */;
+		};
+		788562503C0430032B9659B6 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = FD9C734DBBA59D93CD833737 /* SharedTypes */;
+			targetProxy = 8FA31226F698DD06B243DF91 /* PBXContainerItemProxy */;
+		};
+		7F1DB1E689D68931908FA731 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = FD9C734DBBA59D93CD833737 /* SharedTypes */;
+			targetProxy = D0ECBA3B8D3D357299736D83 /* PBXContainerItemProxy */;
+		};
+		868F1CDFA19381E814847687 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = 004CB375DDD297E6A3F18D39 /* Diagnostics */;
+			targetProxy = 180A65A705825AD55966E036 /* PBXContainerItemProxy */;
+		};
+		8823A2B1859AE6B86F29EB1D /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = 4478A37190115038CDF6B598 /* StageChrome */;
+			targetProxy = 6EE7267A952B4B6707AE8FFC /* PBXContainerItemProxy */;
+		};
+		8EBF510C517A8758B7D721DC /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = FD9C734DBBA59D93CD833737 /* SharedTypes */;
+			targetProxy = DFCA785E1E0BA0F5CF8E9A74 /* PBXContainerItemProxy */;
+		};
+		9124726DBA3BC5FB2074118B /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = 7E444424216D38C14D3625D9 /* AdapterBus */;
+			targetProxy = 2D8D4B8AD544DA5C059E792E /* PBXContainerItemProxy */;
+		};
+		93D2204EE098302BE4B7AE8C /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = 55F671F02D3BB79A707C6B4D /* NexusApp */;
+			targetProxy = 2DA4444405F9DAE287DE997D /* PBXContainerItemProxy */;
+		};
+		975B4B4AEE7D6D743BEEA634 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = D779145BDDFD824DCCC63CB4 /* VisibilityEngine */;
+			targetProxy = 1253E9E6E386FF78D7D55774 /* PBXContainerItemProxy */;
+		};
+		9768AF9D0C724721064BBF82 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = FD9C734DBBA59D93CD833737 /* SharedTypes */;
+			targetProxy = 40A6B2597D2B988510741873 /* PBXContainerItemProxy */;
+		};
+		9C16F7713C19CD1E6A85EDF7 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = 633D380179F57E798C337409 /* TetherAdapter */;
+			targetProxy = EB97ED7016B2B3002B0EF989 /* PBXContainerItemProxy */;
+		};
+		A0FDFF036FF28A2138FD88EC /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = FD9C734DBBA59D93CD833737 /* SharedTypes */;
+			targetProxy = 866C4C203FA247E006A44379 /* PBXContainerItemProxy */;
+		};
+		A3BD2FE07553C2712EF22C22 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = 7E444424216D38C14D3625D9 /* AdapterBus */;
+			targetProxy = 21D02771EBD6A36F8CCE5CB7 /* PBXContainerItemProxy */;
+		};
+		A4B7EE92C2DE36E74C3FF66C /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = F73B2D3FD6C1BBB1233CFE0C /* LayoutEngine */;
+			targetProxy = 03D4F1EB6720B5D398B86552 /* PBXContainerItemProxy */;
+		};
+		A68B826542F2458EBC47017B /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = C89CB1A2CB17BB3911539313 /* WorkspaceEngine */;
+			targetProxy = 95B593F2CD7103142F0D52F9 /* PBXContainerItemProxy */;
+		};
+		A6CD1D60169622922FCC5F96 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = FD9C734DBBA59D93CD833737 /* SharedTypes */;
+			targetProxy = 1DD138D737DCCD48C5620226 /* PBXContainerItemProxy */;
+		};
+		A8EDEF97A6A07AB97B726B37 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = FD9C734DBBA59D93CD833737 /* SharedTypes */;
+			targetProxy = 4FFB802D733AA38415C65FA3 /* PBXContainerItemProxy */;
+		};
+		A9C0F9B0584FB7056904B072 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = C89CB1A2CB17BB3911539313 /* WorkspaceEngine */;
+			targetProxy = 893DBA06F566C0E6E75F8621 /* PBXContainerItemProxy */;
+		};
+		AD3C1D3332D29657E81BDD44 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = FD9C734DBBA59D93CD833737 /* SharedTypes */;
+			targetProxy = EDDD3614D3F09A63CED1A649 /* PBXContainerItemProxy */;
+		};
+		B0A070FD477001E9BF953A21 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = 7E444424216D38C14D3625D9 /* AdapterBus */;
+			targetProxy = A05FC3675078CB7A2D5B97FE /* PBXContainerItemProxy */;
+		};
+		B21AF02ACA361D6CFB5C7D3E /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = 7E444424216D38C14D3625D9 /* AdapterBus */;
+			targetProxy = 712C4D046AEFADABA4A50815 /* PBXContainerItemProxy */;
+		};
+		C2D50C71E9CA3A80B99481B7 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = C89CB1A2CB17BB3911539313 /* WorkspaceEngine */;
+			targetProxy = EAD70E0B04479F92253106C0 /* PBXContainerItemProxy */;
+		};
+		D7BEF08D7D8B99EC2A50D967 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = 004CB375DDD297E6A3F18D39 /* Diagnostics */;
+			targetProxy = 41D7AD8E8F1573CB4F171006 /* PBXContainerItemProxy */;
+		};
+		DD40541982AFB2FEFCCA6E9D /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = D779145BDDFD824DCCC63CB4 /* VisibilityEngine */;
+			targetProxy = E8461439F635C7810B0DCEBC /* PBXContainerItemProxy */;
+		};
+		DF62EB8C75EE997E6F13A4CC /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = 6438DDBBA8BB07A870B3D2AA /* WindowRegistry */;
+			targetProxy = 2F7DF9255CFF06EE80A731C1 /* PBXContainerItemProxy */;
+		};
+		E254650D13536DD4E8F2BBBA /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = FD9C734DBBA59D93CD833737 /* SharedTypes */;
+			targetProxy = A25E46610538F1D54609663A /* PBXContainerItemProxy */;
+		};
+		EA46D736D882C0CCFE27BF00 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = 7E444424216D38C14D3625D9 /* AdapterBus */;
+			targetProxy = F7726622177F10889938A173 /* PBXContainerItemProxy */;
+		};
+		F05BB0CA81598458721B8C90 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = FD9C734DBBA59D93CD833737 /* SharedTypes */;
+			targetProxy = 6C1E321D7B33903C47BD8540 /* PBXContainerItemProxy */;
+		};
+		F12FFE39B233BCE41D1DE262 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = FD9C734DBBA59D93CD833737 /* SharedTypes */;
+			targetProxy = 326AB28DE51FBA5FA92F0AE0 /* PBXContainerItemProxy */;
+		};
+		F89C3413D0C652061E4D97B4 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = C89CB1A2CB17BB3911539313 /* WorkspaceEngine */;
+			targetProxy = 680A9763D4D423C3B974E97C /* PBXContainerItemProxy */;
+		};
+		FC443353F822CCBA56C531F1 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = F73B2D3FD6C1BBB1233CFE0C /* LayoutEngine */;
+			targetProxy = D0110DC99BA7A389AF5272A6 /* PBXContainerItemProxy */;
+		};
+/* End PBXTargetDependency section */
+
+/* Begin XCBuildConfiguration section */
+		00EFA657DA51B02098A9D6ED /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				CLANG_ANALYZER_NONNULL = YES;
+				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++14";
+				CLANG_CXX_LIBRARY = "libc++";
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				CLANG_ENABLE_OBJC_WEAK = YES;
+				CLANG_WARN_BLOCK_CAPTURE_AUTORELEASING = YES;
+				CLANG_WARN_BOOL_CONVERSION = YES;
+				CLANG_WARN_COMMA = YES;
+				CLANG_WARN_CONSTANT_CONVERSION = YES;
+				CLANG_WARN_DEPRECATED_OBJC_IMPLEMENTATIONS = YES;
+				CLANG_WARN_DIRECT_OBJC_ISA_USAGE = YES_ERROR;
+				CLANG_WARN_DOCUMENTATION_COMMENTS = YES;
+				CLANG_WARN_EMPTY_BODY = YES;
+				CLANG_WARN_ENUM_CONVERSION = YES;
+				CLANG_WARN_INFINITE_RECURSION = YES;
+				CLANG_WARN_INT_CONVERSION = YES;
+				CLANG_WARN_NON_LITERAL_NULL_CONVERSION = YES;
+				CLANG_WARN_OBJC_IMPLICIT_RETAIN_SELF = YES;
+				CLANG_WARN_OBJC_LITERAL_CONVERSION = YES;
+				CLANG_WARN_OBJC_ROOT_CLASS = YES_ERROR;
+				CLANG_WARN_QUOTED_INCLUDE_IN_FRAMEWORK_HEADER = YES;
+				CLANG_WARN_RANGE_LOOP_ANALYSIS = YES;
+				CLANG_WARN_STRICT_PROTOTYPES = YES;
+				CLANG_WARN_SUSPICIOUS_MOVE = YES;
+				CLANG_WARN_UNGUARDED_AVAILABILITY = YES_AGGRESSIVE;
+				CLANG_WARN_UNREACHABLE_CODE = YES;
+				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
+				CODE_SIGN_STYLE = Automatic;
+				COPY_PHASE_STRIP = NO;
+				DEBUG_INFORMATION_FORMAT = dwarf;
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				ENABLE_TESTABILITY = YES;
+				ENABLE_USER_SCRIPT_SANDBOXING = NO;
+				GCC_C_LANGUAGE_STANDARD = gnu11;
+				GCC_DYNAMIC_NO_PIC = NO;
+				GCC_NO_COMMON_BLOCKS = YES;
+				GCC_OPTIMIZATION_LEVEL = 0;
+				GCC_PREPROCESSOR_DEFINITIONS = (
+					"$(inherited)",
+					"DEBUG=1",
+				);
+				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
+				GCC_WARN_UNDECLARED_SELECTOR = YES;
+				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
+				GCC_WARN_UNUSED_FUNCTION = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				MACOSX_DEPLOYMENT_TARGET = 14.0;
+				MTL_ENABLE_DEBUG_INFO = INCLUDE_SOURCE;
+				MTL_FAST_MATH = YES;
+				ONLY_ACTIVE_ARCH = YES;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = macosx;
+				SUPPORTS_MAC_DESIGNED_FOR_IPHONE_IPAD = NO;
+				SWIFT_ACTIVE_COMPILATION_CONDITIONS = DEBUG;
+				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
+				SWIFT_VERSION = 6.0;
+			};
+			name = Debug;
+		};
+		07E9AC7C079BBD11539D0E98 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				BUNDLE_LOADER = "$(TEST_HOST)";
+				CODE_SIGNING_ALLOWED = NO;
+				COMBINE_HIDPI_IMAGES = YES;
+				GENERATE_INFOPLIST_FILE = YES;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/../Frameworks",
+					"@loader_path/../Frameworks",
+				);
+				OTHER_LDFLAGS = (
+					"$(inherited)",
+					"-ObjC",
+				);
+				SDKROOT = macosx;
+			};
+			name = Debug;
+		};
+		08D2578873B81582CA490C7F /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				BUNDLE_LOADER = "$(TEST_HOST)";
+				CODE_SIGNING_ALLOWED = NO;
+				COMBINE_HIDPI_IMAGES = YES;
+				GENERATE_INFOPLIST_FILE = YES;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/../Frameworks",
+					"@loader_path/../Frameworks",
+				);
+				OTHER_LDFLAGS = (
+					"$(inherited)",
+					"-ObjC",
+				);
+				SDKROOT = macosx;
+			};
+			name = Release;
+		};
+		0BF332CF5042E5B17CE18B81 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				BUNDLE_LOADER = "$(TEST_HOST)";
+				CODE_SIGNING_ALLOWED = NO;
+				COMBINE_HIDPI_IMAGES = YES;
+				GENERATE_INFOPLIST_FILE = YES;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/../Frameworks",
+					"@loader_path/../Frameworks",
+				);
+				OTHER_LDFLAGS = (
+					"$(inherited)",
+					"-ObjC",
+				);
+				SDKROOT = macosx;
+			};
+			name = Debug;
+		};
+		177062077A1DA5C10C35FA0B /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				COMBINE_HIDPI_IMAGES = YES;
+				DEFINES_MODULE = YES;
+				GENERATE_INFOPLIST_FILE = YES;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/../Frameworks",
+				);
+				SDKROOT = macosx;
+				SKIP_INSTALL = YES;
+			};
+			name = Debug;
+		};
+		1BD3685C8947B2B5DD5EADA8 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				COMBINE_HIDPI_IMAGES = YES;
+				DEFINES_MODULE = YES;
+				GENERATE_INFOPLIST_FILE = YES;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/../Frameworks",
+				);
+				SDKROOT = macosx;
+				SKIP_INSTALL = YES;
+			};
+			name = Release;
+		};
+		1E9F4AE2A29BE5F176C9A4BE /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				COMBINE_HIDPI_IMAGES = YES;
+				DEFINES_MODULE = YES;
+				GENERATE_INFOPLIST_FILE = YES;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/../Frameworks",
+				);
+				SDKROOT = macosx;
+				SKIP_INSTALL = YES;
+			};
+			name = Debug;
+		};
+		20BABEC277B1A856B333D4C0 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				BUNDLE_LOADER = "$(TEST_HOST)";
+				CODE_SIGNING_ALLOWED = NO;
+				COMBINE_HIDPI_IMAGES = YES;
+				GENERATE_INFOPLIST_FILE = YES;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/../Frameworks",
+					"@loader_path/../Frameworks",
+				);
+				OTHER_LDFLAGS = (
+					"$(inherited)",
+					"-ObjC",
+				);
+				SDKROOT = macosx;
+			};
+			name = Debug;
+		};
+		213C19DDDE0412D450638F19 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				BUNDLE_LOADER = "$(TEST_HOST)";
+				CODE_SIGNING_ALLOWED = NO;
+				COMBINE_HIDPI_IMAGES = YES;
+				GENERATE_INFOPLIST_FILE = YES;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/../Frameworks",
+					"@loader_path/../Frameworks",
+				);
+				OTHER_LDFLAGS = (
+					"$(inherited)",
+					"-ObjC",
+				);
+				SDKROOT = macosx;
+			};
+			name = Release;
+		};
+		256DBBE905472D1EDA2CEEC0 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				COMBINE_HIDPI_IMAGES = YES;
+				DEFINES_MODULE = YES;
+				GENERATE_INFOPLIST_FILE = YES;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/../Frameworks",
+				);
+				SDKROOT = macosx;
+				SKIP_INSTALL = YES;
+			};
+			name = Release;
+		};
+		25DFDD73D65BB5B81C6167B1 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				COMBINE_HIDPI_IMAGES = YES;
+				DEFINES_MODULE = YES;
+				GENERATE_INFOPLIST_FILE = YES;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/../Frameworks",
+				);
+				SDKROOT = macosx;
+				SKIP_INSTALL = YES;
+			};
+			name = Release;
+		};
+		3A16819EF1FC43984EC42827 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				BUNDLE_LOADER = "$(TEST_HOST)";
+				CODE_SIGNING_ALLOWED = NO;
+				COMBINE_HIDPI_IMAGES = YES;
+				GENERATE_INFOPLIST_FILE = YES;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/../Frameworks",
+					"@loader_path/../Frameworks",
+				);
+				OTHER_LDFLAGS = (
+					"$(inherited)",
+					"-ObjC",
+				);
+				SDKROOT = macosx;
+			};
+			name = Release;
+		};
+		42D945161C364C9C9F66C933 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				COMBINE_HIDPI_IMAGES = YES;
+				DEFINES_MODULE = YES;
+				GENERATE_INFOPLIST_FILE = YES;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/../Frameworks",
+				);
+				SDKROOT = macosx;
+				SKIP_INSTALL = YES;
+			};
+			name = Debug;
+		};
+		45190FFA8633F088DDE8D280 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				COMBINE_HIDPI_IMAGES = YES;
+				DEFINES_MODULE = YES;
+				GENERATE_INFOPLIST_FILE = YES;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/../Frameworks",
+				);
+				SDKROOT = macosx;
+				SKIP_INSTALL = YES;
+			};
+			name = Release;
+		};
+		4ABCAB6BE860F753712D8677 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				BUNDLE_LOADER = "$(TEST_HOST)";
+				CODE_SIGNING_ALLOWED = NO;
+				COMBINE_HIDPI_IMAGES = YES;
+				GENERATE_INFOPLIST_FILE = YES;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/../Frameworks",
+					"@loader_path/../Frameworks",
+				);
+				OTHER_LDFLAGS = (
+					"$(inherited)",
+					"-ObjC",
+				);
+				SDKROOT = macosx;
+			};
+			name = Debug;
+		};
+		4C13CEF738960A3A0AB74CEC /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				COMBINE_HIDPI_IMAGES = YES;
+				DEFINES_MODULE = YES;
+				GENERATE_INFOPLIST_FILE = YES;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/../Frameworks",
+				);
+				SDKROOT = macosx;
+				SKIP_INSTALL = YES;
+			};
+			name = Debug;
+		};
+		4E8C37CE142D1C6AAD090148 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				COMBINE_HIDPI_IMAGES = YES;
+				DEFINES_MODULE = YES;
+				GENERATE_INFOPLIST_FILE = YES;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/../Frameworks",
+				);
+				SDKROOT = macosx;
+				SKIP_INSTALL = YES;
+			};
+			name = Debug;
+		};
+		56CBAB21CE986A6343397EAD /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				COMBINE_HIDPI_IMAGES = YES;
+				DEFINES_MODULE = YES;
+				GENERATE_INFOPLIST_FILE = YES;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/../Frameworks",
+				);
+				SDKROOT = macosx;
+				SKIP_INSTALL = YES;
+			};
+			name = Release;
+		};
+		5D3FDABCF6D6FC8D82EB1184 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				CODE_SIGN_ENTITLEMENTS = AppResources/Nexus.entitlements;
+				COMBINE_HIDPI_IMAGES = YES;
+				EXECUTABLE_NAME = NexusApp;
+				GENERATE_INFOPLIST_FILE = NO;
+				INFOPLIST_FILE = AppResources/Info.plist;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/../Frameworks",
+					"@loader_path/../Frameworks",
+				);
+				OTHER_LDFLAGS = (
+					"$(inherited)",
+					"-ObjC",
+				);
+				PRODUCT_BUNDLE_IDENTIFIER = dev.nexusniri.Nexus;
+				PRODUCT_MODULE_NAME = NexusApp;
+				PRODUCT_NAME = Nexus;
+				SDKROOT = macosx;
+				WRAPPER_NAME = Nexus.app;
+			};
+			name = Release;
+		};
+		5FA24E65072D4A6CBB87FD05 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				BUNDLE_LOADER = "$(TEST_HOST)";
+				CODE_SIGNING_ALLOWED = NO;
+				COMBINE_HIDPI_IMAGES = YES;
+				GENERATE_INFOPLIST_FILE = YES;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/../Frameworks",
+					"@loader_path/../Frameworks",
+				);
+				OTHER_LDFLAGS = (
+					"$(inherited)",
+					"-ObjC",
+				);
+				SDKROOT = macosx;
+				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/Nexus.app/Contents/MacOS/NexusApp";
+			};
+			name = Debug;
+		};
+		635B50D2A12EB4D53BC87FA2 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				BUNDLE_LOADER = "$(TEST_HOST)";
+				CODE_SIGNING_ALLOWED = NO;
+				COMBINE_HIDPI_IMAGES = YES;
+				GENERATE_INFOPLIST_FILE = YES;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/../Frameworks",
+					"@loader_path/../Frameworks",
+				);
+				OTHER_LDFLAGS = (
+					"$(inherited)",
+					"-ObjC",
+				);
+				SDKROOT = macosx;
+			};
+			name = Release;
+		};
+		6987CF455FD208BB1FF49977 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				COMBINE_HIDPI_IMAGES = YES;
+				DEFINES_MODULE = YES;
+				GENERATE_INFOPLIST_FILE = YES;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/../Frameworks",
+				);
+				SDKROOT = macosx;
+				SKIP_INSTALL = YES;
+			};
+			name = Debug;
+		};
+		790E9D4E0449624E34B9C456 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				BUNDLE_LOADER = "$(TEST_HOST)";
+				CODE_SIGNING_ALLOWED = NO;
+				COMBINE_HIDPI_IMAGES = YES;
+				GENERATE_INFOPLIST_FILE = YES;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/../Frameworks",
+					"@loader_path/../Frameworks",
+				);
+				OTHER_LDFLAGS = (
+					"$(inherited)",
+					"-ObjC",
+				);
+				SDKROOT = macosx;
+			};
+			name = Release;
+		};
+		7D8DE9DE3CDAD021851569B6 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				CODE_SIGN_ENTITLEMENTS = AppResources/Nexus.entitlements;
+				COMBINE_HIDPI_IMAGES = YES;
+				EXECUTABLE_NAME = NexusApp;
+				GENERATE_INFOPLIST_FILE = NO;
+				INFOPLIST_FILE = AppResources/Info.plist;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/../Frameworks",
+					"@loader_path/../Frameworks",
+				);
+				OTHER_LDFLAGS = (
+					"$(inherited)",
+					"-ObjC",
+				);
+				PRODUCT_BUNDLE_IDENTIFIER = dev.nexusniri.Nexus;
+				PRODUCT_MODULE_NAME = NexusApp;
+				PRODUCT_NAME = Nexus;
+				SDKROOT = macosx;
+				WRAPPER_NAME = Nexus.app;
+			};
+			name = Debug;
+		};
+		88CE6DF09676C2DA53DFD507 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				COMBINE_HIDPI_IMAGES = YES;
+				DEFINES_MODULE = YES;
+				GENERATE_INFOPLIST_FILE = YES;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/../Frameworks",
+				);
+				SDKROOT = macosx;
+				SKIP_INSTALL = YES;
+			};
+			name = Debug;
+		};
+		8F7BE6BE824978F8BADB2D38 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				COMBINE_HIDPI_IMAGES = YES;
+				DEFINES_MODULE = YES;
+				GENERATE_INFOPLIST_FILE = YES;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/../Frameworks",
+				);
+				SDKROOT = macosx;
+				SKIP_INSTALL = YES;
+			};
+			name = Release;
+		};
+		942C911AE3A924AEDD82FFE2 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				COMBINE_HIDPI_IMAGES = YES;
+				DEFINES_MODULE = YES;
+				GENERATE_INFOPLIST_FILE = YES;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/../Frameworks",
+				);
+				SDKROOT = macosx;
+				SKIP_INSTALL = YES;
+			};
+			name = Debug;
+		};
+		958B4D27785146E84A1E24AF /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				CLANG_ANALYZER_NONNULL = YES;
+				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++14";
+				CLANG_CXX_LIBRARY = "libc++";
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				CLANG_ENABLE_OBJC_WEAK = YES;
+				CLANG_WARN_BLOCK_CAPTURE_AUTORELEASING = YES;
+				CLANG_WARN_BOOL_CONVERSION = YES;
+				CLANG_WARN_COMMA = YES;
+				CLANG_WARN_CONSTANT_CONVERSION = YES;
+				CLANG_WARN_DEPRECATED_OBJC_IMPLEMENTATIONS = YES;
+				CLANG_WARN_DIRECT_OBJC_ISA_USAGE = YES_ERROR;
+				CLANG_WARN_DOCUMENTATION_COMMENTS = YES;
+				CLANG_WARN_EMPTY_BODY = YES;
+				CLANG_WARN_ENUM_CONVERSION = YES;
+				CLANG_WARN_INFINITE_RECURSION = YES;
+				CLANG_WARN_INT_CONVERSION = YES;
+				CLANG_WARN_NON_LITERAL_NULL_CONVERSION = YES;
+				CLANG_WARN_OBJC_IMPLICIT_RETAIN_SELF = YES;
+				CLANG_WARN_OBJC_LITERAL_CONVERSION = YES;
+				CLANG_WARN_OBJC_ROOT_CLASS = YES_ERROR;
+				CLANG_WARN_QUOTED_INCLUDE_IN_FRAMEWORK_HEADER = YES;
+				CLANG_WARN_RANGE_LOOP_ANALYSIS = YES;
+				CLANG_WARN_STRICT_PROTOTYPES = YES;
+				CLANG_WARN_SUSPICIOUS_MOVE = YES;
+				CLANG_WARN_UNGUARDED_AVAILABILITY = YES_AGGRESSIVE;
+				CLANG_WARN_UNREACHABLE_CODE = YES;
+				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
+				CODE_SIGN_STYLE = Automatic;
+				COPY_PHASE_STRIP = NO;
+				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
+				ENABLE_NS_ASSERTIONS = NO;
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				ENABLE_USER_SCRIPT_SANDBOXING = NO;
+				GCC_C_LANGUAGE_STANDARD = gnu11;
+				GCC_NO_COMMON_BLOCKS = YES;
+				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
+				GCC_WARN_UNDECLARED_SELECTOR = YES;
+				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
+				GCC_WARN_UNUSED_FUNCTION = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				MACOSX_DEPLOYMENT_TARGET = 14.0;
+				MTL_ENABLE_DEBUG_INFO = NO;
+				MTL_FAST_MATH = YES;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = macosx;
+				SUPPORTS_MAC_DESIGNED_FOR_IPHONE_IPAD = NO;
+				SWIFT_COMPILATION_MODE = wholemodule;
+				SWIFT_OPTIMIZATION_LEVEL = "-O";
+				SWIFT_VERSION = 6.0;
+			};
+			name = Release;
+		};
+		A784D707F7ACBCFC86409AC3 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				BUNDLE_LOADER = "$(TEST_HOST)";
+				CODE_SIGNING_ALLOWED = NO;
+				COMBINE_HIDPI_IMAGES = YES;
+				GENERATE_INFOPLIST_FILE = YES;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/../Frameworks",
+					"@loader_path/../Frameworks",
+				);
+				OTHER_LDFLAGS = (
+					"$(inherited)",
+					"-ObjC",
+				);
+				SDKROOT = macosx;
+			};
+			name = Debug;
+		};
+		A88B2133283C9E860899C600 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				COMBINE_HIDPI_IMAGES = YES;
+				DEFINES_MODULE = YES;
+				GENERATE_INFOPLIST_FILE = YES;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/../Frameworks",
+				);
+				SDKROOT = macosx;
+				SKIP_INSTALL = YES;
+			};
+			name = Debug;
+		};
+		A8C2B74350B675E376CF7CB2 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				COMBINE_HIDPI_IMAGES = YES;
+				DEFINES_MODULE = YES;
+				GENERATE_INFOPLIST_FILE = YES;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/../Frameworks",
+				);
+				SDKROOT = macosx;
+				SKIP_INSTALL = YES;
+			};
+			name = Debug;
+		};
+		AB455B83E953DEC5F7BFE36E /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				BUNDLE_LOADER = "$(TEST_HOST)";
+				CODE_SIGNING_ALLOWED = NO;
+				COMBINE_HIDPI_IMAGES = YES;
+				GENERATE_INFOPLIST_FILE = YES;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/../Frameworks",
+					"@loader_path/../Frameworks",
+				);
+				OTHER_LDFLAGS = (
+					"$(inherited)",
+					"-ObjC",
+				);
+				SDKROOT = macosx;
+			};
+			name = Debug;
+		};
+		C5AC04BAF841B06EAF30DFC7 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				BUNDLE_LOADER = "$(TEST_HOST)";
+				CODE_SIGNING_ALLOWED = NO;
+				COMBINE_HIDPI_IMAGES = YES;
+				GENERATE_INFOPLIST_FILE = YES;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/../Frameworks",
+					"@loader_path/../Frameworks",
+				);
+				OTHER_LDFLAGS = (
+					"$(inherited)",
+					"-ObjC",
+				);
+				SDKROOT = macosx;
+			};
+			name = Release;
+		};
+		C8B4B199ACCE0E678043DD5B /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				COMBINE_HIDPI_IMAGES = YES;
+				DEFINES_MODULE = YES;
+				GENERATE_INFOPLIST_FILE = YES;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/../Frameworks",
+				);
+				SDKROOT = macosx;
+				SKIP_INSTALL = YES;
+			};
+			name = Release;
+		};
+		CCAF4F915EA0858E6090089D /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				BUNDLE_LOADER = "$(TEST_HOST)";
+				CODE_SIGNING_ALLOWED = NO;
+				COMBINE_HIDPI_IMAGES = YES;
+				GENERATE_INFOPLIST_FILE = YES;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/../Frameworks",
+					"@loader_path/../Frameworks",
+				);
+				OTHER_LDFLAGS = (
+					"$(inherited)",
+					"-ObjC",
+				);
+				SDKROOT = macosx;
+			};
+			name = Debug;
+		};
+		CF8C05ADF38438F48A71E1FE /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				COMBINE_HIDPI_IMAGES = YES;
+				DEFINES_MODULE = YES;
+				GENERATE_INFOPLIST_FILE = YES;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/../Frameworks",
+				);
+				SDKROOT = macosx;
+				SKIP_INSTALL = YES;
+			};
+			name = Release;
+		};
+		D66B4AA8C003247539D50933 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				BUNDLE_LOADER = "$(TEST_HOST)";
+				CODE_SIGNING_ALLOWED = NO;
+				COMBINE_HIDPI_IMAGES = YES;
+				GENERATE_INFOPLIST_FILE = YES;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/../Frameworks",
+					"@loader_path/../Frameworks",
+				);
+				OTHER_LDFLAGS = (
+					"$(inherited)",
+					"-ObjC",
+				);
+				SDKROOT = macosx;
+			};
+			name = Release;
+		};
+		DA5B567E1C982FEBD75DB75F /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				COMBINE_HIDPI_IMAGES = YES;
+				DEFINES_MODULE = YES;
+				GENERATE_INFOPLIST_FILE = YES;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/../Frameworks",
+				);
+				SDKROOT = macosx;
+				SKIP_INSTALL = YES;
+			};
+			name = Release;
+		};
+		DC63C7FA875A28A7C392E36C /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				COMBINE_HIDPI_IMAGES = YES;
+				DEFINES_MODULE = YES;
+				GENERATE_INFOPLIST_FILE = YES;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/../Frameworks",
+				);
+				SDKROOT = macosx;
+				SKIP_INSTALL = YES;
+			};
+			name = Release;
+		};
+		EFF1E6EAB220F93926986BE4 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				BUNDLE_LOADER = "$(TEST_HOST)";
+				CODE_SIGNING_ALLOWED = NO;
+				COMBINE_HIDPI_IMAGES = YES;
+				GENERATE_INFOPLIST_FILE = YES;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/../Frameworks",
+					"@loader_path/../Frameworks",
+				);
+				OTHER_LDFLAGS = (
+					"$(inherited)",
+					"-ObjC",
+				);
+				SDKROOT = macosx;
+				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/Nexus.app/Contents/MacOS/NexusApp";
+			};
+			name = Release;
+		};
+/* End XCBuildConfiguration section */
+
+/* Begin XCConfigurationList section */
+		036D9E87073E25E929EC8F69 /* Build configuration list for PBXNativeTarget "WorkspaceEngineTests" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				CCAF4F915EA0858E6090089D /* Debug */,
+				C5AC04BAF841B06EAF30DFC7 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Debug;
+		};
+		047A27437250CA3898228C8C /* Build configuration list for PBXNativeTarget "SharedTypes" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				42D945161C364C9C9F66C933 /* Debug */,
+				45190FFA8633F088DDE8D280 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Debug;
+		};
+		0A10C52AD609B2728310F0E5 /* Build configuration list for PBXNativeTarget "WorkspaceEngine" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				A88B2133283C9E860899C600 /* Debug */,
+				256DBBE905472D1EDA2CEEC0 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Debug;
+		};
+		0D9FE304E806F80925BB1D77 /* Build configuration list for PBXNativeTarget "Diagnostics" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				942C911AE3A924AEDD82FFE2 /* Debug */,
+				8F7BE6BE824978F8BADB2D38 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Debug;
+		};
+		131FA4237AD25929D1EEA4F4 /* Build configuration list for PBXNativeTarget "TetherAdapter" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				4C13CEF738960A3A0AB74CEC /* Debug */,
+				1BD3685C8947B2B5DD5EADA8 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Debug;
+		};
+		177E3B1712C1FE4C51EB1C27 /* Build configuration list for PBXNativeTarget "LayoutEngineTests" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				07E9AC7C079BBD11539D0E98 /* Debug */,
+				213C19DDDE0412D450638F19 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Debug;
+		};
+		17896972B6EAD3EB1C3E2233 /* Build configuration list for PBXProject "Nexus" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				00EFA657DA51B02098A9D6ED /* Debug */,
+				958B4D27785146E84A1E24AF /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Debug;
+		};
+		1E848C2D6B61EA22700D1BC0 /* Build configuration list for PBXNativeTarget "VisibilityEngineTests" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				0BF332CF5042E5B17CE18B81 /* Debug */,
+				D66B4AA8C003247539D50933 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Debug;
+		};
+		286C37B8B3D7EFF2DF011939 /* Build configuration list for PBXNativeTarget "StageChromeTests" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				20BABEC277B1A856B333D4C0 /* Debug */,
+				790E9D4E0449624E34B9C456 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Debug;
+		};
+		2B68088442398640BE83DE0D /* Build configuration list for PBXNativeTarget "TetherAdapterTests" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				4ABCAB6BE860F753712D8677 /* Debug */,
+				08D2578873B81582CA490C7F /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Debug;
+		};
+		53ED5E44B7A1670ED43D52CC /* Build configuration list for PBXNativeTarget "LayoutEngine" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				A8C2B74350B675E376CF7CB2 /* Debug */,
+				DC63C7FA875A28A7C392E36C /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Debug;
+		};
+		73827E35AE25CE0A34DFDF50 /* Build configuration list for PBXNativeTarget "AdapterBus" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				88CE6DF09676C2DA53DFD507 /* Debug */,
+				25DFDD73D65BB5B81C6167B1 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Debug;
+		};
+		749D1457B9A3D0CB13806C20 /* Build configuration list for PBXNativeTarget "NexusApp" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				7D8DE9DE3CDAD021851569B6 /* Debug */,
+				5D3FDABCF6D6FC8D82EB1184 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Debug;
+		};
+		7535769157AC819D60705A58 /* Build configuration list for PBXNativeTarget "DiagnosticsTests" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				AB455B83E953DEC5F7BFE36E /* Debug */,
+				635B50D2A12EB4D53BC87FA2 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Debug;
+		};
+		A05F684681EC865A83345607 /* Build configuration list for PBXNativeTarget "SharedTypesTests" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				A784D707F7ACBCFC86409AC3 /* Debug */,
+				3A16819EF1FC43984EC42827 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Debug;
+		};
+		A720CB6BC04E93CF85DBFAB5 /* Build configuration list for PBXNativeTarget "NexusAppTests" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				5FA24E65072D4A6CBB87FD05 /* Debug */,
+				EFF1E6EAB220F93926986BE4 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Debug;
+		};
+		BAC0A1D39E038383BF2E5EFB /* Build configuration list for PBXNativeTarget "GenericAXAdapter" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				177062077A1DA5C10C35FA0B /* Debug */,
+				56CBAB21CE986A6343397EAD /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Debug;
+		};
+		C29DF852EC1D39E58FB4261F /* Build configuration list for PBXNativeTarget "WindowRegistry" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				1E9F4AE2A29BE5F176C9A4BE /* Debug */,
+				DA5B567E1C982FEBD75DB75F /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Debug;
+		};
+		E63ABC10FE1B2B078FF11684 /* Build configuration list for PBXNativeTarget "StageChrome" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				4E8C37CE142D1C6AAD090148 /* Debug */,
+				C8B4B199ACCE0E678043DD5B /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Debug;
+		};
+		F89EAF1E606CDA06A018CAC6 /* Build configuration list for PBXNativeTarget "VisibilityEngine" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				6987CF455FD208BB1FF49977 /* Debug */,
+				CF8C05ADF38438F48A71E1FE /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Debug;
+		};
+/* End XCConfigurationList section */
+	};
+	rootObject = 6E0546D7A1020B804447C56B /* Project object */;
+}
