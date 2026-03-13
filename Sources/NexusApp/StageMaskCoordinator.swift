@@ -5,14 +5,24 @@ import StageChrome
 @MainActor
 protocol StageMaskCoordinating {
     func attach(to window: NSWindow?)
-    func update(layout: LayoutPlan?, stageViewportFrame: CGRect?)
+    func update(
+        layout: LayoutPlan?,
+        stageViewportFrame: CGRect?,
+        shellDisplayLayout: ShellDisplayLayout?,
+        shellPresentationMode: ShellPresentationMode
+    )
     func hideAll()
 }
 
 @MainActor
 final class NoopStageMaskCoordinator: StageMaskCoordinating {
     func attach(to window: NSWindow?) {}
-    func update(layout: LayoutPlan?, stageViewportFrame: CGRect?) {}
+    func update(
+        layout: LayoutPlan?,
+        stageViewportFrame: CGRect?,
+        shellDisplayLayout: ShellDisplayLayout?,
+        shellPresentationMode: ShellPresentationMode
+    ) {}
     func hideAll() {}
 }
 
@@ -20,6 +30,8 @@ final class NoopStageMaskCoordinator: StageMaskCoordinating {
 final class StageMaskCoordinator: StageMaskCoordinating {
     private var sidebarWindow: NSWindow?
     private var topbarWindow: NSWindow?
+    private var topLeftAuxiliaryWindow: NSWindow?
+    private var topRightAuxiliaryWindow: NSWindow?
     private var headerWindow: NSWindow?
     private var indicatorWindow: NSWindow?
     private weak var parentWindow: NSWindow?
@@ -38,7 +50,12 @@ final class StageMaskCoordinator: StageMaskCoordinating {
         chromeWindows.forEach { window.addChildWindow($0, ordered: .below) }
     }
 
-    func update(layout: LayoutPlan?, stageViewportFrame: CGRect?) {
+    func update(
+        layout: LayoutPlan?,
+        stageViewportFrame: CGRect?,
+        shellDisplayLayout: ShellDisplayLayout?,
+        shellPresentationMode: ShellPresentationMode
+    ) {
         _ = layout
         guard let stageViewportFrame else {
             hideAll()
@@ -47,17 +64,33 @@ final class StageMaskCoordinator: StageMaskCoordinating {
 
         ensureSidebarWindow()
         ensureTopbarWindow()
+        ensureTopLeftAuxiliaryWindow()
+        ensureTopRightAuxiliaryWindow()
         ensureHeaderWindow()
         ensureIndicatorWindow()
 
         guard let parentWindow else { return }
 
-        let frames: [(NSWindow?, CGRect?)] = [
-            (sidebarWindow, sidebarFrame(for: parentWindow)),
-            (topbarWindow, topbarFrame(for: stageViewportFrame)),
-            (headerWindow, headerFrame(for: stageViewportFrame)),
-            (indicatorWindow, indicatorFrame(for: stageViewportFrame)),
-        ]
+        let frames: [(NSWindow?, CGRect?)] =
+            if shellPresentationMode == .notchFill {
+                [
+                    (sidebarWindow, nil),
+                    (topbarWindow, nil),
+                    (topLeftAuxiliaryWindow, shellDisplayLayout?.topLeftAuxiliaryFrame?.integral),
+                    (topRightAuxiliaryWindow, shellDisplayLayout?.topRightAuxiliaryFrame?.integral),
+                    (headerWindow, headerFrame(for: stageViewportFrame)),
+                    (indicatorWindow, indicatorFrame(for: stageViewportFrame)),
+                ]
+            } else {
+                [
+                    (sidebarWindow, sidebarFrame(for: parentWindow)),
+                    (topbarWindow, topbarFrame(for: stageViewportFrame)),
+                    (topLeftAuxiliaryWindow, nil),
+                    (topRightAuxiliaryWindow, nil),
+                    (headerWindow, headerFrame(for: stageViewportFrame)),
+                    (indicatorWindow, indicatorFrame(for: stageViewportFrame)),
+                ]
+            }
 
         for (window, frame) in frames {
             guard let window else { continue }
@@ -90,6 +123,16 @@ final class StageMaskCoordinator: StageMaskCoordinating {
     private func ensureHeaderWindow() {
         guard headerWindow == nil else { return }
         headerWindow = makeWindow()
+    }
+
+    private func ensureTopLeftAuxiliaryWindow() {
+        guard topLeftAuxiliaryWindow == nil else { return }
+        topLeftAuxiliaryWindow = makeWindow()
+    }
+
+    private func ensureTopRightAuxiliaryWindow() {
+        guard topRightAuxiliaryWindow == nil else { return }
+        topRightAuxiliaryWindow = makeWindow()
     }
 
     private func ensureIndicatorWindow() {
@@ -154,6 +197,13 @@ final class StageMaskCoordinator: StageMaskCoordinating {
     }
 
     private var chromeWindows: [NSWindow] {
-        [sidebarWindow, topbarWindow, headerWindow, indicatorWindow].compactMap { $0 }
+        [
+            sidebarWindow,
+            topbarWindow,
+            topLeftAuxiliaryWindow,
+            topRightAuxiliaryWindow,
+            headerWindow,
+            indicatorWindow,
+        ].compactMap { $0 }
     }
 }

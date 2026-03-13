@@ -12,6 +12,8 @@ struct NexusApplication: App {
                 session: environment.session,
                 layoutEngine: environment.layoutEngine,
                 diagnosticsSnapshot: environment.diagnosticsSnapshot,
+                shellPresentationMode: environment.shellPresentationMode,
+                shellDisplayLayout: environment.shellDisplayLayout,
                 onOpenDiagnostics: environment.openDiagnosticsPanel,
                 onRequestAccessibility: {
                     Task {
@@ -78,6 +80,11 @@ struct NexusApplication: App {
                     environment.revealAll()
                 }
                 .keyboardShortcut("r", modifiers: [.command, .option, .shift])
+
+                Button(environment.shellPresentationMenuTitle()) {
+                    environment.toggleShellPresentationMode()
+                }
+                .keyboardShortcut("f", modifiers: [.command, .option, .shift])
             }
         }
     }

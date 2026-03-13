@@ -10,6 +10,8 @@ public struct StageChromeView: View {
     @Bindable private var session: WorkspaceSession
     private let layoutEngine: any LayoutComputing
     private let diagnosticsSnapshot: DiagnosticsSnapshot
+    private let shellPresentationMode: ShellPresentationMode
+    private let shellDisplayLayout: ShellDisplayLayout?
     private let onOpenDiagnostics: () -> Void
     private let onRequestAccessibility: () -> Void
     private let onRefreshDiagnostics: () -> Void
@@ -22,6 +24,8 @@ public struct StageChromeView: View {
         session: WorkspaceSession,
         layoutEngine: any LayoutComputing,
         diagnosticsSnapshot: DiagnosticsSnapshot,
+        shellPresentationMode: ShellPresentationMode,
+        shellDisplayLayout: ShellDisplayLayout?,
         onOpenDiagnostics: @escaping () -> Void,
         onRequestAccessibility: @escaping () -> Void,
         onRefreshDiagnostics: @escaping () -> Void,
@@ -33,6 +37,8 @@ public struct StageChromeView: View {
         self.session = session
         self.layoutEngine = layoutEngine
         self.diagnosticsSnapshot = diagnosticsSnapshot
+        self.shellPresentationMode = shellPresentationMode
+        self.shellDisplayLayout = shellDisplayLayout
         self.onOpenDiagnostics = onOpenDiagnostics
         self.onRequestAccessibility = onRequestAccessibility
         self.onRefreshDiagnostics = onRefreshDiagnostics
@@ -43,16 +49,35 @@ public struct StageChromeView: View {
     }
 
     public var body: some View {
+        Group {
+            switch shellPresentationMode {
+            case .windowed:
+                windowedShell
+            case .notchFill:
+                GeometryReader { proxy in
+                    notchFillShell(
+                        displayLayout: shellDisplayLayout ?? ShellDisplayLayout(
+                            windowFrame: CGRect(origin: .zero, size: proxy.size),
+                            safeContentFrame: CGRect(origin: .zero, size: proxy.size),
+                            hasCameraHousing: false
+                        )
+                    )
+                }
+            }
+        }
+        .frame(minWidth: 1120, minHeight: 760)
+        .background(ChromeTheme.windowBackground)
+    }
+
+    private var windowedShell: some View {
         HStack(spacing: 0) {
             sidebar
             VStack(spacing: 0) {
                 topbar
                 Divider().overlay(ChromeTheme.border)
-                viewport
+                windowedViewport
             }
         }
-        .frame(minWidth: 1120, minHeight: 760)
-        .background(ChromeTheme.windowBackground)
     }
 
     private var sidebar: some View {
@@ -163,33 +188,166 @@ public struct StageChromeView: View {
         .frame(height: ChromeMetrics.topbarHeight)
     }
 
-    private var viewport: some View {
+    private var windowedViewport: some View {
         GeometryReader { proxy in
-            let geometry = ChromeMetrics.stageGeometry(for: proxy.size)
-            let workspace = session.selectedWorkspace
-            let layout = workspace.map { layoutEngine.planLayout(for: $0, in: geometry) }
-
-            Group {
-                if let workspace, let layout {
-                    StageViewportView(
-                        session: session,
-                        workspace: workspace,
-                        layout: layout,
-                        geometry: geometry,
-                        onLayoutDidUpdate: onLayoutDidUpdate
-                    )
-                } else {
-                    emptyState
-                }
-            }
-            .background(
-                ScreenSpaceFrameReporter(
-                    onChange: onStageViewportFrameChanged,
-                    onWindowChange: onShellWindowChanged
-                )
-            )
-            .frame(maxWidth: .infinity, maxHeight: .infinity)
+            stageViewportContent(for: proxy.size)
         }
+    }
+
+    private func notchFillShell(displayLayout: ShellDisplayLayout) -> some View {
+        let safeContentFrame = displayLayout.localSafeContentFrame().integral
+        let leadingFrame = notchLeadingFrame(in: displayLayout, safeContentFrame: safeContentFrame)
+        let trailingFrame = notchTrailingFrame(in: displayLayout, safeContentFrame: safeContentFrame)
+
+        return ZStack(alignment: .topLeading) {
+            ChromeBackdrop()
+
+            stageViewportContent(for: safeContentFrame.size)
+                .frame(width: safeContentFrame.width, height: safeContentFrame.height)
+                .offset(x: safeContentFrame.minX, y: safeContentFrame.minY)
+
+            notchLeadingChrome
+                .frame(width: leadingFrame.width, height: leadingFrame.height)
+                .offset(x: leadingFrame.minX, y: leadingFrame.minY)
+
+            notchTrailingChrome
+                .frame(width: trailingFrame.width, height: trailingFrame.height)
+                .offset(x: trailingFrame.minX, y: trailingFrame.minY)
+        }
+    }
+
+    @ViewBuilder
+    private func stageViewportContent(for viewportSize: CGSize) -> some View {
+        let geometry = ChromeMetrics.stageGeometry(
+            for: viewportSize,
+            shellPresentationMode: shellPresentationMode
+        )
+        let workspace = session.selectedWorkspace
+        let layout = workspace.map { layoutEngine.planLayout(for: $0, in: geometry) }
+
+        Group {
+            if let workspace, let layout {
+                StageViewportView(
+                    session: session,
+                    workspace: workspace,
+                    layout: layout,
+                    geometry: geometry,
+                    onLayoutDidUpdate: onLayoutDidUpdate
+                )
+            } else {
+                emptyState
+            }
+        }
+        .background(
+            ScreenSpaceFrameReporter(
+                onChange: onStageViewportFrameChanged,
+                onWindowChange: onShellWindowChanged
+            )
+        )
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
+    }
+
+    private var notchLeadingChrome: some View {
+        HStack(spacing: 8) {
+            ScrollView(.horizontal, showsIndicators: false) {
+                HStack(spacing: 8) {
+                    ForEach(Array(session.workspaces.enumerated()), id: \.element.id) { index, workspace in
+                        WorkspaceButton(
+                            number: index + 1,
+                            workspace: workspace,
+                            isSelected: session.selectedWorkspaceID == workspace.id
+                        ) {
+                            var transaction = Transaction()
+                            transaction.animation = nil
+                            withTransaction(transaction) {
+                                session.selectWorkspace(id: workspace.id)
+                            }
+                        }
+                    }
+                }
+                .padding(.leading, 2)
+            }
+
+            HStack(spacing: 8) {
+                UtilityButton(symbol: "plus", action: {
+                    session.addWorkspace()
+                })
+                UtilityButton(symbol: "arrow.clockwise", action: onRefreshDiagnostics)
+                UtilityButton(symbol: "exclamationmark.triangle", action: onRevealAll)
+                UtilityButton(symbol: "slider.horizontal.3", action: onOpenDiagnostics)
+            }
+        }
+        .padding(.horizontal, 10)
+        .padding(.vertical, 6)
+        .background(NotchChromeBackground())
+        .clipShape(RoundedRectangle(cornerRadius: 12))
+    }
+
+    private var notchTrailingChrome: some View {
+        HStack(spacing: 10) {
+            Text(metadataText)
+                .font(.system(size: 11, weight: .regular))
+                .foregroundStyle(ChromeTheme.textSecondary)
+                .lineLimit(1)
+
+            if let status = accessibilityPermissionStatus, status.state != .granted {
+                Button("Enable Accessibility") {
+                    onRequestAccessibility()
+                }
+                .buttonStyle(.plain)
+                .font(.system(size: 11, weight: .medium))
+                .foregroundStyle(ChromeTheme.accent)
+                .padding(.horizontal, 8)
+                .padding(.vertical, 4)
+                .background(RoundedRectangle(cornerRadius: 8).fill(ChromeTheme.accentDim))
+            }
+
+            HStack(spacing: 10) {
+                Button(action: session.selectPreviousSlot) {
+                    Image(systemName: "arrow.left")
+                }
+                .buttonStyle(.plain)
+                .foregroundStyle(ChromeTheme.textSecondary)
+
+                Button(action: session.selectNextSlot) {
+                    Image(systemName: "arrow.right")
+                }
+                .buttonStyle(.plain)
+                .foregroundStyle(ChromeTheme.textSecondary)
+            }
+            .font(.system(size: 11, weight: .medium))
+        }
+        .padding(.horizontal, 12)
+        .padding(.vertical, 6)
+        .background(NotchChromeBackground())
+        .clipShape(RoundedRectangle(cornerRadius: 12))
+    }
+
+    private func notchLeadingFrame(in displayLayout: ShellDisplayLayout, safeContentFrame: CGRect) -> CGRect {
+        if let frame = displayLayout.localTopLeftAuxiliaryFrame(), frame.isEmpty == false {
+            return frame.insetBy(dx: 8, dy: 6)
+        }
+
+        return CGRect(
+            x: safeContentFrame.minX + 10,
+            y: safeContentFrame.minY + 8,
+            width: max(260, min(safeContentFrame.width * 0.52, 560)),
+            height: ChromeMetrics.workspaceIndicatorSize + 12
+        )
+    }
+
+    private func notchTrailingFrame(in displayLayout: ShellDisplayLayout, safeContentFrame: CGRect) -> CGRect {
+        if let frame = displayLayout.localTopRightAuxiliaryFrame(), frame.isEmpty == false {
+            return frame.insetBy(dx: 8, dy: 6)
+        }
+
+        let width = max(240, min(safeContentFrame.width * 0.38, 420))
+        return CGRect(
+            x: safeContentFrame.maxX - width - 10,
+            y: safeContentFrame.minY + 8,
+            width: width,
+            height: ChromeMetrics.topbarHeight + 10
+        )
     }
 
     private var emptyState: some View {
@@ -586,6 +744,20 @@ private struct ChromeBackdrop: View {
                 TranslucentChromeBackground()
                     .overlay(ChromeTheme.chromeBackground)
             }
+    }
+}
+
+private struct NotchChromeBackground: View {
+    var body: some View {
+        ChromeTheme.chromeOcclusion
+            .overlay {
+                TranslucentChromeBackground()
+                    .overlay(ChromeTheme.chromeBackground)
+            }
+            .overlay(
+                RoundedRectangle(cornerRadius: 12)
+                    .stroke(ChromeTheme.border, lineWidth: 0.5)
+            )
     }
 }
 

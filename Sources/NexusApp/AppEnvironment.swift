@@ -32,8 +32,11 @@ final class AppEnvironment {
     let diagnosticsPanelController: DiagnosticsPanelController
     let choreographyService: any WindowChoreographing
     let stageMaskCoordinator: any StageMaskCoordinating
+    let shellWindowManager: any ShellWindowManaging
 
     private(set) var diagnosticsSnapshot: DiagnosticsSnapshot
+    private(set) var shellPresentationMode: ShellPresentationMode
+    private(set) var shellDisplayLayout: ShellDisplayLayout?
     private var started = false
     private var lastChoreographedWorkspace: Workspace?
     private var lastTransitionSourceWorkspace: Workspace?
@@ -49,6 +52,9 @@ final class AppEnvironment {
     private var pendingFocusedWindowWidthObservation: PendingFocusedWindowWidthObservation?
     private var lastAppliedFocusedWindowWidthObservation: AppliedFocusedWindowWidthObservation?
     private var suppressedFocusSyncUntil: Date?
+    private let userDefaults: UserDefaults
+    private var shellPersistenceKey: String
+    private weak var shellWindow: NSWindow?
 
     init(
         workspaceStore: JSONWorkspaceStore = JSONWorkspaceStore(),
@@ -60,8 +66,12 @@ final class AppEnvironment {
         diagnosticsPanelController: DiagnosticsPanelController = DiagnosticsPanelController(),
         choreographyService: (any WindowChoreographing)? = nil,
         stageMaskCoordinator: (any StageMaskCoordinating)? = nil,
+        shellWindowManager: (any ShellWindowManaging)? = nil,
+        userDefaults: UserDefaults = .standard,
         registerDefaultAdapters: Bool = true
     ) {
+        let initialShellPersistenceKey = ShellPresentationPersistence.key(for: NSScreen.main)
+
         self.workspaceStore = workspaceStore
         self.session = WorkspaceSession(store: workspaceStore)
         self.windowRegistry = windowRegistry
@@ -76,6 +86,13 @@ final class AppEnvironment {
             adapterRegistry: adapterRegistry
         )
         self.stageMaskCoordinator = stageMaskCoordinator ?? NoopStageMaskCoordinator()
+        self.shellWindowManager = shellWindowManager ?? ShellWindowManager()
+        self.userDefaults = userDefaults
+        self.shellPersistenceKey = initialShellPersistenceKey
+        self.shellPresentationMode = Self.loadShellPresentationMode(
+            from: userDefaults,
+            key: initialShellPersistenceKey
+        )
         self.diagnosticsSnapshot = DiagnosticsSnapshot(
             stateDirectory: workspaceStore.stateDirectoryURL.path,
             logDirectory: workspaceStore.logDirectoryURL.path
@@ -156,7 +173,12 @@ final class AppEnvironment {
 
     func applyChoreography(for workspace: Workspace, layout: LayoutPlan) async {
         latestLayoutContext = LayoutContext(workspace: workspace, layout: layout)
-        stageMaskCoordinator.update(layout: layout, stageViewportFrame: stageViewportFrame)
+        stageMaskCoordinator.update(
+            layout: layout,
+            stageViewportFrame: stageViewportFrame,
+            shellDisplayLayout: shellDisplayLayout,
+            shellPresentationMode: shellPresentationMode
+        )
         guard stageViewportFrame != nil || layout.visibleSlotIDs.isEmpty else { return }
         enqueueChoreographyRequest(
             workspace: workspace,
@@ -180,11 +202,18 @@ final class AppEnvironment {
     }
 
     func updateStageViewportFrame(_ frame: CGRect) {
+        synchronizeShellPresentation(for: shellWindowManagerCurrentScreen())
+
         let integralFrame = frame.integral
         guard integralFrame != stageViewportFrame?.integral else { return }
         stageViewportFrame = integralFrame
 
-        stageMaskCoordinator.update(layout: latestLayoutContext?.layout, stageViewportFrame: integralFrame)
+        stageMaskCoordinator.update(
+            layout: latestLayoutContext?.layout,
+            stageViewportFrame: integralFrame,
+            shellDisplayLayout: shellDisplayLayout,
+            shellPresentationMode: shellPresentationMode
+        )
         guard let latestLayoutContext else { return }
         enqueueChoreographyRequest(
             workspace: latestLayoutContext.workspace,
@@ -195,8 +224,16 @@ final class AppEnvironment {
     }
 
     func updateShellWindow(_ window: NSWindow?) {
+        shellWindow = window
+        shellWindowManager.attach(window: window)
         stageMaskCoordinator.attach(to: window)
-        stageMaskCoordinator.update(layout: latestLayoutContext?.layout, stageViewportFrame: stageViewportFrame)
+        synchronizeShellPresentation(for: window?.screen)
+        stageMaskCoordinator.update(
+            layout: latestLayoutContext?.layout,
+            stageViewportFrame: stageViewportFrame,
+            shellDisplayLayout: shellDisplayLayout,
+            shellPresentationMode: shellPresentationMode
+        )
     }
 
     func requestAccessibilityAccess() async {
@@ -206,6 +243,26 @@ final class AppEnvironment {
         if granted == false {
             diagnosticsCenter.openAccessibilitySettings()
             session.refreshStatus(accessibilityBlockedStatusMessage())
+        }
+    }
+
+    func toggleShellPresentationMode() {
+        let nextMode: ShellPresentationMode = switch shellPresentationMode {
+        case .windowed:
+            .notchFill
+        case .notchFill:
+            .windowed
+        }
+
+        setShellPresentationMode(nextMode)
+    }
+
+    func shellPresentationMenuTitle() -> String {
+        switch shellPresentationMode {
+        case .windowed:
+            "Enter Over-Notch Mode"
+        case .notchFill:
+            "Exit Over-Notch Mode"
         }
     }
 
@@ -334,6 +391,62 @@ final class AppEnvironment {
         }
 
         return "Window choreography blocked. Grant Accessibility to the running Nexus.app."
+    }
+
+    private func setShellPresentationMode(_ mode: ShellPresentationMode) {
+        shellPresentationMode = mode
+        persistShellPresentationMode(mode, key: shellPersistenceKey)
+        synchronizeShellPresentation(
+            for: shellWindowManagerCurrentScreen(),
+            reloadModeFromPersistence: false
+        )
+        stageMaskCoordinator.update(
+            layout: latestLayoutContext?.layout,
+            stageViewportFrame: stageViewportFrame,
+            shellDisplayLayout: shellDisplayLayout,
+            shellPresentationMode: shellPresentationMode
+        )
+        session.refreshStatus(
+            mode == .notchFill
+                ? "Entered Nexus over-notch mode."
+                : "Restored Nexus windowed mode."
+        )
+    }
+
+    private func synchronizeShellPresentation(
+        for screen: NSScreen?,
+        reloadModeFromPersistence: Bool = true
+    ) {
+        let nextPersistenceKey = ShellPresentationPersistence.key(for: screen)
+        if shellPersistenceKey != nextPersistenceKey {
+            shellPersistenceKey = nextPersistenceKey
+            if reloadModeFromPersistence {
+                shellPresentationMode = Self.loadShellPresentationMode(
+                    from: userDefaults,
+                    key: nextPersistenceKey
+                )
+            }
+        }
+
+        shellWindowManager.apply(mode: shellPresentationMode, screen: screen)
+        shellDisplayLayout = shellWindowManager.currentLayout()
+    }
+
+    private func shellWindowManagerCurrentScreen() -> NSScreen? {
+        shellWindow?.screen ?? NSScreen.main
+    }
+
+    private static func loadShellPresentationMode(from userDefaults: UserDefaults, key: String) -> ShellPresentationMode {
+        guard let rawValue = userDefaults.string(forKey: key),
+              let mode = ShellPresentationMode(rawValue: rawValue) else {
+            return .windowed
+        }
+
+        return mode
+    }
+
+    private func persistShellPresentationMode(_ mode: ShellPresentationMode, key: String) {
+        userDefaults.set(mode.rawValue, forKey: key)
     }
 
     private func refreshRuntimeBindingsAndVisibleWidths(

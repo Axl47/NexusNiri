@@ -1,3 +1,4 @@
+import CoreGraphics
 import Foundation
 
 public enum DisplayPolicy: String, Codable, Sendable, CaseIterable {
@@ -556,6 +557,58 @@ public struct StageGeometry: Codable, Equatable, Sendable {
     public var stageWidth: Double { max(viewportWidth - sidebarWidth, 320) }
     public var stageHeight: Double { max(viewportHeight - topbarHeight, 240) }
     public var stageContentHeight: Double { max(stageHeight - stripIndicatorHeight, 180) }
+}
+
+public enum ShellPresentationMode: String, Codable, Sendable, CaseIterable {
+    case windowed
+    case notchFill
+}
+
+public struct ShellDisplayLayout: Codable, Equatable, Sendable {
+    public var windowFrame: CGRect
+    public var safeContentFrame: CGRect
+    public var topLeftAuxiliaryFrame: CGRect?
+    public var topRightAuxiliaryFrame: CGRect?
+    public var hasCameraHousing: Bool
+
+    public init(
+        windowFrame: CGRect,
+        safeContentFrame: CGRect,
+        topLeftAuxiliaryFrame: CGRect? = nil,
+        topRightAuxiliaryFrame: CGRect? = nil,
+        hasCameraHousing: Bool
+    ) {
+        self.windowFrame = windowFrame
+        self.safeContentFrame = safeContentFrame
+        self.topLeftAuxiliaryFrame = topLeftAuxiliaryFrame
+        self.topRightAuxiliaryFrame = topRightAuxiliaryFrame
+        self.hasCameraHousing = hasCameraHousing
+    }
+
+    public func localSafeContentFrame() -> CGRect {
+        localFrame(for: safeContentFrame)
+    }
+
+    public func localTopLeftAuxiliaryFrame() -> CGRect? {
+        guard let topLeftAuxiliaryFrame else { return nil }
+        return localFrame(for: topLeftAuxiliaryFrame)
+    }
+
+    public func localTopRightAuxiliaryFrame() -> CGRect? {
+        guard let topRightAuxiliaryFrame else { return nil }
+        return localFrame(for: topRightAuxiliaryFrame)
+    }
+
+    private func localFrame(for frame: CGRect) -> CGRect {
+        let localMinX = frame.minX - windowFrame.minX
+        let localMaxY = frame.maxY - windowFrame.minY
+        return CGRect(
+            x: localMinX,
+            y: windowFrame.height - localMaxY,
+            width: frame.width,
+            height: frame.height
+        )
+    }
 }
 
 public struct SlotLayout: Codable, Equatable, Identifiable, Sendable {

@@ -38,6 +38,7 @@
 		7356CE989D253801E9CDFF2B /* FocusedWindowAttribution.swift in Sources */ = {isa = PBXBuildFile; fileRef = FBA5457825901936B49C9D07 /* FocusedWindowAttribution.swift */; };
 		796BBAECE25E3546EDD9EAA1 /* libAdapterBus.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 05CC05125F65EA32F39D933C /* libAdapterBus.a */; };
 		79C011C2606AF61FDDF148EC /* WorkspaceEngineTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = ABF982C5E5BA59795ADBD04F /* WorkspaceEngineTests.swift */; };
+		7EA8C94419E89D54D389FF5F /* ShellWindowManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = FED150AEF5D93DBFB7D750A7 /* ShellWindowManager.swift */; };
 		86CF1A04DA93842241A37D26 /* libAdapterBus.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 05CC05125F65EA32F39D933C /* libAdapterBus.a */; };
 		8837BD92F461AA7913B23D44 /* AdapterRegistry.swift in Sources */ = {isa = PBXBuildFile; fileRef = 870DD55CB57118B47349842D /* AdapterRegistry.swift */; };
 		8CBC3C3B9607A5E76B649B6B /* StageMaskCoordinator.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5AF77F8B4CC3AE3C532EAC05 /* StageMaskCoordinator.swift */; };
@@ -486,6 +487,7 @@
 		F9B5C42C27BB41BF4A6EAA81 /* LayoutEngineTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LayoutEngineTests.swift; sourceTree = "<group>"; };
 		FBA5457825901936B49C9D07 /* FocusedWindowAttribution.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FocusedWindowAttribution.swift; sourceTree = "<group>"; };
 		FD9A168F3BA2ADE3F9147347 /* AGENTS.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = AGENTS.md; sourceTree = "<group>"; };
+		FED150AEF5D93DBFB7D750A7 /* ShellWindowManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ShellWindowManager.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -792,6 +794,7 @@
 				B36E8DB0A43A1502BFAFC102 /* AppDelegate.swift */,
 				BD2FCEB5FF7E413243E580FC /* AppEnvironment.swift */,
 				5E7C4DD289F7471AD2FC39B7 /* NexusApp.swift */,
+				FED150AEF5D93DBFB7D750A7 /* ShellWindowManager.swift */,
 				5AF77F8B4CC3AE3C532EAC05 /* StageMaskCoordinator.swift */,
 				ADD8B96390872C8012000F63 /* WindowChoreographyService.swift */,
 				0AAC62664E34816C73FF44CE /* WindowSlotMatcher.swift */,
@@ -1724,6 +1727,7 @@
 				B3A83AF9ECBF59EC8A3696E2 /* AppDelegate.swift in Sources */,
 				5F3B59B9BE32EE408F5F45C6 /* AppEnvironment.swift in Sources */,
 				29A695697796115145F7598D /* NexusApp.swift in Sources */,
+				7EA8C94419E89D54D389FF5F /* ShellWindowManager.swift in Sources */,
 				8CBC3C3B9607A5E76B649B6B /* StageMaskCoordinator.swift in Sources */,
 				C580F174675813078FE547A4 /* WindowChoreographyService.swift in Sources */,
 				ADC3951FD82C83171222C082 /* WindowSlotMatcher.swift in Sources */,

@@ -11,8 +11,14 @@ public enum ChromeMetrics {
     public static let edgePeekWidth: CGFloat = 16
     public static let workspaceIndicatorSize: CGFloat = 34
 
-    public static func stageGeometry(for size: CGSize) -> StageGeometry {
-        StageGeometry(
+    public static func stageGeometry(
+        for size: CGSize,
+        shellPresentationMode: ShellPresentationMode = .windowed
+    ) -> StageGeometry {
+        let sidebarWidth = shellPresentationMode == .windowed ? Self.sidebarWidth : 0
+        let topbarHeight = shellPresentationMode == .windowed ? Self.topbarHeight : 0
+
+        return StageGeometry(
             viewportWidth: size.width + sidebarWidth,
             viewportHeight: size.height + topbarHeight,
             sidebarWidth: sidebarWidth,

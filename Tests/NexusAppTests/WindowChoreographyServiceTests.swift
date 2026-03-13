@@ -752,6 +752,7 @@ func appEnvironmentFansLayoutStateOutToStageMasksAndRevealAllHidesThem() async t
     await environment.applyChoreography(for: workspace, layout: layout)
     #expect(stageMaskCoordinator.updateCalls.count == 1)
     #expect(stageMaskCoordinator.updateCalls.last?.frame == nil)
+    #expect(stageMaskCoordinator.updateCalls.last?.shellPresentationMode == .windowed)
 
     environment.updateShellWindow(NSWindow())
     #expect(stageMaskCoordinator.attachedWindowWasSet)
@@ -761,10 +762,70 @@ func appEnvironmentFansLayoutStateOutToStageMasksAndRevealAllHidesThem() async t
     #expect(stageMaskCoordinator.updateCalls.count == 3)
     #expect(stageMaskCoordinator.updateCalls.last?.frame?.integral == CGRect(x: 100, y: 200, width: 1200, height: 720))
     #expect(stageMaskCoordinator.updateCalls.last?.occlusionBands == [RectValue(x: 0, y: 0, width: 120, height: 640)])
+    #expect(stageMaskCoordinator.updateCalls.last?.shellPresentationMode == .windowed)
 
     environment.revealAll()
     try await Task.sleep(nanoseconds: 50_000_000)
     #expect(stageMaskCoordinator.hideAllCount == 1)
+}
+
+@MainActor
+@Test
+func appEnvironmentLoadsPersistedShellPresentationModeAndAppliesItOnAttach() async throws {
+    let suiteName = "AppEnvironmentShellModeLoad-\(UUID().uuidString)"
+    let defaults = UserDefaults(suiteName: suiteName)!
+    let persistenceKey = ShellPresentationPersistence.key(for: NSScreen.main)
+    defaults.removePersistentDomain(forName: suiteName)
+    defaults.set(ShellPresentationMode.notchFill.rawValue, forKey: persistenceKey)
+
+    let shellWindowManager = RecordingShellWindowManager()
+    let environment = AppEnvironment(
+        workspaceStore: makeWorkspaceStore("AppEnvironmentShellModeLoad"),
+        windowRegistry: RecordingWindowRegistry(snapshot: WindowRegistrySnapshot(isAccessibilityTrusted: false)),
+        adapterRegistry: AdapterRegistry(),
+        diagnosticsCenter: DiagnosticsCenter(initialSnapshot: trustedDiagnosticsSnapshot()),
+        shellWindowManager: shellWindowManager,
+        userDefaults: defaults,
+        registerDefaultAdapters: false
+    )
+
+    #expect(environment.shellPresentationMode == .notchFill)
+
+    let window = NSWindow()
+    environment.updateShellWindow(window)
+
+    #expect(shellWindowManager.applyCalls.last == .notchFill)
+    #expect(environment.shellDisplayLayout?.hasCameraHousing == true)
+}
+
+@MainActor
+@Test
+func appEnvironmentPersistsShellPresentationModeToggle() async throws {
+    let suiteName = "AppEnvironmentShellModePersist-\(UUID().uuidString)"
+    let defaults = UserDefaults(suiteName: suiteName)!
+    let persistenceKey = ShellPresentationPersistence.key(for: NSScreen.main)
+    defaults.removePersistentDomain(forName: suiteName)
+
+    let shellWindowManager = RecordingShellWindowManager()
+    let stageMaskCoordinator = RecordingStageMaskCoordinator()
+    let environment = AppEnvironment(
+        workspaceStore: makeWorkspaceStore("AppEnvironmentShellModePersist"),
+        windowRegistry: RecordingWindowRegistry(snapshot: WindowRegistrySnapshot(isAccessibilityTrusted: false)),
+        adapterRegistry: AdapterRegistry(),
+        diagnosticsCenter: DiagnosticsCenter(initialSnapshot: trustedDiagnosticsSnapshot()),
+        stageMaskCoordinator: stageMaskCoordinator,
+        shellWindowManager: shellWindowManager,
+        userDefaults: defaults,
+        registerDefaultAdapters: false
+    )
+
+    environment.updateShellWindow(NSWindow())
+    environment.toggleShellPresentationMode()
+
+    #expect(environment.shellPresentationMode == .notchFill)
+    #expect(defaults.string(forKey: persistenceKey) == ShellPresentationMode.notchFill.rawValue)
+    #expect(shellWindowManager.applyCalls.last == .notchFill)
+    #expect(stageMaskCoordinator.updateCalls.last?.shellPresentationMode == .notchFill)
 }
 
 @MainActor
@@ -1768,6 +1829,8 @@ private final class RecordingStageMaskCoordinator: StageMaskCoordinating {
     struct UpdateCall: Equatable {
         let occlusionBands: [RectValue]
         let frame: CGRect?
+        let shellPresentationMode: ShellPresentationMode
+        let hasCameraHousing: Bool
     }
 
     private(set) var updateCalls: [UpdateCall] = []
@@ -1778,17 +1841,63 @@ private final class RecordingStageMaskCoordinator: StageMaskCoordinating {
         attachedWindowWasSet = attachedWindowWasSet || window != nil
     }
 
-    func update(layout: LayoutPlan?, stageViewportFrame: CGRect?) {
+    func update(
+        layout: LayoutPlan?,
+        stageViewportFrame: CGRect?,
+        shellDisplayLayout: ShellDisplayLayout?,
+        shellPresentationMode: ShellPresentationMode
+    ) {
         updateCalls.append(
             UpdateCall(
                 occlusionBands: layout?.occlusionBands ?? [],
-                frame: stageViewportFrame?.integral
+                frame: stageViewportFrame?.integral,
+                shellPresentationMode: shellPresentationMode,
+                hasCameraHousing: shellDisplayLayout?.hasCameraHousing ?? false
             )
         )
     }
 
     func hideAll() {
         hideAllCount += 1
+    }
+}
+
+@MainActor
+private final class RecordingShellWindowManager: ShellWindowManaging {
+    private(set) var applyCalls: [ShellPresentationMode] = []
+    private let notchLayout = ShellDisplayLayout(
+        windowFrame: CGRect(x: 0, y: 0, width: 1512, height: 982),
+        safeContentFrame: CGRect(x: 0, y: 0, width: 1512, height: 945),
+        topLeftAuxiliaryFrame: CGRect(x: 0, y: 945, width: 640, height: 37),
+        topRightAuxiliaryFrame: CGRect(x: 872, y: 945, width: 640, height: 37),
+        hasCameraHousing: true
+    )
+    private var layout: ShellDisplayLayout
+
+    init() {
+        self.layout = notchLayout
+    }
+
+    func attach(window: NSWindow?) {
+        _ = window
+    }
+
+    func apply(mode: ShellPresentationMode, screen: NSScreen?) {
+        _ = screen
+        applyCalls.append(mode)
+        if mode == .windowed {
+            layout = ShellDisplayLayout(
+                windowFrame: layout.windowFrame,
+                safeContentFrame: layout.windowFrame,
+                hasCameraHousing: false
+            )
+        } else {
+            layout = notchLayout
+        }
+    }
+
+    func currentLayout() -> ShellDisplayLayout? {
+        layout
     }
 }
 
