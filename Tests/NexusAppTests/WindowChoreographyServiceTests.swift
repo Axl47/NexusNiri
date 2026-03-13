@@ -830,6 +830,55 @@ func appEnvironmentPersistsShellPresentationModeToggle() async throws {
 
 @MainActor
 @Test
+func appEnvironmentViewportFrameChangesDoNotReapplyShellPresentationWhenScreenIsUnchanged() async throws {
+    let shellWindowManager = RecordingShellWindowManager()
+    let environment = AppEnvironment(
+        workspaceStore: makeWorkspaceStore("AppEnvironmentShellViewportLoop"),
+        windowRegistry: RecordingWindowRegistry(snapshot: WindowRegistrySnapshot(isAccessibilityTrusted: false)),
+        adapterRegistry: AdapterRegistry(),
+        diagnosticsCenter: DiagnosticsCenter(initialSnapshot: trustedDiagnosticsSnapshot()),
+        shellWindowManager: shellWindowManager,
+        registerDefaultAdapters: false
+    )
+
+    environment.updateShellWindow(NSWindow())
+    let initialApplyCount = shellWindowManager.applyCalls.count
+
+    environment.updateStageViewportFrame(CGRect(x: 0, y: 37, width: 1512, height: 945))
+    environment.updateStageViewportFrame(CGRect(x: 24, y: 37, width: 1512, height: 945))
+    environment.updateStageViewportFrame(CGRect(x: 48, y: 37, width: 1512, height: 945))
+
+    #expect(shellWindowManager.applyCalls.count == initialApplyCount)
+}
+
+@MainActor
+@Test
+func appEnvironmentIgnoresTransientNilShellWindowUpdates() async throws {
+    let shellWindowManager = RecordingShellWindowManager()
+    let stageMaskCoordinator = RecordingStageMaskCoordinator()
+    let environment = AppEnvironment(
+        workspaceStore: makeWorkspaceStore("AppEnvironmentShellNilWindow"),
+        windowRegistry: RecordingWindowRegistry(snapshot: WindowRegistrySnapshot(isAccessibilityTrusted: false)),
+        adapterRegistry: AdapterRegistry(),
+        diagnosticsCenter: DiagnosticsCenter(initialSnapshot: trustedDiagnosticsSnapshot()),
+        stageMaskCoordinator: stageMaskCoordinator,
+        shellWindowManager: shellWindowManager,
+        registerDefaultAdapters: false
+    )
+
+    let window = NSWindow()
+    environment.updateShellWindow(window)
+    let initialApplyCount = shellWindowManager.applyCalls.count
+    let initialAttachCount = stageMaskCoordinator.attachedWindowWasSet
+
+    environment.updateShellWindow(nil)
+
+    #expect(shellWindowManager.applyCalls.count == initialApplyCount)
+    #expect(stageMaskCoordinator.attachedWindowWasSet == initialAttachCount)
+}
+
+@MainActor
+@Test
 func appEnvironmentWaitsForViewportFrameBeforeFirstVisibleSlotApply() async throws {
     let registry = RecordingWindowRegistry(snapshot: WindowRegistrySnapshot(isAccessibilityTrusted: false))
     let choreographyService = RecordingChoreographyService()

@@ -769,7 +769,6 @@ final class ReporterView: NSView {
 
     override func viewWillMove(toWindow newWindow: NSWindow?) {
         super.viewWillMove(toWindow: newWindow)
-        onWindowChange?(newWindow)
         if newWindow == nil {
             tearDownObservers()
         }

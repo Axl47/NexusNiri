@@ -202,7 +202,7 @@ final class AppEnvironment {
     }
 
     func updateStageViewportFrame(_ frame: CGRect) {
-        synchronizeShellPresentation(for: shellWindowManagerCurrentScreen())
+        refreshShellPresentationIfScreenChanged()
 
         let integralFrame = frame.integral
         guard integralFrame != stageViewportFrame?.integral else { return }
@@ -224,10 +224,11 @@ final class AppEnvironment {
     }
 
     func updateShellWindow(_ window: NSWindow?) {
+        guard let window else { return }
         shellWindow = window
         shellWindowManager.attach(window: window)
         stageMaskCoordinator.attach(to: window)
-        synchronizeShellPresentation(for: window?.screen)
+        synchronizeShellPresentation(for: window.screen)
         stageMaskCoordinator.update(
             layout: latestLayoutContext?.layout,
             stageViewportFrame: stageViewportFrame,
@@ -430,6 +431,14 @@ final class AppEnvironment {
 
         shellWindowManager.apply(mode: shellPresentationMode, screen: screen)
         shellDisplayLayout = shellWindowManager.currentLayout()
+    }
+
+    private func refreshShellPresentationIfScreenChanged() {
+        let currentScreen = shellWindowManagerCurrentScreen()
+        let nextPersistenceKey = ShellPresentationPersistence.key(for: currentScreen)
+        guard nextPersistenceKey != shellPersistenceKey else { return }
+
+        synchronizeShellPresentation(for: currentScreen)
     }
 
     private func shellWindowManagerCurrentScreen() -> NSScreen? {

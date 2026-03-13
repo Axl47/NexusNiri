@@ -18,6 +18,7 @@ final class ShellWindowManager: ShellWindowManaging {
     private var savedWindowedStyleMask: NSWindow.StyleMask?
     private var savedWindowedCollectionBehavior: NSWindow.CollectionBehavior?
     private var savedWindowedIsMovable: Bool?
+    private var savedWindowedStateCaptured = false
 
     func attach(window: NSWindow?) {
         self.window = window
@@ -28,6 +29,7 @@ final class ShellWindowManager: ShellWindowManaging {
             savedWindowedStyleMask = nil
             savedWindowedCollectionBehavior = nil
             savedWindowedIsMovable = nil
+            savedWindowedStateCaptured = false
             return
         }
 
@@ -38,8 +40,6 @@ final class ShellWindowManager: ShellWindowManaging {
     }
 
     func apply(mode: ShellPresentationMode, screen: NSScreen?) {
-        currentMode = mode
-
         guard let window else {
             currentDisplayLayout = nil
             return
@@ -49,13 +49,19 @@ final class ShellWindowManager: ShellWindowManaging {
 
         switch mode {
         case .windowed:
-            restoreWindowedState(on: window)
+            if currentMode != .windowed {
+                restoreWindowedState(on: window)
+            }
             currentDisplayLayout = makeWindowedLayout(for: window)
         case .notchFill:
             captureWindowedStateIfNeeded(from: window)
-            applyNotchFill(to: window, screen: resolvedScreen)
+            if shouldApplyNotchFill(to: window, screen: resolvedScreen) {
+                applyNotchFill(to: window, screen: resolvedScreen)
+            }
             currentDisplayLayout = resolvedScreen.map(makeNotchFillLayout(for:))
         }
+
+        currentMode = mode
     }
 
     func currentLayout() -> ShellDisplayLayout? {
@@ -63,27 +69,38 @@ final class ShellWindowManager: ShellWindowManaging {
     }
 
     private func captureWindowedStateIfNeeded(from window: NSWindow) {
+        guard savedWindowedStateCaptured == false else { return }
         savedWindowedFrame = window.frame
         savedWindowedStyleMask = window.styleMask
         savedWindowedCollectionBehavior = window.collectionBehavior
         savedWindowedIsMovable = window.isMovable
+        savedWindowedStateCaptured = true
     }
 
     private func restoreWindowedState(on window: NSWindow) {
         if let savedWindowedStyleMask {
-            window.styleMask = savedWindowedStyleMask
+            if window.styleMask != savedWindowedStyleMask {
+                window.styleMask = savedWindowedStyleMask
+            }
         }
         if let savedWindowedCollectionBehavior {
-            window.collectionBehavior = savedWindowedCollectionBehavior
+            if window.collectionBehavior != savedWindowedCollectionBehavior {
+                window.collectionBehavior = savedWindowedCollectionBehavior
+            }
         }
         if let savedWindowedIsMovable {
-            window.isMovable = savedWindowedIsMovable
+            if window.isMovable != savedWindowedIsMovable {
+                window.isMovable = savedWindowedIsMovable
+            }
         }
         if let savedWindowedFrame, window.frame.integral != savedWindowedFrame.integral {
             window.setFrame(savedWindowedFrame, display: true)
         }
 
-        NSApp.presentationOptions = []
+        if NSApp.presentationOptions != [] {
+            NSApp.presentationOptions = []
+        }
+        savedWindowedStateCaptured = false
     }
 
     private func applyNotchFill(to window: NSWindow, screen: NSScreen?) {
@@ -92,15 +109,53 @@ final class ShellWindowManager: ShellWindowManaging {
             return
         }
 
-        NSApp.presentationOptions = [.autoHideDock, .autoHideMenuBar]
-        window.collectionBehavior = [.fullScreenAuxiliary, .ignoresCycle]
-        window.styleMask = [.borderless]
-        window.isMovable = false
+        let targetPresentationOptions: NSApplication.PresentationOptions = [.autoHideDock, .autoHideMenuBar]
+        if NSApp.presentationOptions != targetPresentationOptions {
+            NSApp.presentationOptions = targetPresentationOptions
+        }
+        let targetCollectionBehavior: NSWindow.CollectionBehavior = [.fullScreenAuxiliary, .ignoresCycle]
+        if window.collectionBehavior != targetCollectionBehavior {
+            window.collectionBehavior = targetCollectionBehavior
+        }
+        let targetStyleMask: NSWindow.StyleMask = [.borderless]
+        if window.styleMask != targetStyleMask {
+            window.styleMask = targetStyleMask
+        }
+        if window.isMovable {
+            window.isMovable = false
+        }
 
         let targetFrame = screen.frame.integral
         if window.frame.integral != targetFrame {
             window.setFrame(targetFrame, display: true)
         }
+    }
+
+    private func shouldApplyNotchFill(to window: NSWindow, screen: NSScreen?) -> Bool {
+        guard let screen else { return false }
+
+        let targetPresentationOptions: NSApplication.PresentationOptions = [.autoHideDock, .autoHideMenuBar]
+        let targetCollectionBehavior: NSWindow.CollectionBehavior = [.fullScreenAuxiliary, .ignoresCycle]
+        let targetStyleMask: NSWindow.StyleMask = [.borderless]
+        let targetFrame = screen.frame.integral
+
+        if currentMode != .notchFill {
+            return true
+        }
+        if NSApp.presentationOptions != targetPresentationOptions {
+            return true
+        }
+        if window.collectionBehavior != targetCollectionBehavior {
+            return true
+        }
+        if window.styleMask != targetStyleMask {
+            return true
+        }
+        if window.isMovable {
+            return true
+        }
+
+        return window.frame.integral != targetFrame
     }
 
     private func makeWindowedLayout(for window: NSWindow) -> ShellDisplayLayout {
