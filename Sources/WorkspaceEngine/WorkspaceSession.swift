@@ -5,6 +5,7 @@ import SharedTypes
 public enum SelectionOrigin: Sendable {
     case nexusNavigation
     case nativeFocusSync
+    case nativeGeometrySync
 }
 
 @MainActor
@@ -243,21 +244,40 @@ public final class WorkspaceSession {
             return
         }
 
-        let currentPolicy = workspaces[workspaceIndex].slots[slotIndex].widthPolicy
-        let minimum = currentPolicy.minimum ?? 320
-        let maximum = currentPolicy.maximum ?? viewportWidth
-        let clampedWidth = min(max(width, minimum), maximum)
-        let fraction = min(max(clampedWidth / viewportWidth, 0.2), 1.25)
+        _ = applySlotWidth(
+            workspaceIndex: workspaceIndex,
+            slotIndex: slotIndex,
+            observedWidth: width,
+            viewportWidth: viewportWidth,
+            persist: persist,
+            originOnChange: nil,
+            statusMessageOnPersist: "Resized slot."
+        )
+    }
 
-        workspaces[workspaceIndex].slots[slotIndex].widthPolicy.mode = .fraction
-        workspaces[workspaceIndex].slots[slotIndex].widthPolicy.value = fraction
-        workspaces[workspaceIndex].slots[slotIndex].updatedAt = .now
-        workspaces[workspaceIndex].updatedAt = .now
-
-        if persist {
-            statusMessage = "Resized slot."
-            persistSoon()
+    @discardableResult
+    public func refreshSlotWidth(
+        workspaceID: String,
+        slotID: String,
+        observedWidth: Double,
+        viewportWidth: Double,
+        persist: Bool = true
+    ) -> Bool {
+        guard viewportWidth > 0,
+              let workspaceIndex = workspaces.firstIndex(where: { $0.id == workspaceID }),
+              let slotIndex = workspaces[workspaceIndex].slots.firstIndex(where: { $0.id == slotID }) else {
+            return false
         }
+
+        return applySlotWidth(
+            workspaceIndex: workspaceIndex,
+            slotIndex: slotIndex,
+            observedWidth: observedWidth,
+            viewportWidth: viewportWidth,
+            persist: persist,
+            originOnChange: .nativeGeometrySync,
+            statusMessageOnPersist: nil
+        )
     }
 
     public func updateVisibility(using layout: LayoutPlan) {
@@ -384,6 +404,50 @@ public final class WorkspaceSession {
         recentWorkspaceIDs.removeAll { $0 == workspaceID }
         recentWorkspaceIDs.insert(workspaceID, at: 0)
         recentWorkspaceIDs = Array(recentWorkspaceIDs.prefix(12))
+    }
+
+    @discardableResult
+    private func applySlotWidth(
+        workspaceIndex: Int,
+        slotIndex: Int,
+        observedWidth: Double,
+        viewportWidth: Double,
+        persist: Bool,
+        originOnChange: SelectionOrigin?,
+        statusMessageOnPersist: String?
+    ) -> Bool {
+        guard viewportWidth > 0, observedWidth > 0 else { return false }
+
+        let currentPolicy = workspaces[workspaceIndex].slots[slotIndex].widthPolicy
+        let minimum = currentPolicy.minimum ?? 320
+        let maximum = currentPolicy.maximum ?? viewportWidth
+        let clampedWidth = min(max(observedWidth, minimum), maximum)
+        let fraction = min(max(clampedWidth / viewportWidth, 0.2), 1.25)
+
+        let currentFraction = currentPolicy.value ?? 0
+        let didChange =
+            currentPolicy.mode != .fraction ||
+            abs(currentFraction - fraction) > 0.0001
+
+        guard didChange else { return false }
+
+        workspaces[workspaceIndex].slots[slotIndex].widthPolicy.mode = .fraction
+        workspaces[workspaceIndex].slots[slotIndex].widthPolicy.value = fraction
+        workspaces[workspaceIndex].slots[slotIndex].updatedAt = .now
+        workspaces[workspaceIndex].updatedAt = .now
+
+        if let originOnChange {
+            lastSelectionOrigin = originOnChange
+        }
+
+        if persist {
+            if let statusMessageOnPersist {
+                statusMessage = statusMessageOnPersist
+            }
+            persistSoon()
+        }
+
+        return true
     }
 
     private func persistSoon() {

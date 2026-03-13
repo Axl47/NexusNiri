@@ -18,6 +18,8 @@ import WorkspaceEngine
 final class AppEnvironment {
     private static let focusedWindowPollIntervalNanoseconds: UInt64 = 250_000_000
     private static let focusSyncSuppressionDuration: TimeInterval = 0.4
+    private static let focusedWindowWidthDebounceDuration: TimeInterval = 0.3
+    private static let widthObservationTolerance: Double = 2
 
     private let focusSyncLogger = Logger(subsystem: "dev.nexusniri.Nexus", category: "focusSync")
     let workspaceStore: JSONWorkspaceStore
@@ -44,6 +46,8 @@ final class AppEnvironment {
     private let windowSlotMatcher = WindowSlotMatcher()
     private var focusedWindowMonitorTask: Task<Void, Never>?
     private var lastFocusedWindowFingerprint: FocusedWindowFingerprint?
+    private var pendingFocusedWindowWidthObservation: PendingFocusedWindowWidthObservation?
+    private var lastAppliedFocusedWindowWidthObservation: AppliedFocusedWindowWidthObservation?
     private var suppressedFocusSyncUntil: Date?
 
     init(
@@ -235,7 +239,10 @@ final class AppEnvironment {
             latestLayoutContext = LayoutContext(workspace: request.workspace, layout: request.layout)
             lastChoreographySignature = request.signature
             lastChoreographedWorkspace = request.workspace
-            await refreshRuntimeBindings(for: request.workspace)
+            await refreshRuntimeBindingsAndVisibleWidths(
+                for: request.workspace,
+                layout: request.layout
+            )
             await refreshDiagnostics()
 
             switch outcome {
@@ -329,11 +336,18 @@ final class AppEnvironment {
         return "Window choreography blocked. Grant Accessibility to the running Nexus.app."
     }
 
-    private func refreshRuntimeBindings(for workspace: Workspace) async {
+    private func refreshRuntimeBindingsAndVisibleWidths(
+        for workspace: Workspace,
+        layout: LayoutPlan
+    ) async {
         guard let snapshot = try? await windowRegistry.snapshot(),
               snapshot.windows.isEmpty == false else {
             return
         }
+
+        let visibleSlotIDs = Set(layout.visibleSlotIDs)
+        let slotLayouts = Dictionary(uniqueKeysWithValues: layout.slotLayouts.map { ($0.slotID, $0) })
+        let viewportWidth = stageViewportFrame?.width ?? 0
 
         for slot in workspace.orderedSlots {
             guard let match = windowSlotMatcher.bestCandidateMatch(
@@ -349,6 +363,20 @@ final class AppEnvironment {
                 slotID: slot.id,
                 candidate: match.candidate,
                 matchConfidence: match.confidence
+            )
+
+            guard viewportWidth > 0,
+                  visibleSlotIDs.contains(slot.id),
+                  let slotLayout = slotLayouts[slot.id] else {
+                continue
+            }
+
+            _ = reconcileObservedSlotWidth(
+                workspaceID: workspace.id,
+                slotID: slot.id,
+                candidate: match.candidate,
+                plannedWidth: slotLayout.frame.width,
+                viewportWidth: viewportWidth
             )
         }
     }
@@ -405,7 +433,7 @@ final class AppEnvironment {
         switch origin {
         case .nexusNavigation:
             return .focusActiveSlot
-        case .nativeFocusSync:
+        case .nativeFocusSync, .nativeGeometrySync:
             return .preserveExternalFocus
         }
     }
@@ -418,6 +446,7 @@ final class AppEnvironment {
                 if self.isAccessibilityTrusted,
                    let candidate = try? await self.windowRegistry.focusedWindowCandidate() {
                     await self.handleFocusedWindowCandidate(candidate)
+                    self.reconcileFocusedWindowWidth(candidate)
                 }
 
                 do {
@@ -427,6 +456,96 @@ final class AppEnvironment {
                 }
             }
         }
+    }
+
+    @discardableResult
+    private func reconcileObservedSlotWidth(
+        workspaceID: String,
+        slotID: String,
+        candidate: WindowCandidate,
+        plannedWidth: Double,
+        viewportWidth: Double
+    ) -> Bool {
+        guard candidate.isMinimized == false,
+              candidate.frame.width > 0,
+              abs(candidate.frame.width - plannedWidth) >= Self.widthObservationTolerance else {
+            return false
+        }
+
+        return session.refreshSlotWidth(
+            workspaceID: workspaceID,
+            slotID: slotID,
+            observedWidth: candidate.frame.width,
+            viewportWidth: viewportWidth
+        )
+    }
+
+    private func reconcileFocusedWindowWidth(_ candidate: WindowCandidate) {
+        guard let stageViewportFrame,
+              let latestLayoutContext,
+              candidate.isMinimized == false,
+              candidate.frame.width > 0 else {
+            pendingFocusedWindowWidthObservation = nil
+            return
+        }
+
+        guard let match = windowSlotMatcher.bestSlotMatch(
+            for: candidate,
+            in: session.workspaces,
+            preferredWorkspaceID: session.selectedWorkspaceID,
+            ignoringBundleID: Bundle.main.bundleIdentifier,
+            ignoringProcessID: Int(ProcessInfo.processInfo.processIdentifier)
+        ),
+        match.workspaceID == session.selectedWorkspaceID,
+        latestLayoutContext.workspace.id == match.workspaceID,
+        latestLayoutContext.layout.visibleSlotIDs.contains(match.slotID),
+        let plannedWidth = latestLayoutContext.layout.slotLayouts.first(where: { $0.slotID == match.slotID })?.frame.width else {
+            pendingFocusedWindowWidthObservation = nil
+            return
+        }
+
+        let observation = AppliedFocusedWindowWidthObservation(
+            fingerprint: FocusedWindowFingerprint(candidate: candidate),
+            workspaceID: match.workspaceID,
+            slotID: match.slotID,
+            roundedWidth: Int(candidate.frame.width.rounded())
+        )
+
+        guard observation != lastAppliedFocusedWindowWidthObservation else { return }
+
+        guard abs(candidate.frame.width - plannedWidth) >= Self.widthObservationTolerance else {
+            pendingFocusedWindowWidthObservation = nil
+            lastAppliedFocusedWindowWidthObservation = observation
+            return
+        }
+
+        let now = Date()
+
+        if let pendingFocusedWindowWidthObservation,
+           pendingFocusedWindowWidthObservation.matches(observation) {
+            let updatedObservation = pendingFocusedWindowWidthObservation.advanced(to: now)
+            self.pendingFocusedWindowWidthObservation = updatedObservation
+
+            let isStable = updatedObservation.observationCount >= 2 ||
+                now.timeIntervalSince(updatedObservation.firstObservedAt) >= Self.focusedWindowWidthDebounceDuration
+            guard isStable else { return }
+
+            _ = session.refreshSlotWidth(
+                workspaceID: match.workspaceID,
+                slotID: match.slotID,
+                observedWidth: candidate.frame.width,
+                viewportWidth: stageViewportFrame.width
+            )
+            lastAppliedFocusedWindowWidthObservation = observation
+            self.pendingFocusedWindowWidthObservation = nil
+            return
+        }
+
+        pendingFocusedWindowWidthObservation = PendingFocusedWindowWidthObservation(
+            observation: observation,
+            firstObservedAt: now,
+            observationCount: 1
+        )
     }
 }
 
@@ -479,6 +598,31 @@ private struct FocusedWindowFingerprint: Equatable {
         bundleID = candidate.bundleID
         windowTitle = candidate.windowTitle
     }
+}
+
+private struct PendingFocusedWindowWidthObservation {
+    let observation: AppliedFocusedWindowWidthObservation
+    let firstObservedAt: Date
+    let observationCount: Int
+
+    func matches(_ other: AppliedFocusedWindowWidthObservation) -> Bool {
+        observation == other
+    }
+
+    func advanced(to date: Date) -> PendingFocusedWindowWidthObservation {
+        PendingFocusedWindowWidthObservation(
+            observation: observation,
+            firstObservedAt: firstObservedAt,
+            observationCount: observationCount + 1
+        )
+    }
+}
+
+private struct AppliedFocusedWindowWidthObservation: Equatable {
+    let fingerprint: FocusedWindowFingerprint
+    let workspaceID: String
+    let slotID: String
+    let roundedWidth: Int
 }
 
 private extension Array {

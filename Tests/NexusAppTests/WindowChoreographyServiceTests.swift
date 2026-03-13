@@ -1007,6 +1007,299 @@ func appEnvironmentRefreshesRuntimeBindingsAfterChoreography() async throws {
 
 @MainActor
 @Test
+func appEnvironmentReconcilesVisibleSlotWidthsAfterChoreography() async throws {
+    let registry = RecordingWindowRegistry(
+        snapshot: WindowRegistrySnapshot(
+            isAccessibilityTrusted: true,
+            windows: [
+                WindowCandidate(
+                    bundleID: "com.example.browser",
+                    appName: "Browser",
+                    windowTitle: "Page",
+                    processID: 202,
+                    windowID: 7,
+                    frame: RectValue(x: 0, y: 0, width: 540, height: 640),
+                    isFocused: true,
+                    source: .accessibility
+                ),
+            ]
+        )
+    )
+    let choreographyService = RecordingChoreographyService()
+    let store = makeWorkspaceStore("AppEnvironmentVisibleWidthRefresh")
+    let environment = AppEnvironment(
+        workspaceStore: store,
+        windowRegistry: registry,
+        adapterRegistry: AdapterRegistry(),
+        diagnosticsCenter: DiagnosticsCenter(initialSnapshot: trustedDiagnosticsSnapshot()),
+        choreographyService: choreographyService,
+        registerDefaultAdapters: false
+    )
+    let slot = Slot(
+        id: "browser",
+        workspaceID: "workspace",
+        kind: .externalWindow,
+        label: "Browser",
+        appBinding: AppBinding(bundleID: "com.example.browser"),
+        widthPolicy: SizePolicy(mode: .fraction, value: 0.4),
+        layoutRole: .primary
+    )
+    let workspace = Workspace(
+        id: "workspace",
+        name: "Main",
+        activeSlotID: slot.id,
+        slotOrder: [slot.id],
+        layoutState: LayoutState(activeIndex: 0, centeredSlotID: slot.id, visibleSlotIDs: [slot.id]),
+        slots: [slot]
+    )
+    let layout = LayoutPlan(
+        slotLayouts: [SlotLayout(slotID: slot.id, frame: RectValue(x: 0, y: 0, width: 480, height: 640), isFocused: true)],
+        contentWidth: 480,
+        scrollOffset: 0,
+        visibleSlotIDs: [slot.id],
+        parkedSlotIDs: [],
+        activeSlotIndex: 0
+    )
+
+    await environment.session.load(seedWorkspaces: [workspace])
+    environment.updateStageViewportFrame(CGRect(x: 100, y: 200, width: 1200, height: 720))
+    await environment.applyChoreography(for: workspace, layout: layout)
+    try await waitForMinimumApplyCount(1, service: choreographyService)
+    try await waitForSlotWidth(0.45, in: environment.session, slotID: slot.id)
+
+    #expect(environment.session.lastSelectionOrigin == .nativeGeometrySync)
+}
+
+@MainActor
+@Test
+func appEnvironmentIgnoresVisibleWidthDeltasWithinTolerance() async throws {
+    let registry = RecordingWindowRegistry(
+        snapshot: WindowRegistrySnapshot(
+            isAccessibilityTrusted: true,
+            windows: [
+                WindowCandidate(
+                    bundleID: "com.example.browser",
+                    appName: "Browser",
+                    windowTitle: "Page",
+                    processID: 202,
+                    windowID: 7,
+                    frame: RectValue(x: 0, y: 0, width: 481, height: 640),
+                    isFocused: true,
+                    source: .accessibility
+                ),
+            ]
+        )
+    )
+    let choreographyService = RecordingChoreographyService()
+    let store = makeWorkspaceStore("AppEnvironmentVisibleWidthTolerance")
+    let environment = AppEnvironment(
+        workspaceStore: store,
+        windowRegistry: registry,
+        adapterRegistry: AdapterRegistry(),
+        diagnosticsCenter: DiagnosticsCenter(initialSnapshot: trustedDiagnosticsSnapshot()),
+        choreographyService: choreographyService,
+        registerDefaultAdapters: false
+    )
+    let slot = Slot(
+        id: "browser",
+        workspaceID: "workspace",
+        kind: .externalWindow,
+        label: "Browser",
+        appBinding: AppBinding(bundleID: "com.example.browser"),
+        widthPolicy: SizePolicy(mode: .fraction, value: 0.4),
+        layoutRole: .primary
+    )
+    let workspace = Workspace(
+        id: "workspace",
+        name: "Main",
+        activeSlotID: slot.id,
+        slotOrder: [slot.id],
+        layoutState: LayoutState(activeIndex: 0, centeredSlotID: slot.id, visibleSlotIDs: [slot.id]),
+        slots: [slot]
+    )
+    let layout = LayoutPlan(
+        slotLayouts: [SlotLayout(slotID: slot.id, frame: RectValue(x: 0, y: 0, width: 480, height: 640), isFocused: true)],
+        contentWidth: 480,
+        scrollOffset: 0,
+        visibleSlotIDs: [slot.id],
+        parkedSlotIDs: [],
+        activeSlotIndex: 0
+    )
+
+    await environment.session.load(seedWorkspaces: [workspace])
+    environment.updateStageViewportFrame(CGRect(x: 100, y: 200, width: 1200, height: 720))
+    await environment.applyChoreography(for: workspace, layout: layout)
+    try await waitForMinimumApplyCount(1, service: choreographyService)
+    try await Task.sleep(nanoseconds: 50_000_000)
+
+    #expect(environment.session.selectedWorkspace?.slots.first?.widthPolicy.value == 0.4)
+    #expect(environment.session.lastSelectionOrigin == .nexusNavigation)
+}
+
+@MainActor
+@Test
+func appEnvironmentGeometryWidthSyncUsesPreserveExternalFocus() async throws {
+    let registry = RecordingWindowRegistry(
+        snapshot: WindowRegistrySnapshot(
+            isAccessibilityTrusted: true,
+            windows: [
+                WindowCandidate(
+                    bundleID: "com.example.browser",
+                    appName: "Browser",
+                    windowTitle: "Page",
+                    processID: 202,
+                    windowID: 7,
+                    frame: RectValue(x: 0, y: 0, width: 540, height: 640),
+                    isFocused: true,
+                    source: .accessibility
+                ),
+            ]
+        )
+    )
+    let choreographyService = RecordingChoreographyService()
+    let store = makeWorkspaceStore("AppEnvironmentGeometryFocusPolicy")
+    let environment = AppEnvironment(
+        workspaceStore: store,
+        windowRegistry: registry,
+        adapterRegistry: AdapterRegistry(),
+        diagnosticsCenter: DiagnosticsCenter(initialSnapshot: trustedDiagnosticsSnapshot()),
+        choreographyService: choreographyService,
+        registerDefaultAdapters: false
+    )
+    let slot = Slot(
+        id: "browser",
+        workspaceID: "workspace",
+        kind: .externalWindow,
+        label: "Browser",
+        appBinding: AppBinding(bundleID: "com.example.browser"),
+        widthPolicy: SizePolicy(mode: .fraction, value: 0.4),
+        layoutRole: .primary
+    )
+    let workspace = Workspace(
+        id: "workspace",
+        name: "Main",
+        activeSlotID: slot.id,
+        slotOrder: [slot.id],
+        layoutState: LayoutState(activeIndex: 0, centeredSlotID: slot.id, visibleSlotIDs: [slot.id]),
+        slots: [slot]
+    )
+    let initialLayout = LayoutPlan(
+        slotLayouts: [SlotLayout(slotID: slot.id, frame: RectValue(x: 0, y: 0, width: 480, height: 640), isFocused: true)],
+        contentWidth: 480,
+        scrollOffset: 0,
+        visibleSlotIDs: [slot.id],
+        parkedSlotIDs: [],
+        activeSlotIndex: 0
+    )
+
+    await environment.session.load(seedWorkspaces: [workspace])
+    environment.updateStageViewportFrame(CGRect(x: 100, y: 200, width: 1200, height: 720))
+    await environment.applyChoreography(for: workspace, layout: initialLayout)
+    try await waitForMinimumApplyCount(1, service: choreographyService)
+    try await waitForSlotWidth(0.45, in: environment.session, slotID: slot.id)
+
+    let updatedWorkspace = try #require(environment.session.selectedWorkspace)
+    let updatedLayout = LayoutPlan(
+        slotLayouts: [SlotLayout(slotID: slot.id, frame: RectValue(x: 0, y: 0, width: 540, height: 640), isFocused: true)],
+        contentWidth: 540,
+        scrollOffset: 0,
+        visibleSlotIDs: [slot.id],
+        parkedSlotIDs: [],
+        activeSlotIndex: 0
+    )
+
+    await environment.applyChoreography(for: updatedWorkspace, layout: updatedLayout)
+    try await waitForMinimumApplyCount(2, service: choreographyService)
+
+    #expect(choreographyService.applyCalls.last?.focusPolicy == .preserveExternalFocus)
+}
+
+@MainActor
+@Test
+func appEnvironmentFocusedWindowResizeFeedbackUpdatesVisibleMatchedSlotAfterDebounce() async throws {
+    let store = makeWorkspaceStore("AppEnvironmentFocusedWidthDebounce")
+    let slot = Slot(
+        id: "browser",
+        workspaceID: "workspace",
+        kind: .externalWindow,
+        label: "Browser",
+        appBinding: AppBinding(bundleID: "com.example.browser"),
+        widthPolicy: SizePolicy(mode: .fraction, value: 0.4),
+        layoutRole: .primary
+    )
+    let workspace = Workspace(
+        id: "workspace",
+        name: "Main",
+        activeSlotID: slot.id,
+        slotOrder: [slot.id],
+        layoutState: LayoutState(activeIndex: 0, centeredSlotID: slot.id, visibleSlotIDs: [slot.id]),
+        slots: [slot]
+    )
+    try await store.saveState(
+        PersistedWorkspaceState(
+            workspaces: [workspace],
+            selectedWorkspaceID: workspace.id
+        )
+    )
+
+    let registry = RecordingWindowRegistry(
+        snapshot: WindowRegistrySnapshot(
+            isAccessibilityTrusted: true,
+            windows: [
+                WindowCandidate(
+                    bundleID: "com.example.browser",
+                    appName: "Browser",
+                    windowTitle: "Page",
+                    processID: 202,
+                    windowID: 7,
+                    frame: RectValue(x: 0, y: 0, width: 480, height: 640),
+                    isFocused: true,
+                    source: .accessibility
+                ),
+            ]
+        )
+    )
+    registry.focusedCandidate = WindowCandidate(
+        bundleID: "com.example.browser",
+        appName: "Browser",
+        windowTitle: "Page",
+        processID: 202,
+        windowID: 7,
+        frame: RectValue(x: 0, y: 0, width: 640, height: 640),
+        isFocused: true,
+        source: .accessibility
+    )
+
+    let choreographyService = RecordingChoreographyService()
+    let environment = AppEnvironment(
+        workspaceStore: store,
+        windowRegistry: registry,
+        adapterRegistry: AdapterRegistry(),
+        diagnosticsCenter: DiagnosticsCenter(initialSnapshot: trustedDiagnosticsSnapshot()),
+        choreographyService: choreographyService,
+        registerDefaultAdapters: false
+    )
+    let layout = LayoutPlan(
+        slotLayouts: [SlotLayout(slotID: slot.id, frame: RectValue(x: 0, y: 0, width: 480, height: 640), isFocused: true)],
+        contentWidth: 480,
+        scrollOffset: 0,
+        visibleSlotIDs: [slot.id],
+        parkedSlotIDs: [],
+        activeSlotIndex: 0
+    )
+
+    await environment.start()
+    let loadedWorkspace = try #require(environment.session.selectedWorkspace)
+    environment.updateStageViewportFrame(CGRect(x: 100, y: 200, width: 1200, height: 720))
+    await environment.applyChoreography(for: loadedWorkspace, layout: layout)
+    try await waitForMinimumApplyCount(1, service: choreographyService)
+    try await waitForSlotWidth((640.0 / 1200.0), in: environment.session, slotID: slot.id)
+
+    #expect(environment.session.lastSelectionOrigin == .nativeGeometrySync)
+}
+
+@MainActor
+@Test
 func appEnvironmentFocusedWindowSyncSwitchesWorkspaceWhenMatched() async throws {
     let registry = RecordingWindowRegistry(snapshot: WindowRegistrySnapshot(isAccessibilityTrusted: true))
     let store = makeWorkspaceStore("AppEnvironmentFocusedWorkspaceSwitch")
@@ -1279,6 +1572,25 @@ private func waitForRuntimeBinding(
     throw TestFailure()
 }
 
+@MainActor
+private func waitForSlotWidth(
+    _ expectedWidthValue: Double,
+    in session: WorkspaceSession,
+    slotID: String
+) async throws {
+    for _ in 0..<120 {
+        if let value = session.selectedWorkspace?.slots.first(where: { $0.id == slotID })?.widthPolicy.value,
+           abs(value - expectedWidthValue) < 0.0001 {
+            return
+        }
+        await Task.yield()
+        try await Task.sleep(nanoseconds: 20_000_000)
+    }
+
+    Issue.record("Timed out waiting for width policy value \(expectedWidthValue) on slot \(slotID).")
+    throw TestFailure()
+}
+
 private func trustedDiagnosticsSnapshot() -> DiagnosticsSnapshot {
     DiagnosticsSnapshot(
         permissions: [
@@ -1307,20 +1619,34 @@ private final class RecordingWindowRegistry: @unchecked Sendable, WindowRegistry
         case focus(processID: Int, windowID: Int?)
     }
 
-    private let snapshotValue: WindowRegistrySnapshot
+    var snapshots: [WindowRegistrySnapshot]
     var focusedCandidate: WindowCandidate?
+    var focusedCandidates: [WindowCandidate?] = []
     private(set) var operations: [Operation] = []
 
     init(snapshot: WindowRegistrySnapshot) {
-        self.snapshotValue = snapshot
+        self.snapshots = [snapshot]
     }
 
     func snapshot() async throws -> WindowRegistrySnapshot {
-        snapshotValue
+        guard snapshots.isEmpty == false else {
+            return WindowRegistrySnapshot(isAccessibilityTrusted: false)
+        }
+
+        if snapshots.count > 1 {
+            return snapshots.removeFirst()
+        }
+
+        return snapshots[0]
     }
 
     func focusedWindowCandidate() async throws -> WindowCandidate? {
-        focusedCandidate
+        if focusedCandidates.isEmpty == false {
+            let nextCandidate = focusedCandidates.count > 1 ? focusedCandidates.removeFirst() : focusedCandidates[0]
+            focusedCandidate = nextCandidate
+        }
+
+        return focusedCandidate
     }
 
     func setWindowFrame(processID: Int, windowID: Int?, to frame: RectValue) async throws {

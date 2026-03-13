@@ -71,6 +71,186 @@ func workspaceSessionResizesSelectedSlotWidthPolicy() async {
 
 @MainActor
 @Test
+func workspaceSessionRefreshSlotWidthUsesObservedPixelsAndGeometryOrigin() async {
+    let tempURL = URL(fileURLWithPath: NSTemporaryDirectory())
+        .appendingPathComponent("NexusWorkspaceRefreshWidthTests-\(UUID().uuidString)", isDirectory: true)
+    let store = JSONWorkspaceStore(baseDirectoryURL: tempURL)
+    let slot = Slot(
+        id: "editor",
+        workspaceID: "workspace",
+        kind: .externalWindow,
+        label: "Editor",
+        widthPolicy: SizePolicy(mode: .fraction, value: 0.4, minimum: 320),
+        layoutRole: .primary
+    )
+    let workspace = Workspace(
+        id: "workspace",
+        name: "Refresh Width",
+        activeSlotID: "editor",
+        slotOrder: ["editor"],
+        slots: [slot]
+    )
+    let session = WorkspaceSession(store: store)
+
+    await session.load(seedWorkspaces: [workspace])
+    let changed = session.refreshSlotWidth(
+        workspaceID: "workspace",
+        slotID: "editor",
+        observedWidth: 540,
+        viewportWidth: 1200,
+        persist: false
+    )
+
+    let refreshedSlot = session.selectedWorkspace?.slots.first
+    #expect(changed)
+    #expect(refreshedSlot?.widthPolicy.value == 0.45)
+    #expect(session.lastSelectionOrigin == .nativeGeometrySync)
+}
+
+@MainActor
+@Test
+func workspaceSessionRefreshSlotWidthClampsToMinimumAndMaximum() async {
+    let tempURL = URL(fileURLWithPath: NSTemporaryDirectory())
+        .appendingPathComponent("NexusWorkspaceRefreshClampTests-\(UUID().uuidString)", isDirectory: true)
+    let store = JSONWorkspaceStore(baseDirectoryURL: tempURL)
+    let minimumSlot = Slot(
+        id: "minimum",
+        workspaceID: "workspace",
+        kind: .externalWindow,
+        label: "Minimum",
+        widthPolicy: SizePolicy(mode: .fraction, value: 0.5, minimum: 500),
+        layoutRole: .primary
+    )
+    let maximumSlot = Slot(
+        id: "maximum",
+        workspaceID: "workspace",
+        kind: .externalWindow,
+        label: "Maximum",
+        widthPolicy: SizePolicy(mode: .fraction, value: 0.5, minimum: 320, maximum: 800),
+        layoutRole: .secondary
+    )
+    let workspace = Workspace(
+        id: "workspace",
+        name: "Clamp Width",
+        activeSlotID: minimumSlot.id,
+        slotOrder: [minimumSlot.id, maximumSlot.id],
+        slots: [minimumSlot, maximumSlot]
+    )
+    let session = WorkspaceSession(store: store)
+
+    await session.load(seedWorkspaces: [workspace])
+    let minimumChanged = session.refreshSlotWidth(
+        workspaceID: "workspace",
+        slotID: minimumSlot.id,
+        observedWidth: 420,
+        viewportWidth: 1200,
+        persist: false
+    )
+    let maximumChanged = session.refreshSlotWidth(
+        workspaceID: "workspace",
+        slotID: maximumSlot.id,
+        observedWidth: 960,
+        viewportWidth: 1200,
+        persist: false
+    )
+
+    let updatedWorkspace = session.selectedWorkspace
+    let updatedMinimum = updatedWorkspace?.slots.first(where: { $0.id == minimumSlot.id })
+    let updatedMaximum = updatedWorkspace?.slots.first(where: { $0.id == maximumSlot.id })
+
+    #expect(minimumChanged)
+    #expect(maximumChanged)
+    #expect(updatedMinimum?.widthPolicy.value == (500.0 / 1200.0))
+    #expect(updatedMaximum?.widthPolicy.value == (800.0 / 1200.0))
+}
+
+@MainActor
+@Test
+func workspaceSessionRefreshSlotWidthNoOpsWhenObservedWidthIsUnchanged() async {
+    let tempURL = URL(fileURLWithPath: NSTemporaryDirectory())
+        .appendingPathComponent("NexusWorkspaceRefreshNoOpTests-\(UUID().uuidString)", isDirectory: true)
+    let store = JSONWorkspaceStore(baseDirectoryURL: tempURL)
+    let slot = Slot(
+        id: "editor",
+        workspaceID: "workspace",
+        kind: .externalWindow,
+        label: "Editor",
+        widthPolicy: SizePolicy(mode: .fraction, value: 0.45, minimum: 320),
+        layoutRole: .primary
+    )
+    let workspace = Workspace(
+        id: "workspace",
+        name: "No Op Width",
+        activeSlotID: slot.id,
+        slotOrder: [slot.id],
+        slots: [slot]
+    )
+    let session = WorkspaceSession(store: store)
+
+    await session.load(seedWorkspaces: [workspace])
+    let changed = session.refreshSlotWidth(
+        workspaceID: workspace.id,
+        slotID: slot.id,
+        observedWidth: 540,
+        viewportWidth: 1200,
+        persist: false
+    )
+
+    #expect(changed == false)
+    #expect(session.selectedWorkspace?.slots.first?.widthPolicy.value == 0.45)
+    #expect(session.lastSelectionOrigin == .nexusNavigation)
+}
+
+@MainActor
+@Test
+func workspaceSessionRefreshSlotWidthUpdatesNonSelectedWorkspace() async {
+    let tempURL = URL(fileURLWithPath: NSTemporaryDirectory())
+        .appendingPathComponent("NexusWorkspaceRefreshTargetedTests-\(UUID().uuidString)", isDirectory: true)
+    let store = JSONWorkspaceStore(baseDirectoryURL: tempURL)
+    let apiSlot = Slot(
+        id: "api-editor",
+        workspaceID: "api",
+        kind: .externalWindow,
+        label: "Editor",
+        widthPolicy: SizePolicy(mode: .fraction, value: 0.5),
+        layoutRole: .primary
+    )
+    let uiSlot = Slot(
+        id: "ui-browser",
+        workspaceID: "ui",
+        kind: .externalWindow,
+        label: "Browser",
+        widthPolicy: SizePolicy(mode: .fraction, value: 0.4),
+        layoutRole: .primary
+    )
+    let session = WorkspaceSession(store: store)
+
+    await session.load(seedWorkspaces: [
+        Workspace(id: "api", name: "API", activeSlotID: apiSlot.id, slotOrder: [apiSlot.id], slots: [apiSlot]),
+        Workspace(id: "ui", name: "UI", activeSlotID: uiSlot.id, slotOrder: [uiSlot.id], slots: [uiSlot]),
+    ])
+
+    let changed = session.refreshSlotWidth(
+        workspaceID: "ui",
+        slotID: uiSlot.id,
+        observedWidth: 660,
+        viewportWidth: 1200,
+        persist: false
+    )
+
+    let updatedUISlot = session.workspaces
+        .first(where: { $0.id == "ui" })?
+        .slots
+        .first(where: { $0.id == uiSlot.id })
+
+    #expect(changed)
+    #expect(session.selectedWorkspaceID == "api")
+    #expect(updatedUISlot?.widthPolicy.value == 0.55)
+    #expect(session.lastSelectionOrigin == .nativeGeometrySync)
+}
+
+@MainActor
+@Test
 func workspaceSessionSelectsNeighborSlotsDeterministically() async {
     let tempURL = URL(fileURLWithPath: NSTemporaryDirectory())
         .appendingPathComponent("NexusWorkspaceNavigationTests-\(UUID().uuidString)", isDirectory: true)
