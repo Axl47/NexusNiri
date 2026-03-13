@@ -40,12 +40,28 @@ public actor AXWindowRegistry: WindowRegistryService, WindowControlling {
         guard AXIsProcessTrusted() else { return nil }
 
         let systemWideElement = AXUIElementCreateSystemWide()
+        if let focusedUIElement = focusedUIElement(for: systemWideElement),
+           let focusedWindow = containingWindowElement(for: focusedUIElement) ?? focusedUIElementCandidateWindow(from: focusedUIElement) {
+            var processIdentifier: pid_t = 0
+            let pidError = AXUIElementGetPid(focusedWindow, &processIdentifier)
+
+            if pidError == .success,
+               let application = NSRunningApplication(processIdentifier: processIdentifier) {
+                return candidate(
+                    for: focusedWindow,
+                    in: application,
+                    bundleID: application.bundleIdentifier,
+                    isFocused: true
+                )
+            }
+        }
+
         guard let focusedApplicationValue = copyAttributeValue(
             for: systemWideElement,
             attribute: kAXFocusedApplicationAttribute as CFString
         ),
         CFGetTypeID(focusedApplicationValue) == AXUIElementGetTypeID() else {
-            return nil
+            return fallbackFocusedWindowCandidate()
         }
 
         let applicationElement = unsafeDowncast(focusedApplicationValue, to: AXUIElement.self)
@@ -53,11 +69,15 @@ public actor AXWindowRegistry: WindowRegistryService, WindowControlling {
         let pidError = AXUIElementGetPid(applicationElement, &processIdentifier)
         guard pidError == .success,
               let application = NSRunningApplication(processIdentifier: processIdentifier) else {
-            return nil
+            return fallbackFocusedWindowCandidate()
         }
 
-        guard let focusedWindow = focusedWindowElement(for: applicationElement) else {
-            return nil
+        let focusedWindow = focusedWindowElement(for: applicationElement)
+            ?? mainWindowElement(for: applicationElement)
+            ?? preferredStandardWindow(from: windowElements(for: applicationElement))
+
+        guard let focusedWindow else {
+            return fallbackFocusedWindowCandidate()
         }
 
         return candidate(
@@ -66,6 +86,43 @@ public actor AXWindowRegistry: WindowRegistryService, WindowControlling {
             bundleID: application.bundleIdentifier,
             isFocused: true
         )
+    }
+
+    private func fallbackFocusedWindowCandidate() -> WindowCandidate? {
+        if let frontmostApplication = NSWorkspace.shared.frontmostApplication {
+            let applicationElement = AXUIElementCreateApplication(frontmostApplication.processIdentifier)
+            let frontmostWindow = focusedWindowElement(for: applicationElement)
+                ?? mainWindowElement(for: applicationElement)
+                ?? preferredStandardWindow(from: windowElements(for: applicationElement))
+
+            if let frontmostWindow {
+                return candidate(
+                    for: frontmostWindow,
+                    in: frontmostApplication,
+                    bundleID: frontmostApplication.bundleIdentifier,
+                    isFocused: true
+                )
+            }
+
+            let appWindows = accessibilityWindows().filter {
+                $0.processID == Int(frontmostApplication.processIdentifier)
+            }
+
+            if let focused = appWindows.first(where: { $0.isFocused }) {
+                return focused
+            }
+
+            if let visible = appWindows.first(where: { $0.isMinimized == false }) {
+                return visible
+            }
+        }
+
+        let axWindows = accessibilityWindows()
+        if let focused = axWindows.first(where: { $0.isFocused }) {
+            return focused
+        }
+
+        return nil
     }
 
     public func setWindowFrame(processID: Int, windowID: Int?, to frame: RectValue) async throws {
@@ -304,11 +361,84 @@ public actor AXWindowRegistry: WindowRegistryService, WindowControlling {
         return unsafeDowncast(focusedWindow, to: AXUIElement.self)
     }
 
+    private func focusedUIElement(for systemWideElement: AXUIElement) -> AXUIElement? {
+        guard let focusedElement = copyAttributeValue(
+            for: systemWideElement,
+            attribute: kAXFocusedUIElementAttribute as CFString
+        ),
+        CFGetTypeID(focusedElement) == AXUIElementGetTypeID() else {
+            return nil
+        }
+
+        return unsafeDowncast(focusedElement, to: AXUIElement.self)
+    }
+
+    private func mainWindowElement(for applicationElement: AXUIElement) -> AXUIElement? {
+        guard let mainWindow = copyAttributeValue(for: applicationElement, attribute: kAXMainWindowAttribute as CFString),
+              CFGetTypeID(mainWindow) == AXUIElementGetTypeID() else {
+            return nil
+        }
+        return unsafeDowncast(mainWindow, to: AXUIElement.self)
+    }
+
     private func isPrimaryStandardWindow(_ element: AXUIElement) -> Bool {
         stringValue(for: element, attribute: kAXRoleAttribute as CFString) == (kAXWindowRole as String) &&
         stringValue(for: element, attribute: kAXSubroleAttribute as CFString) == (kAXStandardWindowSubrole as String) &&
         boolValue(for: element, attribute: kAXMainAttribute as CFString) == true &&
         boolValue(for: element, attribute: kAXMinimizedAttribute as CFString) != true
+    }
+
+    private func containingWindowElement(for element: AXUIElement) -> AXUIElement? {
+        var currentElement: AXUIElement? = element
+        var visited = Set<CFHashCode>()
+
+        while let currentElementValue = currentElement {
+            let identifier = CFHash(currentElementValue)
+            guard visited.insert(identifier).inserted else {
+                return nil
+            }
+
+            if isWindowLikeElement(currentElementValue) {
+                return currentElementValue
+            }
+
+            guard let parent = parentElement(for: currentElementValue) else {
+                return nil
+            }
+
+            currentElement = parent
+        }
+
+        return nil
+    }
+
+    private func focusedUIElementCandidateWindow(from element: AXUIElement) -> AXUIElement? {
+        guard isWindowLikeElement(element) else {
+            return nil
+        }
+        return element
+    }
+
+    private func parentElement(for element: AXUIElement) -> AXUIElement? {
+        guard let parent = copyAttributeValue(for: element, attribute: kAXParentAttribute as CFString),
+              CFGetTypeID(parent) == AXUIElementGetTypeID() else {
+            return nil
+        }
+
+        return unsafeDowncast(parent, to: AXUIElement.self)
+    }
+
+    private func isWindowLikeElement(_ element: AXUIElement) -> Bool {
+        guard let role = stringValue(for: element, attribute: kAXRoleAttribute as CFString) else {
+            return false
+        }
+
+        switch role {
+        case String(kAXWindowRole), String(kAXSheetRole):
+            return true
+        default:
+            return false
+        }
     }
 
     private func preferredStandardWindow(from windows: [AXUIElement]) -> AXUIElement? {

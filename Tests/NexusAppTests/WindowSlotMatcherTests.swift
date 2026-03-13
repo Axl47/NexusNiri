@@ -200,3 +200,69 @@ func windowSlotMatcherCanonicalizesLegacyTetherBundleIDs() {
 
     #expect(match?.slotID == "tether")
 }
+
+@Test
+func windowSlotMatcherCanonicalizesTetherDevBundleIDs() {
+    let matcher = WindowSlotMatcher()
+    let slot = Slot(
+        id: "tether",
+        workspaceID: "workspace",
+        kind: .hybrid,
+        label: "Tether",
+        appBinding: AppBinding(bundleID: "com.t3tools.tether", titleHints: ["Tether"]),
+        widthPolicy: SizePolicy(mode: .fraction, value: 1),
+        layoutRole: .support
+    )
+    let workspace = Workspace(id: "workspace", name: "Main", activeSlotID: slot.id, slotOrder: [slot.id], slots: [slot])
+
+    let match = matcher.bestSlotMatch(
+        for: WindowCandidate(
+            bundleID: "com.t3tools.tether.dev",
+            appName: "Tether (Dev)",
+            windowTitle: "Tether",
+            processID: 404,
+            windowID: 12,
+            frame: .zero,
+            isFocused: true,
+            source: .accessibility
+        ),
+        in: [workspace],
+        ignoringBundleID: nil,
+        ignoringProcessID: 999
+    )
+
+    #expect(match?.slotID == "tether")
+}
+
+@Test
+func windowSlotMatcherCanonicalizesElectronHelperBundleIDs() {
+    let matcher = WindowSlotMatcher()
+    let slot = Slot(
+        id: "editor",
+        workspaceID: "workspace",
+        kind: .externalWindow,
+        label: "Editor",
+        appBinding: AppBinding(bundleID: "com.microsoft.VSCode"),
+        widthPolicy: SizePolicy(mode: .fraction, value: 1),
+        layoutRole: .primary
+    )
+    let workspace = Workspace(id: "workspace", name: "Main", activeSlotID: slot.id, slotOrder: [slot.id], slots: [slot])
+
+    let match = matcher.bestSlotMatch(
+        for: WindowCandidate(
+            bundleID: "com.microsoft.VSCode.helper",
+            appName: "Code Helper",
+            windowTitle: "main.swift",
+            processID: 808,
+            windowID: 42,
+            frame: .zero,
+            isFocused: true,
+            source: .accessibility
+        ),
+        in: [workspace],
+        ignoringBundleID: nil,
+        ignoringProcessID: 999
+    )
+
+    #expect(match?.slotID == "editor")
+}

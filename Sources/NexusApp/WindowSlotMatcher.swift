@@ -183,8 +183,24 @@ struct WindowSlotMatcher {
     }
 
     private func canonicalBundleID(_ bundleID: String?) -> String? {
+        guard var bundleID = bundleID?.lowercased() else {
+            return nil
+        }
+
+        if let helperRange = bundleID.range(of: ".helper"),
+           helperRange.lowerBound != bundleID.startIndex {
+            let suffix = bundleID[helperRange.lowerBound...]
+            if suffix == ".helper" || suffix.hasPrefix(".helper.") {
+                bundleID = String(bundleID[..<helperRange.lowerBound])
+            }
+        }
+
         switch bundleID {
-        case "dev.tether.desktop":
+        case "dev.tether.desktop",
+             "com.t3tools.tether.dev",
+             "com.t3tools.tether-dev":
+            return "com.t3tools.tether"
+        case let bundleID where bundleID.hasPrefix("dev.tether.desktop."):
             return "com.t3tools.tether"
         default:
             return bundleID

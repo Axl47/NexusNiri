@@ -513,6 +513,7 @@ func appEnvironmentRefreshesRuntimeBindingsAfterChoreography() async throws {
     environment.updateStageViewportFrame(CGRect(x: 100, y: 200, width: 1200, height: 720))
     await environment.applyChoreography(for: workspace, layout: layout)
     try await waitForMinimumApplyCount(1, service: choreographyService)
+    try await waitForRuntimeBinding(processID: 202, windowID: 7, in: environment.session, slotID: "browser")
 
     #expect(environment.session.selectedWorkspace?.slots.first?.runtimeBinding?.processID == 202)
     #expect(environment.session.selectedWorkspace?.slots.first?.runtimeBinding?.windowID == 7)
@@ -768,6 +769,27 @@ private func waitForStatusContaining(_ fragment: String, in session: WorkspaceSe
     }
 
     Issue.record("Timed out waiting for status containing '\(fragment)'; saw '\(session.statusMessage)'.")
+    throw TestFailure()
+}
+
+@MainActor
+private func waitForRuntimeBinding(
+    processID: Int,
+    windowID: Int?,
+    in session: WorkspaceSession,
+    slotID: String
+) async throws {
+    for _ in 0..<50 {
+        if let binding = session.selectedWorkspace?.slots.first(where: { $0.id == slotID })?.runtimeBinding,
+           binding.processID == processID,
+           binding.windowID == windowID {
+            return
+        }
+        await Task.yield()
+        try await Task.sleep(nanoseconds: 10_000_000)
+    }
+
+    Issue.record("Timed out waiting for runtime binding \(processID)/\(windowID.map(String.init) ?? "nil") on slot \(slotID).")
     throw TestFailure()
 }
 
