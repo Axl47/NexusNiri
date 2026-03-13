@@ -13,7 +13,8 @@ protocol WindowChoreographing: Sendable {
         workspace: Workspace,
         previousWorkspace: Workspace?,
         layout: LayoutPlan,
-        stageViewportFrame: CGRect?
+        stageViewportFrame: CGRect?,
+        focusPolicy: ChoreographyFocusPolicy
     ) async -> ChoreographyOutcome
 
     func revealAll(
@@ -32,11 +33,17 @@ enum ChoreographyBlockReason: Equatable, Sendable {
     case accessibilityDenied
 }
 
+enum ChoreographyFocusPolicy: Equatable, Sendable {
+    case focusActiveSlot
+    case preserveExternalFocus
+}
+
 @MainActor
 final class WindowChoreographyService: WindowChoreographing {
     private let windowRegistry: any WindowRegistryService & WindowControlling
     private let visibilityCoordinator: VisibilityCoordinator
     private let adapterRegistry: AdapterRegistry
+    private let windowSlotMatcher = WindowSlotMatcher()
 
     private let logger = Logger(subsystem: "dev.nexusniri.Nexus", category: "choreography")
 
@@ -54,7 +61,8 @@ final class WindowChoreographyService: WindowChoreographing {
         workspace: Workspace,
         previousWorkspace: Workspace?,
         layout: LayoutPlan,
-        stageViewportFrame: CGRect?
+        stageViewportFrame: CGRect?,
+        focusPolicy: ChoreographyFocusPolicy
     ) async -> ChoreographyOutcome {
         do {
             let snapshot = try await windowRegistry.snapshot()
@@ -76,7 +84,8 @@ final class WindowChoreographyService: WindowChoreographing {
                 stageViewportFrame: stageViewportFrame,
                 currentWorkspace: workspace,
                 previousWorkspace: previousWorkspace,
-                windows: snapshot.windows
+                windows: snapshot.windows,
+                focusPolicy: focusPolicy
             )
             return blockedReason.map(ChoreographyOutcome.blocked) ?? .applied
         } catch {
@@ -96,7 +105,8 @@ final class WindowChoreographyService: WindowChoreographing {
                 stageViewportFrame: stageViewportFrame,
                 currentWorkspace: currentWorkspace,
                 previousWorkspace: previousWorkspace,
-                windows: snapshot.windows
+                windows: snapshot.windows,
+                focusPolicy: .preserveExternalFocus
             )
         } catch {
             logger.error("Failed to reveal all windows: \(error.localizedDescription, privacy: .public)")
@@ -109,7 +119,8 @@ final class WindowChoreographyService: WindowChoreographing {
         stageViewportFrame: CGRect?,
         currentWorkspace: Workspace?,
         previousWorkspace: Workspace?,
-        windows: [WindowCandidate]
+        windows: [WindowCandidate],
+        focusPolicy: ChoreographyFocusPolicy
     ) async {
         var focusTarget: FocusTarget?
 
@@ -139,7 +150,7 @@ final class WindowChoreographyService: WindowChoreographing {
             }
         }
 
-        if let focusTarget {
+        if focusPolicy == .focusActiveSlot, let focusTarget {
             await focus(focusTarget)
         }
     }
@@ -404,50 +415,11 @@ final class WindowChoreographyService: WindowChoreographing {
         action: VisibilityAction,
         windows: [WindowCandidate]
     ) -> WindowCandidate? {
-        let bundleID = canonicalBundleID(slot.appBinding?.bundleID)
-        let titleHints = slot.appBinding?.titleHints ?? []
-
-        if let windowID = action.windowID,
-           let exactMatch = windows.first(where: { $0.windowID == windowID && (bundleID == nil || canonicalBundleID($0.bundleID) == bundleID) }) {
-            return exactMatch
-        }
-
-        let candidates = windows.filter { candidate in
-            if let bundleID {
-                return canonicalBundleID(candidate.bundleID) == bundleID
-            }
-            return true
-        }
-
-        return candidates.max { lhs, rhs in
-            candidateScore(lhs, slot: slot, titleHints: titleHints) < candidateScore(rhs, slot: slot, titleHints: titleHints)
-        }
-    }
-
-    private func candidateScore(
-        _ candidate: WindowCandidate,
-        slot: Slot,
-        titleHints: [String]
-    ) -> Int {
-        var score = 0
-
-        if candidate.source == .accessibility {
-            score += 3
-        }
-        if candidate.isFocused {
-            score += 2
-        }
-        if slot.runtimeBinding?.windowID == candidate.windowID {
-            score += 6
-        }
-        if slot.runtimeBinding?.processID == candidate.processID {
-            score += 4
-        }
-        if titleHints.contains(where: { candidate.windowTitle.localizedCaseInsensitiveContains($0) }) {
-            score += 5
-        }
-
-        return score
+        windowSlotMatcher.bestCandidate(
+            for: slot,
+            preferredWindowID: action.windowID,
+            in: windows
+        )
     }
 
     private func shouldMinimizeWhenParking(slot: Slot, targetFrame: RectValue) -> Bool {
@@ -456,15 +428,6 @@ final class WindowChoreographyService: WindowChoreographing {
         }
 
         return targetFrame.width <= 24 || targetFrame.height <= 280
-    }
-
-    private func canonicalBundleID(_ bundleID: String?) -> String? {
-        switch bundleID {
-        case "dev.tether.desktop":
-            return "com.t3tools.tether"
-        default:
-            return bundleID
-        }
     }
 
     private func resolvedStageFrame(

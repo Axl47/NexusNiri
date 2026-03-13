@@ -15,6 +15,9 @@ import WorkspaceEngine
 @MainActor
 @Observable
 final class AppEnvironment {
+    private static let focusedWindowPollIntervalNanoseconds: UInt64 = 250_000_000
+    private static let focusSyncSuppressionDuration: TimeInterval = 0.4
+
     let workspaceStore: JSONWorkspaceStore
     let session: WorkspaceSession
     let windowRegistry: any WindowRegistryService
@@ -35,6 +38,10 @@ final class AppEnvironment {
     private var stageViewportFrame: CGRect?
     private var latestLayoutContext: LayoutContext?
     private var appActivationObserver: NSObjectProtocol?
+    private let windowSlotMatcher = WindowSlotMatcher()
+    private var focusedWindowMonitorTask: Task<Void, Never>?
+    private var lastFocusedWindowFingerprint: FocusedWindowFingerprint?
+    private var suppressedFocusSyncUntil: Date?
 
     init(
         workspaceStore: JSONWorkspaceStore = JSONWorkspaceStore(),
@@ -89,6 +96,7 @@ final class AppEnvironment {
 
         await session.load(seedWorkspaces: AppBootstrap.defaultWorkspaces())
         await refreshDiagnostics()
+        startFocusedWindowMonitor()
         session.refreshStatus("Nexus shell ready.")
     }
 
@@ -117,7 +125,8 @@ final class AppEnvironment {
                 enqueueChoreographyRequest(
                     workspace: latestLayoutContext.workspace,
                     layout: latestLayoutContext.layout,
-                    stageViewportFrame: stageViewportFrame
+                    stageViewportFrame: stageViewportFrame,
+                    focusPolicy: focusPolicy(for: session.lastSelectionOrigin)
                 )
             }
         }
@@ -139,7 +148,12 @@ final class AppEnvironment {
     func applyChoreography(for workspace: Workspace, layout: LayoutPlan) async {
         latestLayoutContext = LayoutContext(workspace: workspace, layout: layout)
         guard stageViewportFrame != nil || layout.visibleSlotIDs.isEmpty else { return }
-        enqueueChoreographyRequest(workspace: workspace, layout: layout, stageViewportFrame: stageViewportFrame)
+        enqueueChoreographyRequest(
+            workspace: workspace,
+            layout: layout,
+            stageViewportFrame: stageViewportFrame,
+            focusPolicy: focusPolicy(for: session.lastSelectionOrigin)
+        )
     }
 
     func revealAll() {
@@ -163,7 +177,8 @@ final class AppEnvironment {
         enqueueChoreographyRequest(
             workspace: latestLayoutContext.workspace,
             layout: latestLayoutContext.layout,
-            stageViewportFrame: integralFrame
+            stageViewportFrame: integralFrame,
+            focusPolicy: focusPolicy(for: session.lastSelectionOrigin)
         )
     }
 
@@ -188,16 +203,26 @@ final class AppEnvironment {
             let previousWorkspace = lastChoreographedWorkspace
             lastTransitionSourceWorkspace = previousWorkspace
 
+            if request.focusPolicy == .focusActiveSlot {
+                suppressFocusedWindowSync()
+            }
+
             let outcome = await choreographyService.apply(
                 workspace: request.workspace,
                 previousWorkspace: previousWorkspace,
                 layout: request.layout,
-                stageViewportFrame: stageViewportFrame
+                stageViewportFrame: stageViewportFrame,
+                focusPolicy: request.focusPolicy
             )
+
+            if request.focusPolicy == .focusActiveSlot {
+                suppressFocusedWindowSync()
+            }
 
             latestLayoutContext = LayoutContext(workspace: request.workspace, layout: request.layout)
             lastChoreographySignature = request.signature
             lastChoreographedWorkspace = request.workspace
+            await refreshRuntimeBindings(for: request.workspace)
             await refreshDiagnostics()
 
             switch outcome {
@@ -256,7 +281,8 @@ final class AppEnvironment {
     private func enqueueChoreographyRequest(
         workspace: Workspace,
         layout: LayoutPlan,
-        stageViewportFrame: CGRect?
+        stageViewportFrame: CGRect?,
+        focusPolicy: ChoreographyFocusPolicy
     ) {
         let signature = choreographySignature(for: workspace, layout: layout, stageViewportFrame: stageViewportFrame)
         guard signature != lastChoreographySignature else { return }
@@ -264,7 +290,8 @@ final class AppEnvironment {
         pendingChoreographyRequest = ChoreographyRequest(
             workspace: workspace,
             layout: layout,
-            signature: signature
+            signature: signature,
+            focusPolicy: focusPolicy
         )
         guard choreographyProcessorTask == nil else { return }
 
@@ -287,6 +314,98 @@ final class AppEnvironment {
         }
 
         return "Window choreography blocked. Grant Accessibility to the running Nexus.app."
+    }
+
+    private func refreshRuntimeBindings(for workspace: Workspace) async {
+        guard let snapshot = try? await windowRegistry.snapshot(),
+              snapshot.windows.isEmpty == false else {
+            return
+        }
+
+        for slot in workspace.orderedSlots {
+            guard let match = windowSlotMatcher.bestCandidateMatch(
+                for: slot,
+                preferredWindowID: slot.runtimeBinding?.windowID,
+                in: snapshot.windows
+            ) else {
+                continue
+            }
+
+            _ = session.refreshRuntimeBinding(
+                workspaceID: workspace.id,
+                slotID: slot.id,
+                candidate: match.candidate,
+                matchConfidence: match.confidence
+            )
+        }
+    }
+
+    func handleFocusedWindowCandidate(_ candidate: WindowCandidate) async {
+        let fingerprint = FocusedWindowFingerprint(candidate: candidate)
+        guard fingerprint != lastFocusedWindowFingerprint else { return }
+        lastFocusedWindowFingerprint = fingerprint
+
+        guard candidate.isMinimized == false else { return }
+        guard isFocusSyncSuppressed == false else { return }
+
+        guard let match = windowSlotMatcher.bestSlotMatch(
+            for: candidate,
+            in: session.workspaces,
+            ignoringBundleID: Bundle.main.bundleIdentifier,
+            ignoringProcessID: Int(ProcessInfo.processInfo.processIdentifier)
+        ) else {
+            return
+        }
+
+        _ = session.syncFocusedWindowMatch(
+            workspaceID: match.workspaceID,
+            slotID: match.slotID,
+            candidate: candidate,
+            matchConfidence: match.confidence
+        )
+    }
+
+    private var isAccessibilityTrusted: Bool {
+        diagnosticsSnapshot.permissions.contains {
+            $0.kind == .accessibility && $0.state == .granted
+        }
+    }
+
+    private var isFocusSyncSuppressed: Bool {
+        guard let suppressedFocusSyncUntil else { return false }
+        return suppressedFocusSyncUntil > .now
+    }
+
+    private func suppressFocusedWindowSync() {
+        suppressedFocusSyncUntil = Date().addingTimeInterval(Self.focusSyncSuppressionDuration)
+    }
+
+    private func focusPolicy(for origin: SelectionOrigin) -> ChoreographyFocusPolicy {
+        switch origin {
+        case .nexusNavigation:
+            return .focusActiveSlot
+        case .nativeFocusSync:
+            return .preserveExternalFocus
+        }
+    }
+
+    private func startFocusedWindowMonitor() {
+        guard focusedWindowMonitorTask == nil else { return }
+
+        focusedWindowMonitorTask = Task { @MainActor [weak self] in
+            while let self, Task.isCancelled == false {
+                if self.isAccessibilityTrusted,
+                   let candidate = try? await self.windowRegistry.focusedWindowCandidate() {
+                    await self.handleFocusedWindowCandidate(candidate)
+                }
+
+                do {
+                    try await Task.sleep(nanoseconds: Self.focusedWindowPollIntervalNanoseconds)
+                } catch {
+                    break
+                }
+            }
+        }
     }
 }
 
@@ -319,11 +438,26 @@ private struct ChoreographyRequest {
     let workspace: Workspace
     let layout: LayoutPlan
     let signature: ChoreographySignature
+    let focusPolicy: ChoreographyFocusPolicy
 }
 
 private struct LayoutContext {
     let workspace: Workspace
     let layout: LayoutPlan
+}
+
+private struct FocusedWindowFingerprint: Equatable {
+    let processID: Int
+    let windowID: Int?
+    let bundleID: String?
+    let windowTitle: String
+
+    init(candidate: WindowCandidate) {
+        processID = candidate.processID
+        windowID = candidate.windowID
+        bundleID = candidate.bundleID
+        windowTitle = candidate.windowTitle
+    }
 }
 
 private extension Array {

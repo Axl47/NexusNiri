@@ -30,6 +30,7 @@ That command should build the Swift package, bundle the executable, sign it with
 - [x] (2026-03-13 03:31Z) Implement visible-slot native geometry conformance so every `LayoutPlan.visibleSlotIDs` window stages into its slot rect, the active slot regains focus after the geometry pass, and viewport moves reapply the latest staged layout.
 - [x] (2026-03-13 05:42Z) Move local TCC-sensitive development off disposable ad-hoc bundles to stable signing defaults, add runtime build identity diagnostics, and explicitly block generic choreography when Accessibility trust is denied.
 - [x] (2026-03-13 16:45Z) Add a checked-in XcodeGen project so developers can inspect signing and capabilities in Xcode while keeping the same stable installed-app identity used by the CLI flow.
+- [x] (2026-03-13 17:45Z) Shift orchestration to follow the currently focused native window, reusing one shared slot matcher for forward staging and reverse selection sync while preserving external focus on native click-driven updates.
 - [ ] Harden window rematching and runtime binding persistence across live multi-workspace switching against the registry.
 - [ ] Implement the first fully working deep Tether restore flow once the sibling app exposes the `nexus.*` contract.
 
@@ -63,6 +64,8 @@ That command should build the Swift package, bundle the executable, sign it with
   Evidence: local debugging showed the app could still activate targets while generic AX window mutation stayed blocked; moving to a stable signing identity and stable installed launch path resolved the mismatch between TCC trust expectations and runtime process identity.
 - Observation: SwiftPM alone is not enough when you need to inspect signing, capabilities, and entitlements interactively; an Xcode project is still the practical debugging surface for local TCC issues.
   Evidence: local debugging on 2026-03-13 required checking signing behavior in an IDE-friendly app target, so the repo now carries an XcodeGen spec and checked-in `.xcodeproj` alongside the package workflow.
+- Observation: Native click-driven navigation becomes much more stable when Nexus follows the system-focused window and skips the usual final app refocus on reverse-sync-triggered transitions.
+  Evidence: local implementation and tests on 2026-03-13 showed that a focused-window polling loop plus a short suppression window removed the immediate “Nexus refocused the app I just clicked” feedback loop while keeping Nexus-initiated navigation unchanged.
 
 ## Decision Log
 
@@ -102,6 +105,9 @@ That command should build the Swift package, bundle the executable, sign it with
 - Decision: Check in an XcodeGen-backed `Nexus.xcodeproj` and keep `project.yml` as the editable source of truth.
   Rationale: contributors still need Xcode for certificate selection, entitlement inspection, and signing verification, but the project structure should stay reproducible from the package target graph rather than becoming a hand-edited parallel build system.
   Date/Author: 2026-03-13 / Codex
+- Decision: Make the focused native window a first-class selection source and thread an explicit choreography focus policy through the app environment.
+  Rationale: this lets Nexus follow real app clicks, auto-switch workspaces for matched windows, and restage geometry without stealing focus back from the external window the user already selected.
+  Date/Author: 2026-03-13 / Codex
 
 ## Outcomes & Retrospective
 
@@ -112,6 +118,8 @@ The latest shell slice replaces the old horizontally scrollable card prototype w
 This revision also closes the largest diagnostics and trust gap: local development now defaults to stable signing and a stable installed app path, diagnostics surfaces runtime build identity details, and generic window choreography reports an explicit blocked state when Accessibility is denied instead of silently degrading into app-only activation. Transparent embedding, deeper runtime rematching, and adapter-specific restore remain follow-up work.
 
 The repo also now carries a reproducible Xcode workflow for signing-sensitive debugging. `project.yml` generates `Nexus.xcodeproj`, the app target builds `Nexus.app` with the checked-in entitlements and Info.plist, and signed Xcode runs install back into the same stable app path used by the CLI scripts so TCC debugging stays consistent across both workflows.
+
+The latest orchestration slice also inverts the focus authority. `AppEnvironment` now polls the system-focused native window, maps it back to a slot through the shared `WindowSlotMatcher`, and updates the workspace session with origin `.nativeFocusSync`. Reverse-sync-triggered choreography preserves the already-focused external window, while Nexus-driven slot or workspace changes still use the normal active-slot focus handoff with a short suppression window to avoid immediate echo from the poller.
 
 ## Context and Orientation
 
@@ -164,6 +172,8 @@ The expected Xcode flow is:
 Run `rtk swift test` and expect all package tests to pass. Then run `rtk proxy bash ./scripts/dev-run.sh` and expect the installed `~/Applications/Nexus.app` to launch (or `NEXUS_DEV_INSTALL_PATH` override). The sidebar should show numbered workspaces, the topbar should show the active workspace and slot metadata, the strip should center the focused slot, and diagnostics should now show both permission states and runtime build identity details.
 
 If Accessibility is denied, diagnostics should explicitly report that generic external-window choreography is blocked. With Accessibility granted for the installed app identity, switching slots or workspaces should stage every visible slot into its rect, park only offstage slots, and keep the active slot frontmost after the transition. Moving or resizing the Nexus window should reapply the staged native window frames. Quitting and relaunching should preserve workspace additions, renames, and active-slot selection, though runtime rematching and adapter-specific restore remain follow-up work.
+
+With the reverse-focus slice enabled, clicking a matched native window should also update the active Nexus slot without forcing that app to refocus again. Clicking a matched window in another workspace should switch Nexus to that workspace, while unmanaged windows should not disturb the current selection.
 
 ## Idempotence and Recovery
 

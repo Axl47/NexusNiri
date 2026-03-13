@@ -2,6 +2,11 @@ import Foundation
 import Observation
 import SharedTypes
 
+public enum SelectionOrigin: Sendable {
+    case nexusNavigation
+    case nativeFocusSync
+}
+
 @MainActor
 @Observable
 public final class WorkspaceSession {
@@ -11,6 +16,7 @@ public final class WorkspaceSession {
     public private(set) var adapterStates: [AdapterState] = []
     public private(set) var snapshots: [SessionSnapshot] = []
     public var statusMessage: String = "Bootstrapping Nexus..."
+    @ObservationIgnored public private(set) var lastSelectionOrigin: SelectionOrigin = .nexusNavigation
 
     @ObservationIgnored
     private let store: WorkspaceStore
@@ -141,9 +147,18 @@ public final class WorkspaceSession {
     }
 
     public func selectWorkspace(id: String) {
+        selectWorkspace(id: id, origin: .nexusNavigation)
+    }
+
+    public func selectWorkspace(id: String, origin: SelectionOrigin) {
         guard workspaces.contains(where: { $0.id == id }) else { return }
+        lastSelectionOrigin = origin
+
+        let wasSelected = selectedWorkspaceID == id
         selectedWorkspaceID = id
         appendRecent(id)
+        guard wasSelected == false else { return }
+
         statusMessage = "Switched workspace."
         persistSoon()
     }
@@ -172,6 +187,10 @@ public final class WorkspaceSession {
     }
 
     public func selectSlot(id: String) {
+        selectSlot(id: id, origin: .nexusNavigation)
+    }
+
+    public func selectSlot(id: String, origin: SelectionOrigin) {
         guard let workspaceIndex = selectedWorkspace.flatMap({ workspace in
             workspaces.firstIndex(where: { $0.id == workspace.id })
         }) else {
@@ -180,9 +199,17 @@ public final class WorkspaceSession {
 
         guard workspaces[workspaceIndex].slotOrder.contains(id) else { return }
         let slotIndex = workspaces[workspaceIndex].slotOrder.firstIndex(of: id) ?? 0
+        let didChangeSelection =
+            workspaces[workspaceIndex].activeSlotID != id ||
+            workspaces[workspaceIndex].layoutState.activeIndex != slotIndex ||
+            workspaces[workspaceIndex].layoutState.centeredSlotID != id
+
+        lastSelectionOrigin = origin
         workspaces[workspaceIndex].activeSlotID = id
         workspaces[workspaceIndex].layoutState.activeIndex = slotIndex
         workspaces[workspaceIndex].layoutState.centeredSlotID = id
+        guard didChangeSelection else { return }
+
         workspaces[workspaceIndex].updatedAt = .now
         statusMessage = "Focused slot."
         persistSoon()
@@ -247,6 +274,93 @@ public final class WorkspaceSession {
         persistSoon()
     }
 
+    @discardableResult
+    public func syncFocusedWindowMatch(
+        workspaceID: String,
+        slotID: String,
+        candidate: WindowCandidate,
+        matchConfidence: Double
+    ) -> Bool {
+        guard let workspaceIndex = workspaces.firstIndex(where: { $0.id == workspaceID }),
+              let slotIndex = workspaces[workspaceIndex].slots.firstIndex(where: { $0.id == slotID }),
+              let orderedIndex = workspaces[workspaceIndex].slotOrder.firstIndex(of: slotID) else {
+            return false
+        }
+
+        let bindingChanged = runtimeBindingNeedsRefresh(
+            workspaces[workspaceIndex].slots[slotIndex].runtimeBinding,
+            candidate: candidate,
+            matchConfidence: matchConfidence
+        )
+        let selectionChanged =
+            selectedWorkspaceID != workspaceID ||
+            workspaces[workspaceIndex].activeSlotID != slotID ||
+            workspaces[workspaceIndex].layoutState.activeIndex != orderedIndex ||
+            workspaces[workspaceIndex].layoutState.centeredSlotID != slotID
+
+        guard selectionChanged || bindingChanged else {
+            return false
+        }
+
+        lastSelectionOrigin = .nativeFocusSync
+        selectedWorkspaceID = workspaceID
+        appendRecent(workspaceID)
+        workspaces[workspaceIndex].activeSlotID = slotID
+        workspaces[workspaceIndex].layoutState.activeIndex = orderedIndex
+        workspaces[workspaceIndex].layoutState.centeredSlotID = slotID
+
+        if bindingChanged {
+            workspaces[workspaceIndex].slots[slotIndex].runtimeBinding = RuntimeBinding(
+                processID: candidate.processID,
+                windowID: candidate.windowID,
+                matchConfidence: matchConfidence,
+                state: .attached,
+                lastSeenAt: .now
+            )
+            workspaces[workspaceIndex].slots[slotIndex].updatedAt = .now
+        }
+
+        if selectionChanged || bindingChanged {
+            workspaces[workspaceIndex].updatedAt = .now
+            persistSoon()
+        }
+
+        return true
+    }
+
+    @discardableResult
+    public func refreshRuntimeBinding(
+        workspaceID: String,
+        slotID: String,
+        candidate: WindowCandidate,
+        matchConfidence: Double
+    ) -> Bool {
+        guard let workspaceIndex = workspaces.firstIndex(where: { $0.id == workspaceID }),
+              let slotIndex = workspaces[workspaceIndex].slots.firstIndex(where: { $0.id == slotID }) else {
+            return false
+        }
+
+        guard runtimeBindingNeedsRefresh(
+            workspaces[workspaceIndex].slots[slotIndex].runtimeBinding,
+            candidate: candidate,
+            matchConfidence: matchConfidence
+        ) else {
+            return false
+        }
+
+        workspaces[workspaceIndex].slots[slotIndex].runtimeBinding = RuntimeBinding(
+            processID: candidate.processID,
+            windowID: candidate.windowID,
+            matchConfidence: matchConfidence,
+            state: .attached,
+            lastSeenAt: .now
+        )
+        workspaces[workspaceIndex].slots[slotIndex].updatedAt = .now
+        workspaces[workspaceIndex].updatedAt = .now
+        persistSoon()
+        return true
+    }
+
     public func currentPersistedState() -> PersistedWorkspaceState {
         PersistedWorkspaceState(
             workspaces: workspaces,
@@ -298,6 +412,29 @@ public final class WorkspaceSession {
             }
             return workspace
         }
+    }
+
+    private func runtimeBindingNeedsRefresh(
+        _ binding: RuntimeBinding?,
+        candidate: WindowCandidate,
+        matchConfidence: Double
+    ) -> Bool {
+        guard let binding else { return true }
+
+        if binding.processID != candidate.processID {
+            return true
+        }
+        if binding.windowID != candidate.windowID {
+            return true
+        }
+        if binding.state != .attached {
+            return true
+        }
+        if abs(binding.matchConfidence - matchConfidence) > 0.05 {
+            return true
+        }
+
+        return false
     }
 }
 

@@ -14,6 +14,7 @@
 		17B2B2179FF416CF71409B60 /* libTetherAdapter.a in Frameworks */ = {isa = PBXBuildFile; fileRef = EC9A7D6163591348C95B873F /* libTetherAdapter.a */; };
 		29A695697796115145F7598D /* NexusApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5E7C4DD289F7471AD2FC39B7 /* NexusApp.swift */; };
 		33734EE6A89BCD612ED1539A /* DiagnosticsCenter.swift in Sources */ = {isa = PBXBuildFile; fileRef = F1FAEEC43979A39625B24B05 /* DiagnosticsCenter.swift */; };
+		3C559A39A0AC35BCB2A97854 /* WindowSlotMatcherTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = C04E44915316C5268D52CFB1 /* WindowSlotMatcherTests.swift */; };
 		3EA5327F0CEF7C103C8454C8 /* libSharedTypes.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 1EECF3EF38E390AA92C7CEA1 /* libSharedTypes.a */; };
 		435C7548C89F55FD5F559C9E /* libDiagnostics.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 9BFB6060B38A95BE87355D5E /* libDiagnostics.a */; };
 		46DFA771C8CE90FA5A0098DF /* libStageChrome.a in Frameworks */ = {isa = PBXBuildFile; fileRef = A49624C5727B36CC623F61F0 /* libStageChrome.a */; };
@@ -45,6 +46,7 @@
 		A575C686AE9C57680E36253D /* JSONWorkspaceStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = 35E05CB2947451426DEC9A14 /* JSONWorkspaceStore.swift */; };
 		A76DF07AE83F1D9F02C2701C /* libVisibilityEngine.a in Frameworks */ = {isa = PBXBuildFile; fileRef = F5D447A4A639BCEB6BBF25CC /* libVisibilityEngine.a */; };
 		A89FE544DC4D10B1249BF2AC /* libSharedTypes.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 1EECF3EF38E390AA92C7CEA1 /* libSharedTypes.a */; };
+		ADC3951FD82C83171222C082 /* WindowSlotMatcher.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0AAC62664E34816C73FF44CE /* WindowSlotMatcher.swift */; };
 		B092BA9233B4FD6D47C0B4FC /* libWorkspaceEngine.a in Frameworks */ = {isa = PBXBuildFile; fileRef = DCE56EB9979E483A8533429B /* libWorkspaceEngine.a */; };
 		B0B5AAEF2F5F724360D8B7BE /* DomainModels.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5C9E884AABCCD3D199C8F225 /* DomainModels.swift */; };
 		B2B7470C7711E12DAEEFD9F2 /* StripLayoutEngine.swift in Sources */ = {isa = PBXBuildFile; fileRef = F67CB730FBF639FAFF89AC88 /* StripLayoutEngine.swift */; };
@@ -403,6 +405,7 @@
 /* Begin PBXFileReference section */
 		01D00732FAFF41EE051F1747 /* libGenericAXAdapter.a */ = {isa = PBXFileReference; explicitFileType = archive.ar; includeInIndex = 0; path = libGenericAXAdapter.a; sourceTree = BUILT_PRODUCTS_DIR; };
 		05CC05125F65EA32F39D933C /* libAdapterBus.a */ = {isa = PBXFileReference; explicitFileType = archive.ar; includeInIndex = 0; path = libAdapterBus.a; sourceTree = BUILT_PRODUCTS_DIR; };
+		0AAC62664E34816C73FF44CE /* WindowSlotMatcher.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WindowSlotMatcher.swift; sourceTree = "<group>"; };
 		11A5F47A418AD924DC64F3B2 /* Nexus.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = Nexus.entitlements; sourceTree = "<group>"; };
 		15EC86B903D2DE076FF9A061 /* ChromeThemeTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ChromeThemeTests.swift; sourceTree = "<group>"; };
 		1A01E41DF5E86B332CBCDB74 /* WindowChoreographyServiceTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WindowChoreographyServiceTests.swift; sourceTree = "<group>"; };
@@ -429,6 +432,7 @@
 		8692C4C4B7851CB9F1459DAD /* ChromeTheme.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ChromeTheme.swift; sourceTree = "<group>"; };
 		870DD55CB57118B47349842D /* AdapterRegistry.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AdapterRegistry.swift; sourceTree = "<group>"; };
 		8CC7277B420ACB1B4DA91BCF /* Package.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Package.swift; sourceTree = "<group>"; };
+		8E20696437EEB2E683FCCA8E /* dev-reset-accessibility.sh */ = {isa = PBXFileReference; lastKnownFileType = text.script.sh; path = "dev-reset-accessibility.sh"; sourceTree = "<group>"; };
 		91E8CC1281F737A4AFC6EFCC /* TetherAdapter.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TetherAdapter.swift; sourceTree = "<group>"; };
 		97F79F3A6B26B745BC6D78D2 /* libLayoutEngine.a */ = {isa = PBXFileReference; explicitFileType = archive.ar; includeInIndex = 0; path = libLayoutEngine.a; sourceTree = BUILT_PRODUCTS_DIR; };
 		9BFB6060B38A95BE87355D5E /* libDiagnostics.a */ = {isa = PBXFileReference; explicitFileType = archive.ar; includeInIndex = 0; path = libDiagnostics.a; sourceTree = BUILT_PRODUCTS_DIR; };
@@ -441,6 +445,7 @@
 		B4EA293DBCC5E2C4B70980DC /* VisibilityCoordinator.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VisibilityCoordinator.swift; sourceTree = "<group>"; };
 		B87FAB6666B481B8D6572407 /* SharedTypesTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = SharedTypesTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		BD2FCEB5FF7E413243E580FC /* AppEnvironment.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppEnvironment.swift; sourceTree = "<group>"; };
+		C04E44915316C5268D52CFB1 /* WindowSlotMatcherTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WindowSlotMatcherTests.swift; sourceTree = "<group>"; };
 		C93BA106E782C321CC9FB6B0 /* VisibilityCoordinatorTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VisibilityCoordinatorTests.swift; sourceTree = "<group>"; };
 		CB42F7AB03B39C3B6C9DD94C /* StageChromeTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = StageChromeTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		CCA36D42CBB05CE4EEA49CFD /* SharedTypesTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SharedTypesTests.swift; sourceTree = "<group>"; };
@@ -671,6 +676,7 @@
 				5A0BA3F98539F6C772DB7FEB /* dev-build.sh */,
 				328A9A1651AB3CBDE8BF766F /* dev-clean.sh */,
 				7B8E726EC1C8BE661EE6FB0F /* dev-generate-xcodeproj.sh */,
+				8E20696437EEB2E683FCCA8E /* dev-reset-accessibility.sh */,
 				1D0BA48F117A6CCCF9467FE6 /* dev-run.sh */,
 				EB54D1DEEA6D8663E593ABEF /* make-app-bundle.sh */,
 			);
@@ -689,6 +695,7 @@
 			isa = PBXGroup;
 			children = (
 				1A01E41DF5E86B332CBCDB74 /* WindowChoreographyServiceTests.swift */,
+				C04E44915316C5268D52CFB1 /* WindowSlotMatcherTests.swift */,
 			);
 			path = NexusAppTests;
 			sourceTree = "<group>";
@@ -751,6 +758,7 @@
 				BD2FCEB5FF7E413243E580FC /* AppEnvironment.swift */,
 				5E7C4DD289F7471AD2FC39B7 /* NexusApp.swift */,
 				ADD8B96390872C8012000F63 /* WindowChoreographyService.swift */,
+				0AAC62664E34816C73FF44CE /* WindowSlotMatcher.swift */,
 			);
 			path = NexusApp;
 			sourceTree = "<group>";
@@ -1562,6 +1570,7 @@
 			buildActionMask = 2147483647;
 			files = (
 				CB8337D1CBC94648FC7C79D5 /* WindowChoreographyServiceTests.swift in Sources */,
+				3C559A39A0AC35BCB2A97854 /* WindowSlotMatcherTests.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -1647,6 +1656,7 @@
 				5F3B59B9BE32EE408F5F45C6 /* AppEnvironment.swift in Sources */,
 				29A695697796115145F7598D /* NexusApp.swift in Sources */,
 				C580F174675813078FE547A4 /* WindowChoreographyService.swift in Sources */,
+				ADC3951FD82C83171222C082 /* WindowSlotMatcher.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

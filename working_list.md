@@ -1,8 +1,13 @@
 # Working List
-## Pending
-- [ ] Harden workspace rematching and runtime binding persistence across live multi-workspace switches
-
 ## Done
+- [x] Update docs and exec notes for native focus-driven reverse orchestration
+- [x] Add focused-window discovery and shared slot matching for reverse orchestration
+- [x] Thread focus policy through choreography and app environment
+- [x] Extend tests for matcher, workspace sync, and reverse focus monitoring
+- [x] Verify native focus-driven reverse orchestration with `rtk swift test`
+- [x] Regenerate `Nexus.xcodeproj` and verify the unsigned Xcode build after adding the matcher source file
+
+- [x] Refresh the working list for the native focus-driven reverse orchestration milestone
 - [x] Add a checked-in XcodeGen-based `Nexus.xcodeproj` workflow so signing and entitlements can be inspected and managed from Xcode without losing the stable installed-app path
 - [x] Document and lock the stable local signing workflow (`NEXUS_CODESIGN_IDENTITY` + `~/Applications/Nexus.app`) for Accessibility-sensitive choreography testing
 - [x] Document explicit ad-hoc fallback (`NEXUS_ALLOW_ADHOC=1`) and diagnostics messaging for blocked generic choreography when Accessibility is denied

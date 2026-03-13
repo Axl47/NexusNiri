@@ -10,6 +10,7 @@ public protocol WorkspaceStore: Sendable {
 
 public protocol WindowRegistryService: Sendable {
     func snapshot() async throws -> WindowRegistrySnapshot
+    func focusedWindowCandidate() async throws -> WindowCandidate?
 }
 
 public protocol WindowControlling: Sendable {

@@ -36,6 +36,38 @@ public actor AXWindowRegistry: WindowRegistryService, WindowControlling {
         )
     }
 
+    public func focusedWindowCandidate() async throws -> WindowCandidate? {
+        guard AXIsProcessTrusted() else { return nil }
+
+        let systemWideElement = AXUIElementCreateSystemWide()
+        guard let focusedApplicationValue = copyAttributeValue(
+            for: systemWideElement,
+            attribute: kAXFocusedApplicationAttribute as CFString
+        ),
+        CFGetTypeID(focusedApplicationValue) == AXUIElementGetTypeID() else {
+            return nil
+        }
+
+        let applicationElement = unsafeDowncast(focusedApplicationValue, to: AXUIElement.self)
+        var processIdentifier: pid_t = 0
+        let pidError = AXUIElementGetPid(applicationElement, &processIdentifier)
+        guard pidError == .success,
+              let application = NSRunningApplication(processIdentifier: processIdentifier) else {
+            return nil
+        }
+
+        guard let focusedWindow = focusedWindowElement(for: applicationElement) else {
+            return nil
+        }
+
+        return candidate(
+            for: focusedWindow,
+            in: application,
+            bundleID: application.bundleIdentifier,
+            isFocused: true
+        )
+    }
+
     public func setWindowFrame(processID: Int, windowID: Int?, to frame: RectValue) async throws {
         let windowElement = try matchingWindowElement(processID: processID, windowID: windowID)
 
@@ -77,7 +109,7 @@ public actor AXWindowRegistry: WindowRegistryService, WindowControlling {
             throw NexusError.notFound("No running application found for process \(processID).")
         }
 
-        application.activate(options: [.activateAllWindows])
+        application.activate(options: [])
     }
 
     public func raiseWindow(processID: Int, windowID: Int?) async throws {
@@ -89,14 +121,12 @@ public actor AXWindowRegistry: WindowRegistryService, WindowControlling {
     }
 
     public func focusWindow(processID: Int, windowID: Int?) async throws {
-        try await activateApplication(processID: processID)
-
         let windowElement = try matchingWindowElement(processID: processID, windowID: windowID)
 
         do {
             try setAttributeValue(kCFBooleanTrue, for: windowElement, attribute: kAXMainAttribute as CFString)
         } catch {
-            // Some apps reject AXMainAttribute writes; raising is still a useful fallback.
+            // Some apps reject AXMainAttribute writes.
         }
 
         do {
@@ -105,6 +135,7 @@ public actor AXWindowRegistry: WindowRegistryService, WindowControlling {
             // Some windows do not expose focus writes even when they support raise.
         }
 
+        try await activateApplication(processID: processID)
         try await raiseWindow(processID: processID, windowID: windowID)
     }
 
@@ -144,36 +175,17 @@ public actor AXWindowRegistry: WindowRegistryService, WindowControlling {
         var candidates: [WindowCandidate] = []
 
         for app in NSWorkspace.shared.runningApplications {
-            guard let bundleID = app.bundleIdentifier else { continue }
+            let bundleID = app.bundleIdentifier
             let appElement = AXUIElementCreateApplication(app.processIdentifier)
             let focusedWindow = focusedWindowElement(for: appElement)
             let windows = windowElements(for: appElement)
 
-            let appCandidates = windows.map { windowElement -> WindowCandidate in
-                let title = stringValue(for: windowElement, attribute: kAXTitleAttribute as CFString) ?? app.localizedName ?? bundleID
-                let position = pointValue(for: windowElement, attribute: kAXPositionAttribute as CFString)
-                let size = sizeValue(for: windowElement, attribute: kAXSizeAttribute as CFString)
-                let minimized = boolValue(for: windowElement, attribute: kAXMinimizedAttribute as CFString) ?? false
-                let windowID = intValue(for: windowElement, attribute: "AXWindowNumber" as CFString)
-                let frame = RectValue(
-                    x: Double(position?.x ?? 0),
-                    y: Double(position?.y ?? 0),
-                    width: Double(size?.width ?? 0),
-                    height: Double(size?.height ?? 0)
-                )
-
-                return WindowCandidate(
-                    id: "\(bundleID)-\(windowID ?? Int.random(in: 1...999_999))",
+            let appCandidates = windows.compactMap { windowElement -> WindowCandidate? in
+                candidate(
+                    for: windowElement,
+                    in: app,
                     bundleID: bundleID,
-                    appName: app.localizedName ?? bundleID,
-                    windowTitle: title,
-                    processID: Int(app.processIdentifier),
-                    windowID: windowID,
-                    frame: frame,
-                    displayID: displayID(for: frame),
-                    isFocused: focusedWindow.map { CFEqual($0, windowElement) } ?? false,
-                    isMinimized: minimized,
-                    source: .accessibility
+                    isFocused: focusedWindow.map { CFEqual($0, windowElement) } ?? false
                 )
             }
 
@@ -181,6 +193,46 @@ public actor AXWindowRegistry: WindowRegistryService, WindowControlling {
         }
 
         return candidates
+    }
+
+    private func candidate(
+        for windowElement: AXUIElement,
+        in application: NSRunningApplication,
+        bundleID: String?,
+        isFocused: Bool
+    ) -> WindowCandidate {
+        let title = stringValue(for: windowElement, attribute: kAXTitleAttribute as CFString)
+            ?? application.localizedName
+            ?? bundleID
+            ?? "Process \(application.processIdentifier)"
+        let position = pointValue(for: windowElement, attribute: kAXPositionAttribute as CFString)
+        let size = sizeValue(for: windowElement, attribute: kAXSizeAttribute as CFString)
+        let minimized = boolValue(for: windowElement, attribute: kAXMinimizedAttribute as CFString) ?? false
+        let windowID = intValue(for: windowElement, attribute: "AXWindowNumber" as CFString)
+        let frame = RectValue(
+            x: Double(position?.x ?? 0),
+            y: Double(position?.y ?? 0),
+            width: Double(size?.width ?? 0),
+            height: Double(size?.height ?? 0)
+        )
+
+        return WindowCandidate(
+            id: [
+                bundleID ?? "pid-\(application.processIdentifier)",
+                String(windowID ?? 0),
+                title
+            ].joined(separator: "::"),
+            bundleID: bundleID,
+            appName: application.localizedName ?? bundleID ?? "Process \(application.processIdentifier)",
+            windowTitle: title,
+            processID: Int(application.processIdentifier),
+            windowID: windowID,
+            frame: frame,
+            displayID: displayID(for: frame),
+            isFocused: isFocused,
+            isMinimized: minimized,
+            source: .accessibility
+        )
     }
 
     private func matchingWindowElement(processID: Int, windowID: Int?) throws -> AXUIElement {

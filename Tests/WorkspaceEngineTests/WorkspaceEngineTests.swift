@@ -146,3 +146,158 @@ func workspaceSessionPreservesPerWorkspaceActiveSlotState() async {
     #expect(session.selectedWorkspace?.activeSlotID == "browser")
     #expect(session.workspaces.first(where: { $0.id == "ui" })?.activeSlotID == "zen")
 }
+
+@MainActor
+@Test
+func workspaceSessionSyncFocusedWindowMatchSwitchesWorkspaceAndUpdatesBinding() async {
+    let tempURL = URL(fileURLWithPath: NSTemporaryDirectory())
+        .appendingPathComponent("NexusWorkspaceFocusSyncTests-\(UUID().uuidString)", isDirectory: true)
+    let store = JSONWorkspaceStore(baseDirectoryURL: tempURL)
+    let apiSlot = Slot(
+        id: "editor",
+        workspaceID: "api",
+        kind: .externalWindow,
+        label: "Editor",
+        appBinding: AppBinding(bundleID: "com.example.editor"),
+        widthPolicy: SizePolicy(mode: .fraction, value: 0.55),
+        layoutRole: .primary
+    )
+    let uiSlot = Slot(
+        id: "browser",
+        workspaceID: "ui",
+        kind: .externalWindow,
+        label: "Browser",
+        appBinding: AppBinding(bundleID: "com.example.browser"),
+        widthPolicy: SizePolicy(mode: .fraction, value: 0.45),
+        layoutRole: .primary
+    )
+    let session = WorkspaceSession(store: store)
+    await session.load(seedWorkspaces: [
+        Workspace(id: "api", name: "API", activeSlotID: apiSlot.id, slotOrder: [apiSlot.id], layoutState: LayoutState(activeIndex: 0, centeredSlotID: apiSlot.id), slots: [apiSlot]),
+        Workspace(id: "ui", name: "UI", activeSlotID: uiSlot.id, slotOrder: [uiSlot.id], layoutState: LayoutState(activeIndex: 0, centeredSlotID: uiSlot.id), slots: [uiSlot]),
+    ])
+
+    let changed = session.syncFocusedWindowMatch(
+        workspaceID: "ui",
+        slotID: "browser",
+        candidate: WindowCandidate(
+            bundleID: "com.example.browser",
+            appName: "Browser",
+            windowTitle: "Docs",
+            processID: 202,
+            windowID: 7,
+            frame: .zero,
+            isFocused: true,
+            source: .accessibility
+        ),
+        matchConfidence: 0.9
+    )
+
+    #expect(changed)
+    #expect(session.selectedWorkspaceID == "ui")
+    #expect(session.selectedWorkspace?.activeSlotID == "browser")
+    #expect(session.selectedWorkspace?.layoutState.centeredSlotID == "browser")
+    #expect(session.lastSelectionOrigin == .nativeFocusSync)
+    #expect(session.selectedWorkspace?.slots.first?.runtimeBinding?.processID == 202)
+    #expect(session.selectedWorkspace?.slots.first?.runtimeBinding?.windowID == 7)
+    #expect(session.selectedWorkspace?.slots.first?.runtimeBinding?.state == .attached)
+}
+
+@MainActor
+@Test
+func workspaceSessionSyncFocusedWindowMatchNoOpsWhenSelectionAndBindingAreCurrent() async {
+    let tempURL = URL(fileURLWithPath: NSTemporaryDirectory())
+        .appendingPathComponent("NexusWorkspaceFocusSyncNoOpTests-\(UUID().uuidString)", isDirectory: true)
+    let store = JSONWorkspaceStore(baseDirectoryURL: tempURL)
+    let slot = Slot(
+        id: "editor",
+        workspaceID: "workspace",
+        kind: .externalWindow,
+        label: "Editor",
+        appBinding: AppBinding(bundleID: "com.example.editor"),
+        widthPolicy: SizePolicy(mode: .fraction, value: 1),
+        layoutRole: .primary,
+        runtimeBinding: RuntimeBinding(processID: 101, windowID: 1, matchConfidence: 1, state: .attached)
+    )
+    let session = WorkspaceSession(store: store)
+    await session.load(seedWorkspaces: [
+        Workspace(id: "workspace", name: "Main", activeSlotID: slot.id, slotOrder: [slot.id], layoutState: LayoutState(activeIndex: 0, centeredSlotID: slot.id), slots: [slot]),
+    ])
+
+    let firstChange = session.syncFocusedWindowMatch(
+        workspaceID: "workspace",
+        slotID: "editor",
+        candidate: WindowCandidate(
+            bundleID: "com.example.editor",
+            appName: "Editor",
+            windowTitle: "Project",
+            processID: 101,
+            windowID: 1,
+            frame: .zero,
+            isFocused: true,
+            source: .accessibility
+        ),
+        matchConfidence: 1
+    )
+    let secondChange = session.syncFocusedWindowMatch(
+        workspaceID: "workspace",
+        slotID: "editor",
+        candidate: WindowCandidate(
+            bundleID: "com.example.editor",
+            appName: "Editor",
+            windowTitle: "Project",
+            processID: 101,
+            windowID: 1,
+            frame: .zero,
+            isFocused: true,
+            source: .accessibility
+        ),
+        matchConfidence: 1
+    )
+
+    #expect(firstChange == false)
+    #expect(secondChange == false)
+    #expect(session.lastSelectionOrigin == .nexusNavigation)
+}
+
+@MainActor
+@Test
+func workspaceSessionRefreshRuntimeBindingUpdatesWithoutChangingSelectionOrigin() async {
+    let tempURL = URL(fileURLWithPath: NSTemporaryDirectory())
+        .appendingPathComponent("NexusWorkspaceRefreshBindingTests-\(UUID().uuidString)", isDirectory: true)
+    let store = JSONWorkspaceStore(baseDirectoryURL: tempURL)
+    let slot = Slot(
+        id: "editor",
+        workspaceID: "workspace",
+        kind: .externalWindow,
+        label: "Editor",
+        appBinding: AppBinding(bundleID: "com.example.editor"),
+        widthPolicy: SizePolicy(mode: .fraction, value: 1),
+        layoutRole: .primary
+    )
+    let session = WorkspaceSession(store: store)
+    await session.load(seedWorkspaces: [
+        Workspace(id: "workspace", name: "Main", activeSlotID: slot.id, slotOrder: [slot.id], layoutState: LayoutState(activeIndex: 0, centeredSlotID: slot.id), slots: [slot]),
+    ])
+
+    let changed = session.refreshRuntimeBinding(
+        workspaceID: "workspace",
+        slotID: "editor",
+        candidate: WindowCandidate(
+            bundleID: "com.example.editor",
+            appName: "Editor",
+            windowTitle: "Project",
+            processID: 101,
+            windowID: 1,
+            frame: .zero,
+            isFocused: true,
+            source: .accessibility
+        ),
+        matchConfidence: 0.7
+    )
+
+    #expect(changed)
+    #expect(session.lastSelectionOrigin == .nexusNavigation)
+    #expect(session.selectedWorkspace?.slots.first?.runtimeBinding?.processID == 101)
+    #expect(session.selectedWorkspace?.slots.first?.runtimeBinding?.windowID == 1)
+}
