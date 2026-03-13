@@ -165,6 +165,7 @@ public struct StageChromeView: View {
                         session: session,
                         workspace: workspace,
                         layout: layout,
+                        stageWidth: geometry.stageWidth,
                         onLayoutDidUpdate: onLayoutDidUpdate
                     )
                 } else {
@@ -256,6 +257,7 @@ private struct StageStripView: View {
     @Bindable var session: WorkspaceSession
     let workspace: Workspace
     let layout: LayoutPlan
+    let stageWidth: Double
     let onLayoutDidUpdate: (Workspace, LayoutPlan) async -> Void
 
     var body: some View {
@@ -268,7 +270,15 @@ private struct StageStripView: View {
                             SlotCard(
                                 slot: slot,
                                 width: slotLayout?.frame.width ?? 420,
-                                isFocused: workspace.activeSlotID == slot.id
+                                isFocused: workspace.activeSlotID == slot.id,
+                                onResize: { width, persist in
+                                    session.resizeSlot(
+                                        id: slot.id,
+                                        to: width,
+                                        viewportWidth: stageWidth,
+                                        persist: persist
+                                    )
+                                }
                             )
                             .id(slot.id)
                             .onTapGesture {
@@ -279,7 +289,7 @@ private struct StageStripView: View {
                     .padding(.horizontal, 0)
                     .padding(.vertical, 0)
                 }
-                .task(id: workspace.activeSlotID ?? workspace.id) {
+                .task(id: LayoutTaskKey(layout: layout, workspaceID: workspace.id, activeSlotID: workspace.activeSlotID)) {
                     session.updateVisibility(using: layout)
                     await onLayoutDidUpdate(workspace, layout)
                     guard let activeSlotID = workspace.activeSlotID else { return }
@@ -303,6 +313,9 @@ private struct SlotCard: View {
     let slot: Slot
     let width: Double
     let isFocused: Bool
+    let onResize: (Double, Bool) -> Void
+
+    @State private var dragWidth: Double?
 
     var body: some View {
         VStack(spacing: 0) {
@@ -360,10 +373,15 @@ private struct SlotCard: View {
             .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
             .background(RoundedRectangle(cornerRadius: 0).fill(Color.white.opacity(0.025)))
         }
-        .frame(width: width)
+        .frame(width: dragWidth ?? width)
         .frame(maxHeight: .infinity)
         .opacity(isFocused ? 1.0 : 0.5)
         .animation(.easeOut(duration: 0.3), value: isFocused)
+        .overlay(alignment: .trailing) {
+            ResizeHandle(isActive: isFocused)
+                .padding(.vertical, 20)
+                .gesture(resizeGesture)
+        }
     }
 
     private var appColor: Color {
@@ -379,6 +397,61 @@ private struct SlotCard: View {
         default:
             return Color.white.opacity(0.4)
         }
+    }
+
+    private var resizeGesture: some Gesture {
+        DragGesture(minimumDistance: 1)
+            .onChanged { value in
+                let proposedWidth = max(260, width + value.translation.width)
+                dragWidth = proposedWidth
+                onResize(proposedWidth, false)
+            }
+            .onEnded { value in
+                let proposedWidth = max(260, width + value.translation.width)
+                dragWidth = nil
+                onResize(proposedWidth, true)
+            }
+    }
+}
+
+private struct ResizeHandle: View {
+    let isActive: Bool
+
+    var body: some View {
+        ZStack {
+            Capsule()
+                .fill(ChromeTheme.border)
+                .frame(width: 1)
+
+            RoundedRectangle(cornerRadius: 4)
+                .fill(isActive ? ChromeTheme.accent.opacity(0.9) : ChromeTheme.surfaceHover)
+                .frame(width: 8, height: 56)
+                .overlay {
+                    VStack(spacing: 4) {
+                        ForEach(0..<3, id: \.self) { _ in
+                            Capsule()
+                                .fill(Color.white.opacity(0.7))
+                                .frame(width: 2, height: 8)
+                        }
+                    }
+                }
+        }
+        .frame(width: 12)
+        .contentShape(Rectangle())
+    }
+}
+
+private struct LayoutTaskKey: Hashable {
+    let workspaceID: String
+    let activeSlotID: String?
+    let contentWidth: Int
+    let slotWidths: [Int]
+
+    init(layout: LayoutPlan, workspaceID: String, activeSlotID: String?) {
+        self.workspaceID = workspaceID
+        self.activeSlotID = activeSlotID
+        self.contentWidth = Int(layout.contentWidth.rounded())
+        self.slotWidths = layout.slotLayouts.map { Int($0.frame.width.rounded()) }
     }
 }
 

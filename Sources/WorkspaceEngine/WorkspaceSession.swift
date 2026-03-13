@@ -202,6 +202,37 @@ public final class WorkspaceSession {
         selectSlot(id: workspace.slotOrder[previousIndex])
     }
 
+    public func resizeSlot(
+        id: String,
+        to width: Double,
+        viewportWidth: Double,
+        persist: Bool = true
+    ) {
+        guard viewportWidth > 0,
+              let workspaceIndex = selectedWorkspace.flatMap({ workspace in
+                  workspaces.firstIndex(where: { $0.id == workspace.id })
+              }),
+              let slotIndex = workspaces[workspaceIndex].slots.firstIndex(where: { $0.id == id }) else {
+            return
+        }
+
+        let currentPolicy = workspaces[workspaceIndex].slots[slotIndex].widthPolicy
+        let minimum = currentPolicy.minimum ?? 320
+        let maximum = currentPolicy.maximum ?? viewportWidth
+        let clampedWidth = min(max(width, minimum), maximum)
+        let fraction = min(max(clampedWidth / viewportWidth, 0.2), 1.25)
+
+        workspaces[workspaceIndex].slots[slotIndex].widthPolicy.mode = .fraction
+        workspaces[workspaceIndex].slots[slotIndex].widthPolicy.value = fraction
+        workspaces[workspaceIndex].slots[slotIndex].updatedAt = .now
+        workspaces[workspaceIndex].updatedAt = .now
+
+        if persist {
+            statusMessage = "Resized slot."
+            persistSoon()
+        }
+    }
+
     public func updateVisibility(using layout: LayoutPlan) {
         guard let workspaceID = selectedWorkspaceID,
               let index = workspaces.firstIndex(where: { $0.id == workspaceID }) else {
