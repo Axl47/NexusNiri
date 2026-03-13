@@ -1,0 +1,306 @@
+[
+  {
+    "id": "workspace-api",
+    "name": "API",
+    "description": "Backend implementation workspace",
+    "profileID": null,
+    "displayPolicy": "static",
+    "preferredDisplayID": null,
+    "activeSlotID": "slot-api-editor",
+    "slotOrder": ["slot-api-editor", "slot-api-zen", "slot-api-tether"],
+    "floatingSlotIDs": [],
+    "layoutState": {
+      "activeIndex": 0,
+      "scrollAnchor": 0,
+      "centeredSlotID": "slot-api-editor",
+      "visibleSlotIDs": ["slot-api-editor", "slot-api-zen"],
+      "parkedSlotIDs": ["slot-api-tether"],
+      "geometryVersion": 1
+    },
+    "visibilityPolicy": {
+      "defaultStrategy": "edgeSliver",
+      "prefersHideForBackgroundApps": false,
+      "keepsFloatsVisible": true,
+      "revealAllShortcutEnabled": true
+    },
+    "residencyPolicy": {
+      "hotSlotIDs": ["slot-api-editor", "slot-api-tether"],
+      "warmSlotIDs": ["slot-api-zen"],
+      "coldLaunchAllowed": true
+    },
+    "assignmentRuleIDs": [],
+    "adapterStateIDs": [],
+    "snapshotIDs": [],
+    "tags": ["api", "default"],
+    "createdAt": "2026-03-12T23:00:00Z",
+    "updatedAt": "2026-03-12T23:00:00Z",
+    "slots": [
+      {
+        "id": "slot-api-editor",
+        "workspaceID": "workspace-api",
+        "kind": "externalWindow",
+        "label": "Editor",
+        "appBinding": {
+          "bundleID": "com.microsoft.VSCode",
+          "preferredProcessStrategy": "reuse",
+          "titleHints": ["Nexus"],
+          "urlHints": [],
+          "documentHints": [],
+          "profileHint": null,
+          "launchCommand": null,
+          "adapterHints": {}
+        },
+        "widthPolicy": {
+          "mode": "fraction",
+          "value": 0.55,
+          "minimum": 540,
+          "maximum": null
+        },
+        "heightPolicy": {
+          "mode": "fill",
+          "value": null,
+          "minimum": null,
+          "maximum": null
+        },
+        "layoutRole": "primary",
+        "adapterID": null,
+        "adapterStateID": null,
+        "runtimeBinding": null,
+        "lastKnownDisplayID": null,
+        "pinned": false,
+        "warmPreference": "hot",
+        "createdAt": "2026-03-12T23:00:00Z",
+        "updatedAt": "2026-03-12T23:00:00Z"
+      },
+      {
+        "id": "slot-api-zen",
+        "workspaceID": "workspace-api",
+        "kind": "externalWindow",
+        "label": "Zen",
+        "appBinding": {
+          "bundleID": "app.zen-browser.zen",
+          "preferredProcessStrategy": "reuse",
+          "titleHints": ["docs", "Nexus"],
+          "urlHints": [],
+          "documentHints": [],
+          "profileHint": null,
+          "launchCommand": null,
+          "adapterHints": {}
+        },
+        "widthPolicy": {
+          "mode": "fraction",
+          "value": 0.45,
+          "minimum": 500,
+          "maximum": null
+        },
+        "heightPolicy": {
+          "mode": "fill",
+          "value": null,
+          "minimum": null,
+          "maximum": null
+        },
+        "layoutRole": "secondary",
+        "adapterID": null,
+        "adapterStateID": null,
+        "runtimeBinding": null,
+        "lastKnownDisplayID": null,
+        "pinned": false,
+        "warmPreference": "warm",
+        "createdAt": "2026-03-12T23:00:00Z",
+        "updatedAt": "2026-03-12T23:00:00Z"
+      },
+      {
+        "id": "slot-api-tether",
+        "workspaceID": "workspace-api",
+        "kind": "hybrid",
+        "label": "Tether",
+        "appBinding": {
+          "bundleID": "dev.tether.desktop",
+          "preferredProcessStrategy": "reuse",
+          "titleHints": ["Tether"],
+          "urlHints": [],
+          "documentHints": [],
+          "profileHint": null,
+          "launchCommand": null,
+          "adapterHints": {
+            "baseURL": "http://127.0.0.1:3773",
+            "wsURL": "ws://127.0.0.1:3773"
+          }
+        },
+        "widthPolicy": {
+          "mode": "fraction",
+          "value": 0.40,
+          "minimum": 460,
+          "maximum": null
+        },
+        "heightPolicy": {
+          "mode": "fill",
+          "value": null,
+          "minimum": null,
+          "maximum": null
+        },
+        "layoutRole": "support",
+        "adapterID": "tether",
+        "adapterStateID": null,
+        "runtimeBinding": null,
+        "lastKnownDisplayID": null,
+        "pinned": false,
+        "warmPreference": "hot",
+        "createdAt": "2026-03-12T23:00:00Z",
+        "updatedAt": "2026-03-12T23:00:00Z"
+      }
+    ]
+  },
+  {
+    "id": "workspace-ui",
+    "name": "UI",
+    "description": "Design and polish workspace",
+    "profileID": null,
+    "displayPolicy": "static",
+    "preferredDisplayID": null,
+    "activeSlotID": "slot-ui-zed",
+    "slotOrder": ["slot-ui-zed", "slot-ui-zen", "slot-ui-tether"],
+    "floatingSlotIDs": [],
+    "layoutState": {
+      "activeIndex": 0,
+      "scrollAnchor": 0,
+      "centeredSlotID": "slot-ui-zed",
+      "visibleSlotIDs": ["slot-ui-zed", "slot-ui-zen"],
+      "parkedSlotIDs": ["slot-ui-tether"],
+      "geometryVersion": 1
+    },
+    "visibilityPolicy": {
+      "defaultStrategy": "edgeSliver",
+      "prefersHideForBackgroundApps": false,
+      "keepsFloatsVisible": true,
+      "revealAllShortcutEnabled": true
+    },
+    "residencyPolicy": {
+      "hotSlotIDs": ["slot-ui-zed"],
+      "warmSlotIDs": ["slot-ui-zen", "slot-ui-tether"],
+      "coldLaunchAllowed": true
+    },
+    "assignmentRuleIDs": [],
+    "adapterStateIDs": [],
+    "snapshotIDs": [],
+    "tags": ["ui"],
+    "createdAt": "2026-03-12T23:00:00Z",
+    "updatedAt": "2026-03-12T23:00:00Z",
+    "slots": [
+      {
+        "id": "slot-ui-zed",
+        "workspaceID": "workspace-ui",
+        "kind": "externalWindow",
+        "label": "Zed",
+        "appBinding": {
+          "bundleID": "dev.zed.Zed",
+          "preferredProcessStrategy": "reuse",
+          "titleHints": ["Nexus"],
+          "urlHints": [],
+          "documentHints": [],
+          "profileHint": null,
+          "launchCommand": null,
+          "adapterHints": {}
+        },
+        "widthPolicy": {
+          "mode": "fraction",
+          "value": 0.50,
+          "minimum": 520,
+          "maximum": null
+        },
+        "heightPolicy": {
+          "mode": "fill",
+          "value": null,
+          "minimum": null,
+          "maximum": null
+        },
+        "layoutRole": "primary",
+        "adapterID": null,
+        "adapterStateID": null,
+        "runtimeBinding": null,
+        "lastKnownDisplayID": null,
+        "pinned": false,
+        "warmPreference": "hot",
+        "createdAt": "2026-03-12T23:00:00Z",
+        "updatedAt": "2026-03-12T23:00:00Z"
+      },
+      {
+        "id": "slot-ui-zen",
+        "workspaceID": "workspace-ui",
+        "kind": "externalWindow",
+        "label": "Zen",
+        "appBinding": {
+          "bundleID": "app.zen-browser.zen",
+          "preferredProcessStrategy": "reuse",
+          "titleHints": ["figma", "docs"],
+          "urlHints": [],
+          "documentHints": [],
+          "profileHint": null,
+          "launchCommand": null,
+          "adapterHints": {}
+        },
+        "widthPolicy": {
+          "mode": "fraction",
+          "value": 0.45,
+          "minimum": 500,
+          "maximum": null
+        },
+        "heightPolicy": {
+          "mode": "fill",
+          "value": null,
+          "minimum": null,
+          "maximum": null
+        },
+        "layoutRole": "secondary",
+        "adapterID": null,
+        "adapterStateID": null,
+        "runtimeBinding": null,
+        "lastKnownDisplayID": null,
+        "pinned": false,
+        "warmPreference": "warm",
+        "createdAt": "2026-03-12T23:00:00Z",
+        "updatedAt": "2026-03-12T23:00:00Z"
+      },
+      {
+        "id": "slot-ui-tether",
+        "workspaceID": "workspace-ui",
+        "kind": "hybrid",
+        "label": "Tether",
+        "appBinding": {
+          "bundleID": "dev.tether.desktop",
+          "preferredProcessStrategy": "reuse",
+          "titleHints": ["Tether"],
+          "urlHints": [],
+          "documentHints": [],
+          "profileHint": null,
+          "launchCommand": null,
+          "adapterHints": {
+            "baseURL": "http://127.0.0.1:3773",
+            "wsURL": "ws://127.0.0.1:3773"
+          }
+        },
+        "widthPolicy": {
+          "mode": "fraction",
+          "value": 0.42,
+          "minimum": 480,
+          "maximum": null
+        },
+        "heightPolicy": {
+          "mode": "fill",
+          "value": null,
+          "minimum": null,
+          "maximum": null
+        },
+        "layoutRole": "support",
+        "adapterID": "tether",
+        "adapterStateID": null,
+        "runtimeBinding": null,
+        "lastKnownDisplayID": null,
+        "pinned": false,
+        "warmPreference": "warm",
+        "createdAt": "2026-03-12T23:00:00Z",
+        "updatedAt": "2026-03-12T23:00:00Z"
+      }
+    ]
+  }
+]
