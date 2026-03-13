@@ -103,6 +103,12 @@ public enum PermissionKind: String, Codable, Sendable, CaseIterable {
     case screenRecording
 }
 
+public enum BuildSigningMode: String, Codable, Sendable, CaseIterable {
+    case selfSigned
+    case adHoc
+    case unknown
+}
+
 public enum HotkeyCommand: String, Codable, Sendable, CaseIterable {
     case nextSlot
     case previousSlot
@@ -617,6 +623,34 @@ public struct PermissionStatus: Codable, Equatable, Identifiable, Sendable {
     }
 }
 
+public struct BuildIdentityStatus: Codable, Equatable, Sendable {
+    public var bundlePath: String
+    public var bundleIdentifier: String
+    public var signingMode: BuildSigningMode
+    public var signingIdentityLabel: String?
+    public var expectedInstallPath: String?
+    public var launchedFromExpectedPath: Bool
+    public var buildTimestamp: Date?
+
+    public init(
+        bundlePath: String = "",
+        bundleIdentifier: String = "",
+        signingMode: BuildSigningMode = .unknown,
+        signingIdentityLabel: String? = nil,
+        expectedInstallPath: String? = nil,
+        launchedFromExpectedPath: Bool = false,
+        buildTimestamp: Date? = nil
+    ) {
+        self.bundlePath = bundlePath
+        self.bundleIdentifier = bundleIdentifier
+        self.signingMode = signingMode
+        self.signingIdentityLabel = signingIdentityLabel
+        self.expectedInstallPath = expectedInstallPath
+        self.launchedFromExpectedPath = launchedFromExpectedPath
+        self.buildTimestamp = buildTimestamp
+    }
+}
+
 public struct WindowCandidate: Codable, Equatable, Identifiable, Sendable {
     public var id: String
     public var bundleID: String?
@@ -692,6 +726,7 @@ public struct AdapterHealthReport: Codable, Equatable, Identifiable, Sendable {
 public struct DiagnosticsSnapshot: Codable, Equatable, Sendable {
     public var refreshedAt: Date
     public var permissions: [PermissionStatus]
+    public var buildIdentity: BuildIdentityStatus
     public var adapterHealth: [AdapterHealthReport]
     public var windows: [WindowCandidate]
     public var notes: [String]
@@ -701,6 +736,7 @@ public struct DiagnosticsSnapshot: Codable, Equatable, Sendable {
     public init(
         refreshedAt: Date = .now,
         permissions: [PermissionStatus] = [],
+        buildIdentity: BuildIdentityStatus = BuildIdentityStatus(),
         adapterHealth: [AdapterHealthReport] = [],
         windows: [WindowCandidate] = [],
         notes: [String] = [],
@@ -709,6 +745,7 @@ public struct DiagnosticsSnapshot: Codable, Equatable, Sendable {
     ) {
         self.refreshedAt = refreshedAt
         self.permissions = permissions
+        self.buildIdentity = buildIdentity
         self.adapterHealth = adapterHealth
         self.windows = windows
         self.notes = notes

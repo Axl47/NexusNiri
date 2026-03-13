@@ -1,3 +1,4 @@
+import AppKit
 import Foundation
 import Observation
 import AdapterBus
@@ -33,6 +34,7 @@ final class AppEnvironment {
     private var choreographyProcessorTask: Task<Void, Never>?
     private var stageViewportFrame: CGRect?
     private var latestLayoutContext: LayoutContext?
+    private var appActivationObserver: NSObjectProtocol?
 
     init(
         workspaceStore: JSONWorkspaceStore = JSONWorkspaceStore(),
@@ -69,6 +71,16 @@ final class AppEnvironment {
             let tetherBaseURL = URL(string: "http://127.0.0.1:3773")!
             adapterRegistry.register(TetherAdapter(baseURL: tetherBaseURL))
         }
+
+        appActivationObserver = NotificationCenter.default.addObserver(
+            forName: NSApplication.didBecomeActiveNotification,
+            object: nil,
+            queue: .main
+        ) { [weak self] _ in
+            Task { @MainActor [weak self] in
+                await self?.refreshDiagnostics()
+            }
+        }
     }
 
     func start() async {
@@ -81,6 +93,9 @@ final class AppEnvironment {
     }
 
     func refreshDiagnostics() async {
+        let wasAccessibilityTrusted = diagnosticsSnapshot.permissions.contains(where: {
+            $0.kind == .accessibility && $0.state == .granted
+        })
         let windowSnapshot = try? await windowRegistry.snapshot()
         let adapterHealth = await adapterRegistry.healthReports()
         diagnosticsCenter.refresh(
@@ -90,6 +105,22 @@ final class AppEnvironment {
             adapterHealth: adapterHealth
         )
         diagnosticsSnapshot = diagnosticsCenter.snapshot
+
+        let isAccessibilityTrusted = diagnosticsSnapshot.permissions.contains(where: {
+            $0.kind == .accessibility && $0.state == .granted
+        })
+
+        if wasAccessibilityTrusted == false, isAccessibilityTrusted {
+            lastChoreographySignature = nil
+
+            if let latestLayoutContext {
+                enqueueChoreographyRequest(
+                    workspace: latestLayoutContext.workspace,
+                    layout: latestLayoutContext.layout,
+                    stageViewportFrame: stageViewportFrame
+                )
+            }
+        }
     }
 
     func openDiagnosticsPanel() {
@@ -107,19 +138,8 @@ final class AppEnvironment {
 
     func applyChoreography(for workspace: Workspace, layout: LayoutPlan) async {
         latestLayoutContext = LayoutContext(workspace: workspace, layout: layout)
-        let signature = choreographySignature(for: workspace, layout: layout, stageViewportFrame: stageViewportFrame)
-        guard signature != lastChoreographySignature else { return }
-
-        pendingChoreographyRequest = ChoreographyRequest(
-            workspace: workspace,
-            layout: layout,
-            signature: signature
-        )
-        guard choreographyProcessorTask == nil else { return }
-
-        choreographyProcessorTask = Task { @MainActor [weak self] in
-            await self?.processPendingChoreography()
-        }
+        guard stageViewportFrame != nil || layout.visibleSlotIDs.isEmpty else { return }
+        enqueueChoreographyRequest(workspace: workspace, layout: layout, stageViewportFrame: stageViewportFrame)
     }
 
     func revealAll() {
@@ -140,22 +160,20 @@ final class AppEnvironment {
         stageViewportFrame = integralFrame
 
         guard let latestLayoutContext else { return }
-        let signature = choreographySignature(
-            for: latestLayoutContext.workspace,
+        enqueueChoreographyRequest(
+            workspace: latestLayoutContext.workspace,
             layout: latestLayoutContext.layout,
             stageViewportFrame: integralFrame
         )
-        guard signature != lastChoreographySignature else { return }
+    }
 
-        pendingChoreographyRequest = ChoreographyRequest(
-            workspace: latestLayoutContext.workspace,
-            layout: latestLayoutContext.layout,
-            signature: signature
-        )
-        guard choreographyProcessorTask == nil else { return }
+    func requestAccessibilityAccess() async {
+        let granted = diagnosticsCenter.requestAccessibilityAccess()
+        await refreshDiagnostics()
 
-        choreographyProcessorTask = Task { @MainActor [weak self] in
-            await self?.processPendingChoreography()
+        if granted == false {
+            diagnosticsCenter.openAccessibilitySettings()
+            session.refreshStatus(accessibilityBlockedStatusMessage())
         }
     }
 
@@ -170,7 +188,7 @@ final class AppEnvironment {
             let previousWorkspace = lastChoreographedWorkspace
             lastTransitionSourceWorkspace = previousWorkspace
 
-            await choreographyService.apply(
+            let outcome = await choreographyService.apply(
                 workspace: request.workspace,
                 previousWorkspace: previousWorkspace,
                 layout: request.layout,
@@ -182,11 +200,16 @@ final class AppEnvironment {
             lastChoreographedWorkspace = request.workspace
             await refreshDiagnostics()
 
-            if previousWorkspace?.id == request.workspace.id {
-                let activeSlotLabel = request.workspace.orderedSlots[safe: request.layout.activeSlotIndex]?.label ?? "slot"
-                session.refreshStatus("Focused \(activeSlotLabel).")
-            } else {
-                session.refreshStatus("Staged workspace \(request.workspace.name).")
+            switch outcome {
+            case .applied:
+                if previousWorkspace?.id == request.workspace.id {
+                    let activeSlotLabel = request.workspace.orderedSlots[safe: request.layout.activeSlotIndex]?.label ?? "slot"
+                    session.refreshStatus("Focused \(activeSlotLabel).")
+                } else {
+                    session.refreshStatus("Staged workspace \(request.workspace.name).")
+                }
+            case .blocked(.accessibilityDenied):
+                session.refreshStatus(accessibilityBlockedStatusMessage())
             }
         }
 
@@ -228,6 +251,42 @@ final class AppEnvironment {
                 )
             }
         )
+    }
+
+    private func enqueueChoreographyRequest(
+        workspace: Workspace,
+        layout: LayoutPlan,
+        stageViewportFrame: CGRect?
+    ) {
+        let signature = choreographySignature(for: workspace, layout: layout, stageViewportFrame: stageViewportFrame)
+        guard signature != lastChoreographySignature else { return }
+
+        pendingChoreographyRequest = ChoreographyRequest(
+            workspace: workspace,
+            layout: layout,
+            signature: signature
+        )
+        guard choreographyProcessorTask == nil else { return }
+
+        choreographyProcessorTask = Task { @MainActor [weak self] in
+            await self?.processPendingChoreography()
+        }
+    }
+
+    private func accessibilityBlockedStatusMessage() -> String {
+        let buildIdentity = diagnosticsSnapshot.buildIdentity
+
+        if buildIdentity.signingMode == .adHoc {
+            return "Window choreography blocked. Rebuild Nexus with NEXUS_CODESIGN_IDENTITY and launch the installed app."
+        }
+
+        if let expectedInstallPath = buildIdentity.expectedInstallPath,
+           expectedInstallPath.isEmpty == false,
+           buildIdentity.launchedFromExpectedPath == false {
+            return "Window choreography blocked. Grant Accessibility to the Nexus.app installed at \(expectedInstallPath)."
+        }
+
+        return "Window choreography blocked. Grant Accessibility to the running Nexus.app."
     }
 }
 

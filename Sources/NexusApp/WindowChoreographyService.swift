@@ -14,13 +14,22 @@ protocol WindowChoreographing: Sendable {
         previousWorkspace: Workspace?,
         layout: LayoutPlan,
         stageViewportFrame: CGRect?
-    ) async
+    ) async -> ChoreographyOutcome
 
     func revealAll(
         currentWorkspace: Workspace?,
         previousWorkspace: Workspace?,
         stageViewportFrame: CGRect?
     ) async
+}
+
+enum ChoreographyOutcome: Equatable, Sendable {
+    case applied
+    case blocked(ChoreographyBlockReason)
+}
+
+enum ChoreographyBlockReason: Equatable, Sendable {
+    case accessibilityDenied
 }
 
 @MainActor
@@ -46,7 +55,7 @@ final class WindowChoreographyService: WindowChoreographing {
         previousWorkspace: Workspace?,
         layout: LayoutPlan,
         stageViewportFrame: CGRect?
-    ) async {
+    ) async -> ChoreographyOutcome {
         do {
             let snapshot = try await windowRegistry.snapshot()
             let actions = try await visibilityCoordinator.transition(
@@ -55,16 +64,24 @@ final class WindowChoreographyService: WindowChoreographing {
                 layout: layout,
                 windows: snapshot.windows
             )
+            let (permittedActions, blockedReason) = filterActionsForPermissions(
+                actions,
+                currentWorkspace: workspace,
+                previousWorkspace: previousWorkspace,
+                isAccessibilityTrusted: snapshot.isAccessibilityTrusted
+            )
             await apply(
-                actions: actions,
+                actions: permittedActions,
                 layout: layout,
                 stageViewportFrame: stageViewportFrame,
                 currentWorkspace: workspace,
                 previousWorkspace: previousWorkspace,
                 windows: snapshot.windows
             )
+            return blockedReason.map(ChoreographyOutcome.blocked) ?? .applied
         } catch {
             logger.error("Failed to apply window choreography for workspace \(workspace.id, privacy: .public): \(error.localizedDescription, privacy: .public)")
+            return .applied
         }
     }
 
@@ -124,6 +141,52 @@ final class WindowChoreographyService: WindowChoreographing {
 
         if let focusTarget {
             await focus(focusTarget)
+        }
+    }
+
+    private func filterActionsForPermissions(
+        _ actions: [VisibilityAction],
+        currentWorkspace: Workspace?,
+        previousWorkspace: Workspace?,
+        isAccessibilityTrusted: Bool
+    ) -> ([VisibilityAction], ChoreographyBlockReason?) {
+        guard isAccessibilityTrusted == false else {
+            return (actions, nil)
+        }
+
+        var permittedActions: [VisibilityAction] = []
+        var blockedReason: ChoreographyBlockReason?
+
+        for action in actions {
+            guard let slot = slot(
+                withID: action.slotID,
+                currentWorkspace: currentWorkspace,
+                previousWorkspace: previousWorkspace
+            ) else {
+                permittedActions.append(action)
+                continue
+            }
+
+            if requiresAccessibilityTrust(slot: slot, action: action) {
+                blockedReason = .accessibilityDenied
+                continue
+            }
+
+            permittedActions.append(action)
+        }
+
+        return (permittedActions, blockedReason)
+    }
+
+    private func requiresAccessibilityTrust(slot: Slot, action: VisibilityAction) -> Bool {
+        guard slot.kind == .externalWindow else { return false }
+        guard slot.adapterID == nil else { return false }
+
+        switch action.kind {
+        case .show, .reveal, .park, .minimize, .hideApp:
+            return true
+        case .detach:
+            return false
         }
     }
 

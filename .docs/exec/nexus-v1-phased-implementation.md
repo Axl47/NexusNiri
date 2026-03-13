@@ -13,7 +13,7 @@ The first observable result is a working CLI workflow:
     cd /Users/axel/Desktop/Code_Projects/Personal/NexusNiri
     rtk proxy bash ./scripts/dev-run.sh
 
-That command should build the Swift package, bundle the executable into `build/Nexus.app`, apply the checked-in `Info.plist`, ad-hoc sign the app, and launch it.
+That command should build the Swift package, bundle the executable, sign it with a stable local identity, install it to `~/Applications/Nexus.app` (override via `NEXUS_DEV_INSTALL_PATH`), and launch the installed app so Accessibility trust stays tied to a stable process identity.
 
 ## Progress
 
@@ -28,6 +28,7 @@ That command should build the Swift package, bundle the executable into `build/N
 - [x] (2026-03-13 02:56Z) Rewrite `StageChrome` from the horizontal `ScrollView` prototype into a layout-driven overlay viewport with centered active-slot navigation, header-only strip chrome, and indicator feedback driven by `LayoutPlan.scrollOffset`.
 - [x] (2026-03-13 02:56Z) Remove stage-level resize handles and direct strip dragging from the shell UI for this v1 slice, leaving width-policy mutation dormant in the model layer for a later geometry pass.
 - [x] (2026-03-13 03:31Z) Implement visible-slot native geometry conformance so every `LayoutPlan.visibleSlotIDs` window stages into its slot rect, the active slot regains focus after the geometry pass, and viewport moves reapply the latest staged layout.
+- [x] (2026-03-13 05:42Z) Move local TCC-sensitive development off disposable ad-hoc bundles to stable signing defaults, add runtime build identity diagnostics, and explicitly block generic choreography when Accessibility trust is denied.
 - [ ] Harden window rematching and runtime binding persistence across live multi-workspace switching against the registry.
 - [ ] Implement the first fully working deep Tether restore flow once the sibling app exposes the `nexus.*` contract.
 
@@ -55,6 +56,10 @@ That command should build the Swift package, bundle the executable into `build/N
   Evidence: local inspection on 2026-03-13 showed `VisibilityCoordinator.transition` parking every non-active slot while `StripLayoutEngine.planLayout` and `WorkspaceSession.updateVisibility(using:)` already track visible and parked slot IDs separately.
 - Observation: AX position writes need the slot's top-left screen coordinate, not the bottom-left point that AppKit geometry makes convenient to compute.
   Evidence: local visible-slot geometry tests on 2026-03-13 only matched the stage viewport when `resolvedStageFrame` used `stageViewportFrame.maxY - ChromeMetrics.slotHeaderHeight - slotLayout.frame.y` for Y and delayed focus until after all frame writes.
+- Observation: `ScreenSpaceFrameReporter` cannot rely on SwiftUI view layout alone for live-follow behavior because dragging the `Nexus` window can leave the view hierarchy unchanged while the screen-space rect still moves.
+  Evidence: local follow-up fix on 2026-03-13 only made visible-slot viewport tracking work after `ReporterView` began observing `NSWindow.didMove`, `didResize`, `didChangeScreen`, and `didEndLiveResize`.
+- Observation: Rebuilding and relaunching a freshly ad-hoc signed `build/Nexus.app` can keep `AXIsProcessTrusted()` denied even after users believe they already granted Accessibility.
+  Evidence: local debugging showed the app could still activate targets while generic AX window mutation stayed blocked; moving to a stable signing identity and stable installed launch path resolved the mismatch between TCC trust expectations and runtime process identity.
 
 ## Decision Log
 
@@ -88,12 +93,17 @@ That command should build the Swift package, bundle the executable into `build/N
 - Decision: Implement native size conformance by staging every visible slot, focusing only once after geometry work, and reapplying the latest layout when the stage viewport frame moves.
   Rationale: the layout engine already defines which slots belong on stage, and delaying focus until the end prevents secondary visible apps from stealing activation while still keeping the current opaque shell and parking heuristics intact.
   Date/Author: 2026-03-13 / Codex
+- Decision: Make stable local signing and installed-path launches the default for TCC-sensitive development, and treat denied Accessibility as an explicit choreography block state.
+  Rationale: ad-hoc rebuilds at transient paths produce unreliable TCC identity continuity, while explicit blocked-state UX prevents misleading "app activated but window did not move" behavior.
+  Date/Author: 2026-03-13 / Codex
 
 ## Outcomes & Retrospective
 
 The repository is no longer empty. It now has a native CLI-first app shape, a working shell UI, clean subsystem boundaries, persistence, diagnostics, and adapter scaffolding. The bootstrap is compiling again under Swift 6.3, `rtk swift test` is passing, and the CLI bundling workflow has been re-verified with the correct `rtk proxy bash` invocation. The shell is also no longer fully mocked: stage layout updates now trigger real AX-backed window staging, parking, and reveal-all replay through the new app-layer choreographer.
 
-The latest shell slice replaces the old horizontally scrollable card prototype with a focus-driven stage model. The active slot is centered by layout state, the strip indicator and header movement are driven directly by `LayoutPlan.scrollOffset`, and the viewport no longer behaves like a user-draggable `ScrollView`. Native size conformance for every visible slot is now implemented: visible windows receive the slot rects computed by the layout engine, the active slot is focused only after the geometry pass completes, and moving the Nexus window replays the latest staged layout. Transparent embedding, deeper runtime rematching, and adapter-specific restore remain follow-up work after this geometry pass.
+The latest shell slice replaces the old horizontally scrollable card prototype with a focus-driven stage model. The active slot is centered by layout state, the strip indicator and header movement are driven directly by `LayoutPlan.scrollOffset`, and the viewport no longer behaves like a user-draggable `ScrollView`. Native size conformance for every visible slot is now implemented: visible windows receive the slot rects computed by the layout engine, the active slot is focused only after the geometry pass completes, and moving the Nexus window replays the latest staged layout.
+
+This revision also closes the largest diagnostics and trust gap: local development now defaults to stable signing and a stable installed app path, diagnostics surfaces runtime build identity details, and generic window choreography reports an explicit blocked state when Accessibility is denied instead of silently degrading into app-only activation. Transparent embedding, deeper runtime rematching, and adapter-specific restore remain follow-up work.
 
 ## Context and Orientation
 
@@ -111,6 +121,9 @@ After the foundations exist, build the first shell UI in `Sources/StageChrome` a
 
 From the repository root, use these commands:
 
+    export NEXUS_CODESIGN_IDENTITY="Nexus Dev Local"
+    # optional override (default is ~/Applications/Nexus.app)
+    # export NEXUS_DEV_INSTALL_PATH="$HOME/Applications/Nexus.app"
     rtk proxy bash ./scripts/dev-build.sh
     rtk swift test
     rtk proxy bash ./scripts/dev-run.sh
@@ -120,16 +133,20 @@ The expected build flow is:
     > rtk proxy bash ./scripts/dev-build.sh
     Building NexusApp with SwiftPM...
     Bundling build/Nexus.app...
-    Ad-hoc signing build/Nexus.app...
-    Nexus.app ready at .../build/Nexus.app
+    Signing with identity 'Nexus Dev Local'...
+    Installing Nexus.app to ~/Applications/Nexus.app...
+    Nexus.app ready at .../Applications/Nexus.app
+    (Use NEXUS_ALLOW_ADHOC=1 only for explicit non-TCC debugging fallback.)
 
 ## Validation and Acceptance
 
-Run `rtk swift test` and expect all package tests to pass. Then run `rtk proxy bash ./scripts/dev-run.sh` and expect a native `Nexus.app` to launch. The sidebar should show numbered workspaces, the topbar should show the active workspace and slot metadata, the strip should center the focused slot, and the diagnostics button should open a panel that shows permission states and environment paths. Slot changes should come from header clicks, topbar arrows, or keyboard shortcuts rather than direct strip dragging. With Accessibility granted, switching slots or workspaces should stage every visible slot into its rect, park only offstage slots, and keep the active slot frontmost after the transition. Moving or resizing the Nexus window should reapply the staged native window frames. Quitting and relaunching the app should still preserve workspace additions, renames, and active-slot selection, though runtime window rematching and adapter-specific restore remain open follow-ups.
+Run `rtk swift test` and expect all package tests to pass. Then run `rtk proxy bash ./scripts/dev-run.sh` and expect the installed `~/Applications/Nexus.app` to launch (or `NEXUS_DEV_INSTALL_PATH` override). The sidebar should show numbered workspaces, the topbar should show the active workspace and slot metadata, the strip should center the focused slot, and diagnostics should now show both permission states and runtime build identity details.
+
+If Accessibility is denied, diagnostics should explicitly report that generic external-window choreography is blocked. With Accessibility granted for the installed app identity, switching slots or workspaces should stage every visible slot into its rect, park only offstage slots, and keep the active slot frontmost after the transition. Moving or resizing the Nexus window should reapply the staged native window frames. Quitting and relaunching should preserve workspace additions, renames, and active-slot selection, though runtime rematching and adapter-specific restore remain follow-up work.
 
 ## Idempotence and Recovery
 
-The scripts are designed to be repeatable. Re-running `rtk proxy bash ./scripts/dev-build.sh` replaces `build/Nexus.app` safely. Re-running `rtk proxy bash ./scripts/dev-run.sh` rebuilds and reopens the app bundle. `rtk proxy bash ./scripts/dev-clean.sh` removes only generated build outputs and leaves checked-in sources untouched.
+The scripts are designed to be repeatable. Re-running `rtk proxy bash ./scripts/dev-build.sh` rebuilds and reinstalls the app at `~/Applications/Nexus.app` by default. Re-running `rtk proxy bash ./scripts/dev-run.sh` rebuilds and relaunches the installed path. `rtk proxy bash ./scripts/dev-clean.sh` removes generated build outputs and leaves checked-in sources untouched. `NEXUS_ALLOW_ADHOC=1` is available as an explicit fallback but is not appropriate for reliable Accessibility trust verification.
 
 ## Artifacts and Notes
 
@@ -194,3 +211,4 @@ The package exposes one executable target, `NexusApp`, and the following interna
       DiagnosticsPanelController
 
 Plan revision note: this revision records the completed visible-slot native geometry milestone, including the new `WindowControlling` protocol for testable AX mutations, visible-slot staging semantics in the visibility engine, live viewport-follow replay in `AppEnvironment`, and executable-level tests that lock the frame-conversion and final-focus behavior in place.
+Plan revision note: this revision also records the stable dev-signing and Accessibility-blocked choreography update: `dev-build` and `dev-run` now target a stable installed app identity by default, ad-hoc signing is explicit fallback only, and diagnostics surfaces runtime build identity so denied trust states can be distinguished from TCC identity drift.

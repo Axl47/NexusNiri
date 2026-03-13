@@ -3,6 +3,8 @@
 - [ ] Harden workspace rematching and runtime binding persistence across live multi-workspace switches
 
 ## Done
+- [x] Document and lock the stable local signing workflow (`NEXUS_CODESIGN_IDENTITY` + `~/Applications/Nexus.app`) for Accessibility-sensitive choreography testing
+- [x] Document explicit ad-hoc fallback (`NEXUS_ALLOW_ADHOC=1`) and diagnostics messaging for blocked generic choreography when Accessibility is denied
 - [x] Implement visible-slot native geometry conformance with live viewport follow
 - [x] Locate the active ExecPlan and identify the current milestone from the workspace state
 - [x] Reconstruct active task state from the existing ExecPlan and current worktree

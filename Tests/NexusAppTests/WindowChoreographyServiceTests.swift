@@ -1,4 +1,5 @@
 import AdapterBus
+import Diagnostics
 import Foundation
 import LayoutEngine
 import SharedTypes
@@ -81,12 +82,13 @@ func visibleSlotStagingWritesFramesForEachVisibleWindowAndFocusesOnlyAtTheEnd() 
     )
     let viewportFrame = CGRect(x: 100, y: 200, width: 1200, height: 720)
 
-    await service.apply(
+    let outcome = await service.apply(
         workspace: workspace,
         previousWorkspace: nil,
         layout: layout,
         stageViewportFrame: viewportFrame
     )
+    #expect(outcome == .applied)
 
     let operations = registry.operations
     let frameOperations = operations.compactMap { operation -> RecordingWindowRegistry.Operation? in
@@ -120,12 +122,76 @@ func visibleSlotStagingWritesFramesForEachVisibleWindowAndFocusesOnlyAtTheEnd() 
 
 @MainActor
 @Test
+func choreographyReturnsBlockedWhenAccessibilityIsDeniedForGenericWindows() async throws {
+    let registry = RecordingWindowRegistry(
+        snapshot: WindowRegistrySnapshot(
+            isAccessibilityTrusted: false,
+            windows: [
+                WindowCandidate(
+                    bundleID: "com.example.editor",
+                    appName: "Editor",
+                    windowTitle: "Project",
+                    processID: 101,
+                    windowID: 1,
+                    frame: .zero,
+                    source: .accessibility
+                ),
+            ]
+        )
+    )
+    let service = WindowChoreographyService(
+        windowRegistry: registry,
+        visibilityCoordinator: VisibilityCoordinator(),
+        adapterRegistry: AdapterRegistry()
+    )
+    let slot = Slot(
+        id: "editor",
+        workspaceID: "workspace",
+        kind: .externalWindow,
+        label: "Editor",
+        appBinding: AppBinding(bundleID: "com.example.editor"),
+        widthPolicy: SizePolicy(mode: .fraction, value: 1),
+        layoutRole: .primary
+    )
+    let workspace = Workspace(
+        id: "workspace",
+        name: "Main",
+        activeSlotID: slot.id,
+        slotOrder: [slot.id],
+        layoutState: LayoutState(activeIndex: 0, centeredSlotID: slot.id, visibleSlotIDs: [slot.id]),
+        slots: [slot]
+    )
+    let layout = LayoutPlan(
+        slotLayouts: [
+            SlotLayout(slotID: slot.id, frame: RectValue(x: 0, y: 0, width: 720, height: 640), isFocused: true),
+        ],
+        contentWidth: 720,
+        scrollOffset: 0,
+        visibleSlotIDs: [slot.id],
+        parkedSlotIDs: [],
+        activeSlotIndex: 0
+    )
+
+    let outcome = await service.apply(
+        workspace: workspace,
+        previousWorkspace: nil,
+        layout: layout,
+        stageViewportFrame: CGRect(x: 100, y: 200, width: 1200, height: 720)
+    )
+
+    #expect(outcome == .blocked(.accessibilityDenied))
+    #expect(registry.operations.isEmpty)
+}
+
+@MainActor
+@Test
 func appEnvironmentRestagesWhenViewportFrameChangesButNotWhenItRepeats() async throws {
     let registry = RecordingWindowRegistry(snapshot: WindowRegistrySnapshot(isAccessibilityTrusted: false))
     let choreographyService = RecordingChoreographyService()
     let environment = AppEnvironment(
         windowRegistry: registry,
         adapterRegistry: AdapterRegistry(),
+        diagnosticsCenter: DiagnosticsCenter(initialSnapshot: trustedDiagnosticsSnapshot()),
         choreographyService: choreographyService,
         registerDefaultAdapters: false
     )
@@ -157,16 +223,117 @@ func appEnvironmentRestagesWhenViewportFrameChangesButNotWhenItRepeats() async t
         activeSlotIndex: 0
     )
 
+    environment.updateStageViewportFrame(CGRect(x: 100, y: 200, width: 1200, height: 720))
     await environment.applyChoreography(for: workspace, layout: layout)
-    try await waitForApplyCount(1, service: choreographyService)
+    try await waitForMinimumApplyCount(1, service: choreographyService)
+    let initialApplyCount = choreographyService.applyCalls.count
 
-    environment.updateStageViewportFrame(CGRect(x: 100, y: 200, width: 1200, height: 720))
-    try await waitForApplyCount(2, service: choreographyService)
+    environment.updateStageViewportFrame(CGRect(x: 140, y: 240, width: 1200, height: 720))
+    try await waitForMinimumApplyCount(initialApplyCount + 1, service: choreographyService)
+    let postMoveApplyCount = choreographyService.applyCalls.count
 
-    environment.updateStageViewportFrame(CGRect(x: 100, y: 200, width: 1200, height: 720))
+    environment.updateStageViewportFrame(CGRect(x: 140, y: 240, width: 1200, height: 720))
     try await Task.sleep(nanoseconds: 50_000_000)
 
-    #expect(choreographyService.applyCalls.count == 2)
+    #expect(choreographyService.applyCalls.count == postMoveApplyCount)
+}
+
+@MainActor
+@Test
+func appEnvironmentWaitsForViewportFrameBeforeFirstVisibleSlotApply() async throws {
+    let registry = RecordingWindowRegistry(snapshot: WindowRegistrySnapshot(isAccessibilityTrusted: false))
+    let choreographyService = RecordingChoreographyService()
+    let environment = AppEnvironment(
+        windowRegistry: registry,
+        adapterRegistry: AdapterRegistry(),
+        diagnosticsCenter: DiagnosticsCenter(initialSnapshot: trustedDiagnosticsSnapshot()),
+        choreographyService: choreographyService,
+        registerDefaultAdapters: false
+    )
+    let slot = Slot(
+        id: "editor",
+        workspaceID: "workspace",
+        kind: .externalWindow,
+        label: "Editor",
+        appBinding: AppBinding(bundleID: "com.example.editor"),
+        widthPolicy: SizePolicy(mode: .fraction, value: 0.6),
+        layoutRole: .primary
+    )
+    let workspace = Workspace(
+        id: "workspace",
+        name: "Main",
+        activeSlotID: slot.id,
+        slotOrder: [slot.id],
+        layoutState: LayoutState(activeIndex: 0, centeredSlotID: slot.id, visibleSlotIDs: [slot.id]),
+        slots: [slot]
+    )
+    let layout = LayoutPlan(
+        slotLayouts: [
+            SlotLayout(slotID: slot.id, frame: RectValue(x: 0, y: 0, width: 720, height: 640), isFocused: true),
+        ],
+        contentWidth: 720,
+        scrollOffset: 0,
+        visibleSlotIDs: [slot.id],
+        parkedSlotIDs: [],
+        activeSlotIndex: 0
+    )
+
+    await environment.applyChoreography(for: workspace, layout: layout)
+    try await Task.sleep(nanoseconds: 50_000_000)
+    #expect(choreographyService.applyCalls.isEmpty)
+
+    environment.updateStageViewportFrame(CGRect(x: 100, y: 200, width: 1200, height: 720))
+    try await waitForMinimumApplyCount(1, service: choreographyService)
+}
+
+@MainActor
+@Test
+func appEnvironmentSetsBlockedStatusWhenChoreographyIsDenied() async throws {
+    let registry = RecordingWindowRegistry(snapshot: WindowRegistrySnapshot(isAccessibilityTrusted: false))
+    let choreographyService = RecordingChoreographyService()
+    choreographyService.outcome = .blocked(.accessibilityDenied)
+    let environment = AppEnvironment(
+        windowRegistry: registry,
+        adapterRegistry: AdapterRegistry(),
+        diagnosticsCenter: DiagnosticsCenter(initialSnapshot: trustedDiagnosticsSnapshot()),
+        choreographyService: choreographyService,
+        registerDefaultAdapters: false
+    )
+    let slot = Slot(
+        id: "editor",
+        workspaceID: "workspace",
+        kind: .externalWindow,
+        label: "Editor",
+        appBinding: AppBinding(bundleID: "com.example.editor"),
+        widthPolicy: SizePolicy(mode: .fraction, value: 1),
+        layoutRole: .primary
+    )
+    let workspace = Workspace(
+        id: "workspace",
+        name: "Main",
+        activeSlotID: slot.id,
+        slotOrder: [slot.id],
+        layoutState: LayoutState(activeIndex: 0, centeredSlotID: slot.id, visibleSlotIDs: [slot.id]),
+        slots: [slot]
+    )
+    let layout = LayoutPlan(
+        slotLayouts: [
+            SlotLayout(slotID: slot.id, frame: RectValue(x: 0, y: 0, width: 720, height: 640), isFocused: true),
+        ],
+        contentWidth: 720,
+        scrollOffset: 0,
+        visibleSlotIDs: [slot.id],
+        parkedSlotIDs: [],
+        activeSlotIndex: 0
+    )
+
+    environment.updateStageViewportFrame(CGRect(x: 100, y: 200, width: 1200, height: 720))
+    await environment.applyChoreography(for: workspace, layout: layout)
+    try await waitForMinimumApplyCount(1, service: choreographyService)
+    try await waitForStatusContaining("blocked", in: environment.session)
+
+    #expect(environment.session.statusMessage.localizedCaseInsensitiveContains("blocked"))
+    #expect(environment.session.statusMessage.localizedCaseInsensitiveContains("Focused") == false)
 }
 
 @MainActor
@@ -181,6 +348,46 @@ private func waitForApplyCount(_ expectedCount: Int, service: RecordingChoreogra
 
     Issue.record("Timed out waiting for \(expectedCount) choreography apply call(s); saw \(service.applyCalls.count).")
     throw TestFailure()
+}
+
+@MainActor
+private func waitForMinimumApplyCount(_ minimumCount: Int, service: RecordingChoreographyService) async throws {
+    for _ in 0..<50 {
+        if service.applyCalls.count >= minimumCount {
+            return
+        }
+        await Task.yield()
+        try await Task.sleep(nanoseconds: 10_000_000)
+    }
+
+    Issue.record("Timed out waiting for at least \(minimumCount) choreography apply call(s); saw \(service.applyCalls.count).")
+    throw TestFailure()
+}
+
+@MainActor
+private func waitForStatusContaining(_ fragment: String, in session: WorkspaceSession) async throws {
+    for _ in 0..<50 {
+        if session.statusMessage.localizedCaseInsensitiveContains(fragment) {
+            return
+        }
+        await Task.yield()
+        try await Task.sleep(nanoseconds: 10_000_000)
+    }
+
+    Issue.record("Timed out waiting for status containing '\(fragment)'; saw '\(session.statusMessage)'.")
+    throw TestFailure()
+}
+
+private func trustedDiagnosticsSnapshot() -> DiagnosticsSnapshot {
+    DiagnosticsSnapshot(
+        permissions: [
+            PermissionStatus(
+                kind: .accessibility,
+                state: .granted,
+                detail: "Accessibility access is enabled for the running Nexus.app."
+            ),
+        ]
+    )
 }
 
 private final class RecordingWindowRegistry: @unchecked Sendable, WindowRegistryService, WindowControlling {
@@ -236,6 +443,7 @@ private final class RecordingChoreographyService: WindowChoreographing {
         let frame: CGRect?
     }
 
+    var outcome: ChoreographyOutcome = .applied
     private(set) var applyCalls: [ApplyCall] = []
 
     func apply(
@@ -243,10 +451,11 @@ private final class RecordingChoreographyService: WindowChoreographing {
         previousWorkspace: Workspace?,
         layout: LayoutPlan,
         stageViewportFrame: CGRect?
-    ) async {
+    ) async -> ChoreographyOutcome {
         _ = previousWorkspace
         _ = layout
         applyCalls.append(ApplyCall(workspaceID: workspace.id, frame: stageViewportFrame?.integral))
+        return outcome
     }
 
     func revealAll(

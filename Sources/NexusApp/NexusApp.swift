@@ -13,6 +13,11 @@ struct NexusApplication: App {
                 layoutEngine: environment.layoutEngine,
                 diagnosticsSnapshot: environment.diagnosticsSnapshot,
                 onOpenDiagnostics: environment.openDiagnosticsPanel,
+                onRequestAccessibility: {
+                    Task {
+                        await environment.requestAccessibilityAccess()
+                    }
+                },
                 onRefreshDiagnostics: {
                     Task {
                         await environment.refreshDiagnostics()

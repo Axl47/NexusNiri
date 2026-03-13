@@ -11,6 +11,7 @@ public struct StageChromeView: View {
     private let layoutEngine: any LayoutComputing
     private let diagnosticsSnapshot: DiagnosticsSnapshot
     private let onOpenDiagnostics: () -> Void
+    private let onRequestAccessibility: () -> Void
     private let onRefreshDiagnostics: () -> Void
     private let onRevealAll: () -> Void
     private let onLayoutDidUpdate: (Workspace, LayoutPlan) async -> Void
@@ -21,6 +22,7 @@ public struct StageChromeView: View {
         layoutEngine: any LayoutComputing,
         diagnosticsSnapshot: DiagnosticsSnapshot,
         onOpenDiagnostics: @escaping () -> Void,
+        onRequestAccessibility: @escaping () -> Void,
         onRefreshDiagnostics: @escaping () -> Void,
         onRevealAll: @escaping () -> Void,
         onLayoutDidUpdate: @escaping (Workspace, LayoutPlan) async -> Void,
@@ -30,6 +32,7 @@ public struct StageChromeView: View {
         self.layoutEngine = layoutEngine
         self.diagnosticsSnapshot = diagnosticsSnapshot
         self.onOpenDiagnostics = onOpenDiagnostics
+        self.onRequestAccessibility = onRequestAccessibility
         self.onRefreshDiagnostics = onRefreshDiagnostics
         self.onRevealAll = onRevealAll
         self.onLayoutDidUpdate = onLayoutDidUpdate
@@ -122,9 +125,14 @@ public struct StageChromeView: View {
 
                 Spacer(minLength: 12)
 
-                if let status = diagnosticsSnapshot.permissions.first(where: { $0.kind == .accessibility && $0.state != .granted }) {
-                    Button(status.kind == .accessibility ? "Enable Accessibility" : "Permissions") {
-                        openSettings(for: status)
+                if let status = accessibilityPermissionStatus, status.state != .granted {
+                    Text(accessibilityWarningText(for: status))
+                        .font(.system(size: 11, weight: .medium))
+                        .foregroundStyle(.orange.opacity(0.92))
+                        .lineLimit(1)
+
+                    Button("Enable Accessibility") {
+                        onRequestAccessibility()
                     }
                     .buttonStyle(.plain)
                     .font(.system(size: 11, weight: .medium))
@@ -199,9 +207,27 @@ public struct StageChromeView: View {
         return count == 1 ? "1 app" : "\(count) apps · \(index) / \(count)"
     }
 
-    private func openSettings(for status: PermissionStatus) {
-        guard let settingsURL = status.settingsURL, let url = URL(string: settingsURL) else { return }
-        NSWorkspace.shared.open(url)
+    private var accessibilityPermissionStatus: PermissionStatus? {
+        diagnosticsSnapshot.permissions.first(where: { $0.kind == .accessibility })
+    }
+
+    private func accessibilityWarningText(for status: PermissionStatus) -> String {
+        let buildIdentity = diagnosticsSnapshot.buildIdentity
+
+        if buildIdentity.signingMode == .adHoc {
+            return "Window staging blocked by ad-hoc dev signing."
+        }
+
+        if buildIdentity.launchedFromExpectedPath == false,
+           buildIdentity.expectedInstallPath?.isEmpty == false {
+            return "Window staging blocked until the installed Nexus.app is trusted."
+        }
+
+        if status.state == .denied {
+            return "Window staging is blocked until Accessibility is granted."
+        }
+
+        return status.detail
     }
 }
 
@@ -546,9 +572,18 @@ private struct ScreenSpaceFrameReporter: NSViewRepresentable {
 final class ReporterView: NSView {
     var onChange: ((CGRect) -> Void)?
     private var lastReportedFrame: CGRect = .null
+    private var observationTokens: [NSObjectProtocol] = []
+
+    override func viewWillMove(toWindow newWindow: NSWindow?) {
+        super.viewWillMove(toWindow: newWindow)
+        if newWindow == nil {
+            tearDownObservers()
+        }
+    }
 
     override func viewDidMoveToWindow() {
         super.viewDidMoveToWindow()
+        setUpObservers()
         reportFrameIfNeeded()
     }
 
@@ -566,6 +601,33 @@ final class ReporterView: NSView {
         DispatchQueue.main.async { [onChange, rectOnScreen] in
             onChange?(rectOnScreen)
         }
+    }
+
+    private func setUpObservers() {
+        tearDownObservers()
+
+        guard let window else { return }
+        let center = NotificationCenter.default
+        let names: [Notification.Name] = [
+            NSWindow.didMoveNotification,
+            NSWindow.didResizeNotification,
+            NSWindow.didChangeScreenNotification,
+            NSWindow.didEndLiveResizeNotification,
+        ]
+
+        observationTokens = names.map { name in
+            center.addObserver(forName: name, object: window, queue: .main) { [weak self] _ in
+                Task { @MainActor [weak self] in
+                    self?.reportFrameIfNeeded()
+                }
+            }
+        }
+    }
+
+    private func tearDownObservers() {
+        let center = NotificationCenter.default
+        observationTokens.forEach(center.removeObserver)
+        observationTokens.removeAll()
     }
 }
 
@@ -658,6 +720,24 @@ public struct DiagnosticsPanelView: View {
                 }
             }
 
+            GroupBox("Build Identity") {
+                VStack(alignment: .leading, spacing: 6) {
+                    DiagnosticRow(label: "Signing", value: snapshot.buildIdentity.signingMode.rawValue)
+                    DiagnosticRow(label: "Identity", value: snapshot.buildIdentity.signingIdentityLabel ?? "unknown")
+                    DiagnosticRow(label: "Bundle ID", value: snapshot.buildIdentity.bundleIdentifier.isEmpty ? "unknown" : snapshot.buildIdentity.bundleIdentifier)
+                    DiagnosticRow(label: "Bundle Path", value: snapshot.buildIdentity.bundlePath.isEmpty ? "unknown" : snapshot.buildIdentity.bundlePath)
+                    DiagnosticRow(label: "Expected Path", value: snapshot.buildIdentity.expectedInstallPath ?? "unknown")
+                    DiagnosticRow(label: "Launch Path", value: snapshot.buildIdentity.launchedFromExpectedPath ? "matches expected install path" : "does not match expected install path")
+
+                    if let buildTimestamp = snapshot.buildIdentity.buildTimestamp {
+                        DiagnosticRow(
+                            label: "Built",
+                            value: buildTimestamp.formatted(date: .abbreviated, time: .standard)
+                        )
+                    }
+                }
+            }
+
             GroupBox("Adapters") {
                 VStack(alignment: .leading, spacing: 8) {
                     ForEach(snapshot.adapterHealth) { report in
@@ -702,6 +782,22 @@ public struct DiagnosticsPanelView: View {
         }
         .padding(20)
         .frame(width: 460, height: 560)
+    }
+}
+
+private struct DiagnosticRow: View {
+    let label: String
+    let value: String
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 2) {
+            Text(label)
+                .font(.system(size: 11, weight: .medium))
+            Text(value)
+                .font(.system(size: 11, weight: .regular, design: .monospaced))
+                .foregroundStyle(ChromeTheme.textSecondary)
+                .textSelection(.enabled)
+        }
     }
 }
 
