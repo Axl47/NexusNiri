@@ -31,7 +31,7 @@ public protocol FocusCoordinating {
     func focus(slotID: String, candidate: WindowCandidate?) async throws
 }
 
-public protocol NexusAdapter: AnyObject {
+public protocol NexusAdapter: AnyObject, Sendable {
     var id: String { get }
     var supportedBundleIDs: [String] { get }
 

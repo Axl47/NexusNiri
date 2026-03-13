@@ -1,4 +1,5 @@
 import AppKit
+import AdapterBus
 import Foundation
 import OSLog
 import SharedTypes
@@ -9,15 +10,18 @@ import WindowRegistry
 final class WindowChoreographyService {
     private let windowRegistry: AXWindowRegistry
     private let visibilityCoordinator: VisibilityCoordinator
+    private let adapterRegistry: AdapterRegistry
 
     private let logger = Logger(subsystem: "dev.nexusniri.Nexus", category: "choreography")
 
     init(
         windowRegistry: AXWindowRegistry,
-        visibilityCoordinator: VisibilityCoordinator
+        visibilityCoordinator: VisibilityCoordinator,
+        adapterRegistry: AdapterRegistry
     ) {
         self.windowRegistry = windowRegistry
         self.visibilityCoordinator = visibilityCoordinator
+        self.adapterRegistry = adapterRegistry
     }
 
     func apply(
@@ -92,6 +96,18 @@ final class WindowChoreographyService {
         candidate: WindowCandidate?,
         activeSlotID: String?
     ) async {
+        if let adapter = adapter(for: slot) {
+            let didHandle = await applyAdapterAction(
+                adapter,
+                action: action,
+                slot: slot,
+                shouldFocus: slot.id == activeSlotID || action.kind == .reveal
+            )
+            if didHandle {
+                return
+            }
+        }
+
         switch action.kind {
         case .show, .reveal:
             await stageVisibleWindow(
@@ -214,6 +230,13 @@ final class WindowChoreographyService {
             } catch {
                 logger.debug("Unable to minimize parked window for slot \(slot.id, privacy: .public): \(error.localizedDescription, privacy: .public)")
             }
+
+            do {
+                try await windowRegistry.setApplicationHidden(processID: candidate.processID, to: true)
+                return
+            } catch {
+                logger.debug("Unable to hide parked app for slot \(slot.id, privacy: .public): \(error.localizedDescription, privacy: .public)")
+            }
         }
     }
 
@@ -291,6 +314,37 @@ final class WindowChoreographyService {
             return "com.t3tools.tether"
         default:
             return bundleID
+        }
+    }
+
+    private func adapter(for slot: Slot) -> (any NexusAdapter)? {
+        guard slot.adapterID != nil else { return nil }
+        return adapterRegistry.adapter(for: slot)
+    }
+
+    private func applyAdapterAction(
+        _ adapter: any NexusAdapter,
+        action: VisibilityAction,
+        slot: Slot,
+        shouldFocus: Bool
+    ) async -> Bool {
+        do {
+            switch action.kind {
+            case .show, .reveal:
+                try await adapter.stage(slot: slot, action: action)
+                if shouldFocus {
+                    try await adapter.activate(slot: slot)
+                }
+                return true
+            case .park, .minimize, .hideApp:
+                try await adapter.park(slot: slot)
+                return true
+            case .detach:
+                return false
+            }
+        } catch {
+            logger.debug("Adapter \(adapter.id, privacy: .public) failed for slot \(slot.id, privacy: .public): \(error.localizedDescription, privacy: .public)")
+            return false
         }
     }
 

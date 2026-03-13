@@ -42,7 +42,8 @@ final class AppEnvironment {
         self.diagnosticsPanelController = DiagnosticsPanelController()
         self.choreographyService = WindowChoreographyService(
             windowRegistry: windowRegistry,
-            visibilityCoordinator: visibilityCoordinator
+            visibilityCoordinator: visibilityCoordinator,
+            adapterRegistry: adapterRegistry
         )
         self.diagnosticsSnapshot = DiagnosticsSnapshot(
             stateDirectory: workspaceStore.stateDirectoryURL.path,

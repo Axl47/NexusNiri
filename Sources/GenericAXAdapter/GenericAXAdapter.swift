@@ -3,7 +3,7 @@ import Foundation
 import AdapterBus
 import SharedTypes
 
-public final class GenericAXAdapter: NexusAdapter {
+public final class GenericAXAdapter: @unchecked Sendable, NexusAdapter {
     public let id = "generic-ax"
     public let supportedBundleIDs: [String] = []
 

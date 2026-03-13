@@ -12,7 +12,7 @@ public struct TetherIdentity: Equatable, Sendable {
     }
 }
 
-public final class TetherAdapter: NexusAdapter {
+public final class TetherAdapter: @unchecked Sendable, NexusAdapter {
     public typealias Transport = (_ method: String, _ payload: [String: Any]) async throws -> Any
 
     public let id = "tether"
