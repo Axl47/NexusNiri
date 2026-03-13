@@ -95,6 +95,10 @@ let package = Package(
             dependencies: ["Diagnostics", "SharedTypes"]
         ),
         .testTarget(
+            name: "WindowRegistryTests",
+            dependencies: ["WindowRegistry", "SharedTypes"]
+        ),
+        .testTarget(
             name: "NexusAppTests",
             dependencies: ["NexusApp", "SharedTypes", "AdapterBus", "VisibilityEngine", "LayoutEngine", "WorkspaceEngine"]
         ),

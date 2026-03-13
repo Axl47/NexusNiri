@@ -237,6 +237,7 @@ targets:
         - StageChromeTests
         - VisibilityEngineTests
         - DiagnosticsTests
+        - WindowRegistryTests
         - NexusAppTests
 
   SharedTypesTests:
@@ -309,6 +310,16 @@ targets:
       - path: Tests/DiagnosticsTests
     dependencies:
       - target: Diagnostics
+      - target: SharedTypes
+
+  WindowRegistryTests:
+    templates:
+      - unitTest
+    platform: macOS
+    sources:
+      - path: Tests/WindowRegistryTests
+    dependencies:
+      - target: WindowRegistry
       - target: SharedTypes
 
   NexusAppTests:

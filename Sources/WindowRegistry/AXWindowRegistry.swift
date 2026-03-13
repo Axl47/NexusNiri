@@ -1,9 +1,14 @@
 import AppKit
 import ApplicationServices
 import Foundation
+import OSLog
 import SharedTypes
 
 public actor AXWindowRegistry: WindowRegistryService, WindowControlling {
+    private let focusLogger = Logger(subsystem: "dev.nexusniri.Nexus", category: "focusSync")
+    private let focusedWindowAttribution = FocusedWindowAttribution()
+    private var lastLoggedFocusedWindowResolution: FocusedWindowAttribution.Resolution?
+
     public init() {}
 
     public func snapshot() async throws -> WindowRegistrySnapshot {
@@ -40,56 +45,106 @@ public actor AXWindowRegistry: WindowRegistryService, WindowControlling {
         guard AXIsProcessTrusted() else { return nil }
 
         let systemWideElement = AXUIElementCreateSystemWide()
-        if let focusedUIElement = focusedUIElement(for: systemWideElement),
-           let focusedWindow = containingWindowElement(for: focusedUIElement) ?? focusedUIElementCandidateWindow(from: focusedUIElement) {
-            var processIdentifier: pid_t = 0
-            let pidError = AXUIElementGetPid(focusedWindow, &processIdentifier)
+        let focusedApplication = focusedApplication(for: systemWideElement)
+        let frontmostApplication = NSWorkspace.shared.frontmostApplication
 
-            if pidError == .success,
-               let application = NSRunningApplication(processIdentifier: processIdentifier) {
-                return candidate(
-                    for: focusedWindow,
-                    in: application,
-                    bundleID: application.bundleIdentifier,
-                    isFocused: true
-                )
-            }
+        let focusedWindowLookup = focusedWindowCandidate(
+            from: systemWideElement,
+            focusedApplication: focusedApplication,
+            frontmostApplication: frontmostApplication
+        )
+        if let candidate = focusedWindowLookup.candidate {
+            return candidate
+        }
+        if focusedWindowLookup.shouldContinue == false {
+            return nil
         }
 
-        guard let focusedApplicationValue = copyAttributeValue(
-            for: systemWideElement,
-            attribute: kAXFocusedApplicationAttribute as CFString
-        ),
-        CFGetTypeID(focusedApplicationValue) == AXUIElementGetTypeID() else {
-            return fallbackFocusedWindowCandidate()
+        guard let focusedApplication else {
+            return fallbackFocusedWindowCandidate(frontmostApplication: frontmostApplication)
         }
 
-        let applicationElement = unsafeDowncast(focusedApplicationValue, to: AXUIElement.self)
-        var processIdentifier: pid_t = 0
-        let pidError = AXUIElementGetPid(applicationElement, &processIdentifier)
-        guard pidError == .success,
-              let application = NSRunningApplication(processIdentifier: processIdentifier) else {
-            return fallbackFocusedWindowCandidate()
-        }
-
+        let applicationElement = AXUIElementCreateApplication(focusedApplication.processIdentifier)
         let focusedWindow = focusedWindowElement(for: applicationElement)
             ?? mainWindowElement(for: applicationElement)
             ?? preferredStandardWindow(from: windowElements(for: applicationElement))
 
         guard let focusedWindow else {
-            return fallbackFocusedWindowCandidate()
+            return fallbackFocusedWindowCandidate(frontmostApplication: frontmostApplication)
         }
 
         return candidate(
             for: focusedWindow,
-            in: application,
-            bundleID: application.bundleIdentifier,
+            in: focusedApplication,
+            bundleID: focusedApplication.bundleIdentifier,
             isFocused: true
         )
     }
 
-    private func fallbackFocusedWindowCandidate() -> WindowCandidate? {
-        if let frontmostApplication = NSWorkspace.shared.frontmostApplication {
+    private func focusedWindowCandidate(
+        from systemWideElement: AXUIElement,
+        focusedApplication: NSRunningApplication?,
+        frontmostApplication: NSRunningApplication?
+    ) -> (candidate: WindowCandidate?, shouldContinue: Bool) {
+        let focusedUIElement = focusedUIElement(for: systemWideElement)
+        let focusedWindow = focusedUIElement.flatMap { containingWindowElement(for: $0) ?? focusedUIElementCandidateWindow(from: $0) }
+        let focusedElementProcessID = focusedUIElement.flatMap(processID(for:))
+        let focusedWindowProcessID = focusedWindow.flatMap(processID(for:))
+        let focusedWindowRole = focusedWindow.flatMap { stringValue(for: $0, attribute: kAXRoleAttribute as CFString) }
+        let focusedWindowSubrole = focusedWindow.flatMap { stringValue(for: $0, attribute: kAXSubroleAttribute as CFString) }
+        let frontmostHostWindow = frontmostApplication.flatMap(standardHostWindowElement(for:))
+
+        let resolution = focusedWindowAttribution.resolve(
+            FocusedWindowAttribution.Context(
+                focusedElementProcessID: focusedElementProcessID,
+                focusedWindowProcessID: focusedWindowProcessID,
+                focusedApplicationProcessID: focusedApplication.map { Int($0.processIdentifier) },
+                focusedApplicationBundleID: focusedApplication?.bundleIdentifier,
+                focusedWindowRole: focusedWindowRole,
+                focusedWindowSubrole: focusedWindowSubrole,
+                frontmostApplicationProcessID: frontmostApplication.map { Int($0.processIdentifier) },
+                frontmostApplicationBundleID: frontmostApplication?.bundleIdentifier,
+                hostStandardWindowAvailable: frontmostHostWindow != nil
+            ),
+            nexusProcessID: Int(ProcessInfo.processInfo.processIdentifier),
+            nexusBundleID: Bundle.main.bundleIdentifier
+        )
+        logFocusedWindowResolution(resolution)
+
+        switch resolution.decision {
+        case .useFocusedOwner:
+            guard let focusedWindow,
+                  let application = application(for: resolution.resolvedOwnerProcessID) else {
+                return (nil, true)
+            }
+
+            return (candidate(
+                for: focusedWindow,
+                in: application,
+                bundleID: application.bundleIdentifier ?? resolution.resolvedOwnerBundleID,
+                isFocused: true
+            ), false)
+        case .useFrontmostHost:
+            guard let frontmostApplication,
+                  let frontmostHostWindow else {
+                return (nil, false)
+            }
+
+            return (candidate(
+                for: frontmostHostWindow,
+                in: frontmostApplication,
+                bundleID: frontmostApplication.bundleIdentifier,
+                isFocused: true
+            ), false)
+        case .ignoreFrontmostNexus, .ignoreMissingHostWindow:
+            return (nil, false)
+        case .unresolved:
+            return (nil, true)
+        }
+    }
+
+    private func fallbackFocusedWindowCandidate(frontmostApplication: NSRunningApplication?) -> WindowCandidate? {
+        if let frontmostApplication {
             let applicationElement = AXUIElementCreateApplication(frontmostApplication.processIdentifier)
             let frontmostWindow = focusedWindowElement(for: applicationElement)
                 ?? mainWindowElement(for: applicationElement)
@@ -353,6 +408,23 @@ public actor AXWindowRegistry: WindowRegistryService, WindowControlling {
         return value as? [AXUIElement] ?? []
     }
 
+    private func focusedApplication(for systemWideElement: AXUIElement) -> NSRunningApplication? {
+        guard let focusedApplicationValue = copyAttributeValue(
+            for: systemWideElement,
+            attribute: kAXFocusedApplicationAttribute as CFString
+        ),
+        CFGetTypeID(focusedApplicationValue) == AXUIElementGetTypeID() else {
+            return nil
+        }
+
+        let applicationElement = unsafeDowncast(focusedApplicationValue, to: AXUIElement.self)
+        guard let processIdentifier = processID(for: applicationElement) else {
+            return nil
+        }
+
+        return application(for: processIdentifier)
+    }
+
     private func focusedWindowElement(for applicationElement: AXUIElement) -> AXUIElement? {
         guard let focusedWindow = copyAttributeValue(for: applicationElement, attribute: kAXFocusedWindowAttribute as CFString),
               CFGetTypeID(focusedWindow) == AXUIElementGetTypeID() else {
@@ -441,6 +513,43 @@ public actor AXWindowRegistry: WindowRegistryService, WindowControlling {
         }
     }
 
+    private func standardHostWindowElement(for application: NSRunningApplication) -> AXUIElement? {
+        let applicationElement = AXUIElementCreateApplication(application.processIdentifier)
+        let windows = windowElements(for: applicationElement)
+
+        if let focusedWindow = focusedWindowElement(for: applicationElement),
+           isStandardHostWindow(focusedWindow) {
+            return focusedWindow
+        }
+
+        if let mainWindow = mainWindowElement(for: applicationElement),
+           isStandardHostWindow(mainWindow) {
+            return mainWindow
+        }
+
+        if let primaryStandardWindow = windows.first(where: isPrimaryStandardWindow) {
+            return primaryStandardWindow
+        }
+
+        let standardWindows = windows.filter(isStandardHostWindow).sorted { lhs, rhs in
+            preferredWindowScore(lhs) > preferredWindowScore(rhs)
+        }
+        return standardWindows.first
+    }
+
+    private func isStandardHostWindow(_ element: AXUIElement) -> Bool {
+        guard boolValue(for: element, attribute: kAXMinimizedAttribute as CFString) != true,
+              stringValue(for: element, attribute: kAXRoleAttribute as CFString) == String(kAXWindowRole) else {
+            return false
+        }
+
+        guard let subrole = stringValue(for: element, attribute: kAXSubroleAttribute as CFString) else {
+            return true
+        }
+
+        return subrole == String(kAXStandardWindowSubrole)
+    }
+
     private func preferredStandardWindow(from windows: [AXUIElement]) -> AXUIElement? {
         let candidates = windows
             .filter { boolValue(for: $0, attribute: kAXMinimizedAttribute as CFString) != true }
@@ -468,6 +577,46 @@ public actor AXWindowRegistry: WindowRegistryService, WindowControlling {
             score += 30_000
         }
         return score
+    }
+
+    private func processID(for element: AXUIElement) -> Int? {
+        var processIdentifier: pid_t = 0
+        let error = AXUIElementGetPid(element, &processIdentifier)
+        guard error == .success else {
+            return nil
+        }
+        return Int(processIdentifier)
+    }
+
+    private func application(for processID: Int?) -> NSRunningApplication? {
+        guard let processID else {
+            return nil
+        }
+        return NSRunningApplication(processIdentifier: pid_t(processID))
+    }
+
+    private func logFocusedWindowResolution(_ resolution: FocusedWindowAttribution.Resolution) {
+        guard resolution != lastLoggedFocusedWindowResolution else {
+            return
+        }
+
+        lastLoggedFocusedWindowResolution = resolution
+        focusLogger.debug(
+            """
+            Focus attribution decision=\(String(describing: resolution.decision), privacy: .public) \
+            helperToHost=\(resolution.helperToHostAttributionUsed, privacy: .public) \
+            focusedElementPID=\(String(describing: resolution.focusedElementProcessID), privacy: .public) \
+            focusedWindowPID=\(String(describing: resolution.focusedWindowProcessID), privacy: .public) \
+            focusedAppPID=\(String(describing: resolution.focusedApplicationProcessID), privacy: .public) \
+            focusedAppBundle=\(resolution.focusedApplicationBundleID ?? "nil", privacy: .public) \
+            frontmostPID=\(String(describing: resolution.frontmostApplicationProcessID), privacy: .public) \
+            frontmostBundle=\(resolution.frontmostApplicationBundleID ?? "nil", privacy: .public) \
+            resolvedOwnerPID=\(String(describing: resolution.resolvedOwnerProcessID), privacy: .public) \
+            resolvedOwnerBundle=\(resolution.resolvedOwnerBundleID ?? "nil", privacy: .public) \
+            role=\(resolution.focusedWindowRole ?? "nil", privacy: .public) \
+            subrole=\(resolution.focusedWindowSubrole ?? "nil", privacy: .public)
+            """
+        )
     }
 
     private func copyAttributeValue(for element: AXUIElement, attribute: CFString) -> CFTypeRef? {

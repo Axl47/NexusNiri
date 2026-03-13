@@ -455,6 +455,63 @@ func appEnvironmentReverseFocusSyncUsesPreserveExternalFocus() async throws {
 
 @MainActor
 @Test
+func appEnvironmentReverseFocusPrefersSelectedWorkspaceForDuplicateSharedAppProcess() async throws {
+    let registry = RecordingWindowRegistry(snapshot: WindowRegistrySnapshot(isAccessibilityTrusted: true))
+    let choreographyService = RecordingChoreographyService()
+    let store = makeWorkspaceStore("AppEnvironmentReverseFocusPreferredWorkspace")
+    let environment = AppEnvironment(
+        workspaceStore: store,
+        windowRegistry: registry,
+        adapterRegistry: AdapterRegistry(),
+        diagnosticsCenter: DiagnosticsCenter(initialSnapshot: trustedDiagnosticsSnapshot()),
+        choreographyService: choreographyService,
+        registerDefaultAdapters: false
+    )
+    let apiZen = Slot(
+        id: "api-zen",
+        workspaceID: "api",
+        kind: .externalWindow,
+        label: "Zen",
+        appBinding: AppBinding(bundleID: "app.zen-browser.zen"),
+        widthPolicy: SizePolicy(mode: .fraction, value: 0.5),
+        layoutRole: .secondary,
+        runtimeBinding: RuntimeBinding(processID: 687, matchConfidence: 1, state: .attached)
+    )
+    let uiZen = Slot(
+        id: "ui-zen",
+        workspaceID: "ui",
+        kind: .externalWindow,
+        label: "Zen",
+        appBinding: AppBinding(bundleID: "app.zen-browser.zen"),
+        widthPolicy: SizePolicy(mode: .fraction, value: 0.5),
+        layoutRole: .secondary,
+        runtimeBinding: RuntimeBinding(processID: 687, matchConfidence: 1, state: .attached)
+    )
+    await environment.session.load(seedWorkspaces: [
+        Workspace(id: "api", name: "API", activeSlotID: apiZen.id, slotOrder: [apiZen.id], layoutState: LayoutState(activeIndex: 0, centeredSlotID: apiZen.id), slots: [apiZen]),
+        Workspace(id: "ui", name: "UI", activeSlotID: uiZen.id, slotOrder: [uiZen.id], layoutState: LayoutState(activeIndex: 0, centeredSlotID: uiZen.id), slots: [uiZen]),
+    ])
+
+    await environment.handleFocusedWindowCandidate(
+        WindowCandidate(
+            bundleID: "app.zen-browser.zen",
+            appName: "Zen",
+            windowTitle: "Docs",
+            processID: 687,
+            windowID: nil,
+            frame: .zero,
+            isFocused: true,
+            source: .accessibility
+        )
+    )
+
+    #expect(environment.session.selectedWorkspaceID == "api")
+    #expect(environment.session.selectedWorkspace?.activeSlotID == "api-zen")
+    #expect(environment.session.lastSelectionOrigin == .nativeFocusSync)
+}
+
+@MainActor
+@Test
 func appEnvironmentRefreshesRuntimeBindingsAfterChoreography() async throws {
     let registry = RecordingWindowRegistry(
         snapshot: WindowRegistrySnapshot(

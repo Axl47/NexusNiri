@@ -121,6 +121,17 @@
             parallelizable = "NO">
             <BuildableReference
                BuildableIdentifier = "primary"
+               BlueprintIdentifier = "BC9447C9261021B33AD0997A"
+               BuildableName = "WindowRegistryTests.xctest"
+               BlueprintName = "WindowRegistryTests"
+               ReferencedContainer = "container:Nexus.xcodeproj">
+            </BuildableReference>
+         </TestableReference>
+         <TestableReference
+            skipped = "NO"
+            parallelizable = "NO">
+            <BuildableReference
+               BuildableIdentifier = "primary"
                BlueprintIdentifier = "006F692DCD862A52C708B650"
                BuildableName = "NexusAppTests.xctest"
                BlueprintName = "NexusAppTests"

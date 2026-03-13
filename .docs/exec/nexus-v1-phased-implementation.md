@@ -31,6 +31,8 @@ That command should build the Swift package, bundle the executable, sign it with
 - [x] (2026-03-13 05:42Z) Move local TCC-sensitive development off disposable ad-hoc bundles to stable signing defaults, add runtime build identity diagnostics, and explicitly block generic choreography when Accessibility trust is denied.
 - [x] (2026-03-13 16:45Z) Add a checked-in XcodeGen project so developers can inspect signing and capabilities in Xcode while keeping the same stable installed-app identity used by the CLI flow.
 - [x] (2026-03-13 17:45Z) Shift orchestration to follow the currently focused native window, reusing one shared slot matcher for forward staging and reverse selection sync while preserving external focus on native click-driven updates.
+- [x] (2026-03-13 19:32Z) Refine reverse focus attribution so helper-owned Zen and Tether content resolves through the frontmost host app only when a standard host window is available, and add dedicated ownership-attribution tests plus focus-sync logging.
+- [x] (2026-03-13 18:57Z) Resolve duplicate-process reverse-focus ambiguity by preferring the currently selected workspace when Zen or Tether are intentionally reused across workspaces without enough window-level signal to auto-switch safely.
 - [ ] Harden window rematching and runtime binding persistence across live multi-workspace switching against the registry.
 - [ ] Implement the first fully working deep Tether restore flow once the sibling app exposes the `nexus.*` contract.
 
@@ -66,6 +68,10 @@ That command should build the Swift package, bundle the executable, sign it with
   Evidence: local debugging on 2026-03-13 required checking signing behavior in an IDE-friendly app target, so the repo now carries an XcodeGen spec and checked-in `.xcodeproj` alongside the package workflow.
 - Observation: Native click-driven navigation becomes much more stable when Nexus follows the system-focused window and skips the usual final app refocus on reverse-sync-triggered transitions.
   Evidence: local implementation and tests on 2026-03-13 showed that a focused-window polling loop plus a short suppression window removed the immediate “Nexus refocused the app I just clicked” feedback loop while keeping Nexus-initiated navigation unchanged.
+- Observation: Zen and Tether can report focused content through helper or content processes even when the user perceives the host app as frontmost.
+  Evidence: live process inspection on 2026-03-13 showed Zen content under `app.zen-browser.plugincontainer` and Tether-adjacent content under `com.apple.SafariPlatformSupport.Helper`, while persisted Nexus runtime bindings still pointed at the host app PIDs.
+- Observation: The stronger reverse-focus blocker for Zen and Tether was not just helper-process ownership; both apps were also duplicated across workspaces while sharing the same live host PID.
+  Evidence: local inspection of `~/Library/Application Support/Nexus/workspace-state.json` on 2026-03-13 showed `slot-api-zen` and `slot-ui-zen` both bound to PID `687`, and `slot-api-tether` and `slot-ui-tether` both bound to PID `7131`, which makes process-plus-bundle reverse matching intentionally ambiguous without a workspace tie-break or exact window binding.
 
 ## Decision Log
 
@@ -108,6 +114,12 @@ That command should build the Swift package, bundle the executable, sign it with
 - Decision: Make the focused native window a first-class selection source and thread an explicit choreography focus policy through the app environment.
   Rationale: this lets Nexus follow real app clicks, auto-switch workspaces for matched windows, and restage geometry without stealing focus back from the external window the user already selected.
   Date/Author: 2026-03-13 / Codex
+- Decision: Fix Zen and Tether reverse focus at the ownership-attribution layer rather than by broad helper-bundle canonicalization in `WindowSlotMatcher`.
+  Rationale: helper-hosted web content should follow the frontmost host app only when that host exposes a standard window; generic canonicalization of helper bundles like `com.apple.SafariPlatformSupport.Helper` would be too coarse and would misroute unrelated apps.
+  Date/Author: 2026-03-13 / Codex
+- Decision: When reverse focus finds equal-scored matches for the same live process across multiple workspaces, prefer the currently selected workspace instead of dropping the event.
+  Rationale: duplicated Zen and Tether slots are a deliberate workflow choice in the seeded state, and when no exact window binding exists the current workspace is the only reliable local context that avoids both false workspace jumps and total no-op behavior.
+  Date/Author: 2026-03-13 / Codex
 
 ## Outcomes & Retrospective
 
@@ -120,6 +132,10 @@ This revision also closes the largest diagnostics and trust gap: local developme
 The repo also now carries a reproducible Xcode workflow for signing-sensitive debugging. `project.yml` generates `Nexus.xcodeproj`, the app target builds `Nexus.app` with the checked-in entitlements and Info.plist, and signed Xcode runs install back into the same stable app path used by the CLI scripts so TCC debugging stays consistent across both workflows.
 
 The latest orchestration slice also inverts the focus authority. `AppEnvironment` now polls the system-focused native window, maps it back to a slot through the shared `WindowSlotMatcher`, and updates the workspace session with origin `.nativeFocusSync`. Reverse-sync-triggered choreography preserves the already-focused external window, while Nexus-driven slot or workspace changes still use the normal active-slot focus handoff with a short suppression window to avoid immediate echo from the poller.
+
+The newest refinement narrows reverse focus attribution for helper-hosted apps. `AXWindowRegistry` now inspects the focused UI element, the containing window, and the frontmost host app together, then remaps helper-owned content back to the host only if that host exposes a standard window. That keeps Zen page clicks and Tether hosted-content clicks on the generic reverse-focus path without teaching `WindowSlotMatcher` unsafe global aliases for generic helper bundles, and the new `focusSync` logger plus `WindowRegistryTests` make the next app-specific attribution issue observable instead of heuristic guesswork.
+
+The next refinement closes a second Zen and Tether gap that only appeared against real saved state: those apps are reused across multiple workspaces while sharing the same live process IDs. `WindowSlotMatcher` now accepts the currently selected workspace as a reverse-focus tie-break so a click on the shared app instance can still reinforce the active workspace instead of getting discarded as an ambiguity whenever process, bundle, and title are otherwise identical.
 
 ## Context and Orientation
 

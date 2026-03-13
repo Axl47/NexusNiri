@@ -52,6 +52,7 @@ struct WindowSlotMatcher {
     func bestSlotMatch(
         for candidate: WindowCandidate,
         in workspaces: [Workspace],
+        preferredWorkspaceID: String? = nil,
         ignoringBundleID: String?,
         ignoringProcessID: Int
     ) -> SlotMatch? {
@@ -90,7 +91,29 @@ struct WindowSlotMatcher {
                 $0.score == best.score &&
                 !($0.workspaceID == best.workspaceID && $0.slotID == best.slotID)
             }
-            guard collisions.isEmpty else { return nil }
+            if collisions.isEmpty == false {
+                if let preferredWorkspaceID {
+                    let preferredMatches = scoredMatches.filter {
+                        $0.score == best.score && $0.workspaceID == preferredWorkspaceID
+                    }
+
+                    guard preferredMatches.count == 1,
+                          let preferredMatch = preferredMatches.first else {
+                        return nil
+                    }
+
+                    return SlotMatch(
+                        workspaceID: preferredMatch.workspaceID,
+                        slotID: preferredMatch.slotID,
+                        confidence: matchConfidence(
+                            for: preferredMatch.score,
+                            exactWindowBindingMatch: preferredMatch.exact
+                        )
+                    )
+                }
+
+                return nil
+            }
         }
 
         return SlotMatch(

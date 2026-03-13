@@ -1,6 +1,7 @@
 import AppKit
 import Foundation
 import Observation
+import OSLog
 import AdapterBus
 import Diagnostics
 import GenericAXAdapter
@@ -18,6 +19,7 @@ final class AppEnvironment {
     private static let focusedWindowPollIntervalNanoseconds: UInt64 = 250_000_000
     private static let focusSyncSuppressionDuration: TimeInterval = 0.4
 
+    private let focusSyncLogger = Logger(subsystem: "dev.nexusniri.Nexus", category: "focusSync")
     let workspaceStore: JSONWorkspaceStore
     let session: WorkspaceSession
     let windowRegistry: any WindowRegistryService
@@ -351,11 +353,19 @@ final class AppEnvironment {
         guard let match = windowSlotMatcher.bestSlotMatch(
             for: candidate,
             in: session.workspaces,
+            preferredWorkspaceID: session.selectedWorkspaceID,
             ignoringBundleID: Bundle.main.bundleIdentifier,
             ignoringProcessID: Int(ProcessInfo.processInfo.processIdentifier)
         ) else {
+            focusSyncLogger.debug(
+                "Reverse focus ignored candidate bundle=\(candidate.bundleID ?? "nil", privacy: .public) pid=\(candidate.processID, privacy: .public) windowID=\(String(describing: candidate.windowID), privacy: .public) title=\(candidate.windowTitle, privacy: .public) source=\(String(describing: candidate.source), privacy: .public) reason=noSlotMatch"
+            )
             return
         }
+
+        focusSyncLogger.debug(
+            "Reverse focus matched candidate bundle=\(candidate.bundleID ?? "nil", privacy: .public) pid=\(candidate.processID, privacy: .public) windowID=\(String(describing: candidate.windowID), privacy: .public) title=\(candidate.windowTitle, privacy: .public) source=\(String(describing: candidate.source), privacy: .public) workspace=\(match.workspaceID, privacy: .public) slot=\(match.slotID, privacy: .public) confidence=\(match.confidence, privacy: .public)"
+        )
 
         _ = session.syncFocusedWindowMatch(
             workspaceID: match.workspaceID,

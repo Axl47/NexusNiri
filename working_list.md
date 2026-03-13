@@ -1,5 +1,15 @@
 # Working List
+## In Progress
+- [x] Implement host-app reverse focus attribution in `WindowRegistry`
+
+## Pending
+- [x] No open items for this slice
+
 ## Done
+- [x] Resolve duplicate-process reverse-focus ambiguity for Zen and Tether by preferring the currently selected workspace when reverse matching ties across workspaces
+- [x] Add ownership-attribution unit coverage in `Tests/WindowRegistryTests`
+- [x] Extend reverse-focus app tests and keep matcher regressions green
+- [x] Regenerate `Nexus.xcodeproj`, update developer notes, and verify with `rtk swift test` plus unsigned Xcode build
 - [x] Update docs and exec notes for native focus-driven reverse orchestration
 - [x] Add focused-window discovery and shared slot matching for reverse orchestration
 - [x] Thread focus policy through choreography and app environment
