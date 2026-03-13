@@ -18,27 +18,25 @@ public actor VisibilityCoordinator: VisibilityCoordinating {
             panicModeEnabled = false
         }
 
-        let windowsBySlotBundleID = Dictionary(grouping: windows, by: { canonicalBundleID($0.bundleID) ?? "" })
+        _ = windows
         var actions: [VisibilityAction] = []
-        let activeSlotID = nextWorkspace.activeSlotID ?? nextWorkspace.orderedSlots.first?.id
 
         for slot in nextWorkspace.orderedSlots {
-            let window = windowsBySlotBundleID[canonicalBundleID(slot.appBinding?.bundleID) ?? ""]?.first
-            if slot.id == activeSlotID,
+            if layout.visibleSlotIDs.contains(slot.id),
                let layoutFrame = layout.slotLayouts.first(where: { $0.slotID == slot.id })?.frame {
                 actions.append(
                     VisibilityAction(
                         slotID: slot.id,
-                        windowID: window?.windowID,
+                        windowID: slot.runtimeBinding?.windowID,
                         kind: .show,
                         targetFrame: layoutFrame
                     )
                 )
-            } else {
+            } else if layout.parkedSlotIDs.contains(slot.id) {
                 actions.append(
                     VisibilityAction(
                         slotID: slot.id,
-                        windowID: window?.windowID,
+                        windowID: slot.runtimeBinding?.windowID,
                         kind: .park,
                         targetFrame: RectValue(x: -24, y: 48, width: 12, height: 240)
                     )
@@ -53,15 +51,6 @@ public actor VisibilityCoordinator: VisibilityCoordinating {
 
         lastActions = actions
         return actions
-    }
-
-    private func canonicalBundleID(_ bundleID: String?) -> String? {
-        switch bundleID {
-        case "dev.tether.desktop":
-            return "com.t3tools.tether"
-        default:
-            return bundleID
-        }
     }
 
     public func currentActions() -> [VisibilityAction] {

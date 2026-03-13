@@ -3,7 +3,7 @@ import ApplicationServices
 import Foundation
 import SharedTypes
 
-public actor AXWindowRegistry: WindowRegistryService {
+public actor AXWindowRegistry: WindowRegistryService, WindowControlling {
     public init() {}
 
     public func snapshot() async throws -> WindowRegistrySnapshot {
@@ -36,7 +36,7 @@ public actor AXWindowRegistry: WindowRegistryService {
         )
     }
 
-    public func setWindowFrame(processID: Int, windowID: Int?, to frame: RectValue) throws {
+    public func setWindowFrame(processID: Int, windowID: Int?, to frame: RectValue) async throws {
         let windowElement = try matchingWindowElement(processID: processID, windowID: windowID)
 
         try setAttributeValue(
@@ -51,7 +51,7 @@ public actor AXWindowRegistry: WindowRegistryService {
         )
     }
 
-    public func setWindowMinimized(processID: Int, windowID: Int?, to minimized: Bool) throws {
+    public func setWindowMinimized(processID: Int, windowID: Int?, to minimized: Bool) async throws {
         let windowElement = try matchingWindowElement(processID: processID, windowID: windowID)
         try setAttributeValue(
             minimized ? kCFBooleanTrue : kCFBooleanFalse,
@@ -60,7 +60,7 @@ public actor AXWindowRegistry: WindowRegistryService {
         )
     }
 
-    public func setApplicationHidden(processID: Int, to hidden: Bool) throws {
+    public func setApplicationHidden(processID: Int, to hidden: Bool) async throws {
         guard let application = NSRunningApplication(processIdentifier: pid_t(processID)) else {
             throw NexusError.notFound("No running application found for process \(processID).")
         }
@@ -72,7 +72,7 @@ public actor AXWindowRegistry: WindowRegistryService {
         }
     }
 
-    public func activateApplication(processID: Int) throws {
+    public func activateApplication(processID: Int) async throws {
         guard let application = NSRunningApplication(processIdentifier: pid_t(processID)) else {
             throw NexusError.notFound("No running application found for process \(processID).")
         }
@@ -80,7 +80,7 @@ public actor AXWindowRegistry: WindowRegistryService {
         application.activate(options: [.activateAllWindows])
     }
 
-    public func raiseWindow(processID: Int, windowID: Int?) throws {
+    public func raiseWindow(processID: Int, windowID: Int?) async throws {
         let windowElement = try matchingWindowElement(processID: processID, windowID: windowID)
         let error = AXUIElementPerformAction(windowElement, kAXRaiseAction as CFString)
         guard error == .success else {
@@ -88,8 +88,8 @@ public actor AXWindowRegistry: WindowRegistryService {
         }
     }
 
-    public func focusWindow(processID: Int, windowID: Int?) throws {
-        try activateApplication(processID: processID)
+    public func focusWindow(processID: Int, windowID: Int?) async throws {
+        try await activateApplication(processID: processID)
 
         let windowElement = try matchingWindowElement(processID: processID, windowID: windowID)
 
@@ -105,7 +105,7 @@ public actor AXWindowRegistry: WindowRegistryService {
             // Some windows do not expose focus writes even when they support raise.
         }
 
-        try raiseWindow(processID: processID, windowID: windowID)
+        try await raiseWindow(processID: processID, windowID: windowID)
     }
 
     private func quartzWindows() -> [WindowCandidate] {

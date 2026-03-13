@@ -57,15 +57,15 @@ func transitionStagesVisibleSlotsAndParksOutgoingWorkspaceSlots() async throws {
     let browserAction = actions.first(where: { $0.slotID == "browser" })
 
     #expect(zedAction?.kind == .show)
-    #expect(zedAction?.windowID == 1)
+    #expect(zedAction?.windowID == nil)
     #expect(docsAction?.kind == .park)
-    #expect(docsAction?.windowID == 2)
+    #expect(docsAction?.windowID == nil)
     #expect(editorAction?.kind == .park)
     #expect(browserAction?.kind == .park)
 }
 
 @Test
-func transitionParksNonActiveSlotsEvenWhenTheyRemainInLayoutNeighborhood() async throws {
+func transitionStagesEveryVisibleSlotAndOnlyParksOffstageSlots() async throws {
     let slots = [
         Slot(id: "editor", workspaceID: "w", kind: .externalWindow, label: "Editor", appBinding: AppBinding(bundleID: "com.example.editor"), widthPolicy: SizePolicy(mode: .fraction, value: 0.55), layoutRole: .primary),
         Slot(id: "browser", workspaceID: "w", kind: .externalWindow, label: "Browser", appBinding: AppBinding(bundleID: "com.example.browser"), widthPolicy: SizePolicy(mode: .fraction, value: 0.45), layoutRole: .secondary),
@@ -98,8 +98,50 @@ func transitionParksNonActiveSlotsEvenWhenTheyRemainInLayoutNeighborhood() async
     let editorAction = actions.first(where: { $0.slotID == "editor" })
     let browserAction = actions.first(where: { $0.slotID == "browser" })
 
-    #expect(editorAction?.kind == .park)
+    #expect(editorAction?.kind == .show)
     #expect(browserAction?.kind == .show)
+}
+
+@Test
+func transitionLeavesWindowIDUnsetWhenNoRuntimeBindingExists() async throws {
+    let slots = [
+        Slot(
+            id: "editor",
+            workspaceID: "w",
+            kind: .externalWindow,
+            label: "Editor",
+            appBinding: AppBinding(bundleID: "com.example.editor"),
+            widthPolicy: SizePolicy(mode: .fraction, value: 0.55),
+            layoutRole: .primary
+        ),
+    ]
+    let workspace = Workspace(
+        id: "w",
+        name: "Main",
+        activeSlotID: "editor",
+        slotOrder: ["editor"],
+        slots: slots
+    )
+    let layout = LayoutPlan(
+        slotLayouts: [
+            SlotLayout(slotID: "editor", frame: RectValue(x: 0, y: 0, width: 760, height: 700), isFocused: true),
+        ],
+        contentWidth: 760,
+        scrollOffset: 0,
+        visibleSlotIDs: ["editor"],
+        parkedSlotIDs: [],
+        activeSlotIndex: 0
+    )
+    let windows = [
+        WindowCandidate(bundleID: "com.example.editor", appName: "Editor", windowTitle: "Project A", processID: 300, windowID: 30, frame: .zero, source: .accessibility),
+        WindowCandidate(bundleID: "com.example.editor", appName: "Editor", windowTitle: "Project B", processID: 300, windowID: 31, frame: .zero, source: .accessibility),
+    ]
+    let coordinator = VisibilityCoordinator()
+
+    let actions = try await coordinator.transition(from: nil, to: workspace, layout: layout, windows: windows)
+
+    #expect(actions.first?.kind == .show)
+    #expect(actions.first?.windowID == nil)
 }
 
 @Test

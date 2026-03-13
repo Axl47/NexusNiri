@@ -8,15 +8,31 @@ import VisibilityEngine
 import WindowRegistry
 
 @MainActor
-final class WindowChoreographyService {
-    private let windowRegistry: AXWindowRegistry
+protocol WindowChoreographing: Sendable {
+    func apply(
+        workspace: Workspace,
+        previousWorkspace: Workspace?,
+        layout: LayoutPlan,
+        stageViewportFrame: CGRect?
+    ) async
+
+    func revealAll(
+        currentWorkspace: Workspace?,
+        previousWorkspace: Workspace?,
+        stageViewportFrame: CGRect?
+    ) async
+}
+
+@MainActor
+final class WindowChoreographyService: WindowChoreographing {
+    private let windowRegistry: any WindowRegistryService & WindowControlling
     private let visibilityCoordinator: VisibilityCoordinator
     private let adapterRegistry: AdapterRegistry
 
     private let logger = Logger(subsystem: "dev.nexusniri.Nexus", category: "choreography")
 
     init(
-        windowRegistry: AXWindowRegistry,
+        windowRegistry: any WindowRegistryService & WindowControlling,
         visibilityCoordinator: VisibilityCoordinator,
         adapterRegistry: AdapterRegistry
     ) {
@@ -78,6 +94,8 @@ final class WindowChoreographyService {
         previousWorkspace: Workspace?,
         windows: [WindowCandidate]
     ) async {
+        var focusTarget: FocusTarget?
+
         for action in actions {
             guard let slot = slot(
                 withID: action.slotID,
@@ -89,7 +107,7 @@ final class WindowChoreographyService {
             }
 
             let candidate = resolveCandidate(for: slot, action: action, windows: windows)
-            await apply(
+            let stageResult = await apply(
                 action: action,
                 slot: slot,
                 candidate: candidate,
@@ -97,6 +115,15 @@ final class WindowChoreographyService {
                 layout: layout,
                 stageViewportFrame: stageViewportFrame
             )
+
+            if action.kind == .show || action.kind == .reveal,
+               slot.id == currentWorkspace?.activeSlotID {
+                focusTarget = stageResult.focusTarget
+            }
+        }
+
+        if let focusTarget {
+            await focus(focusTarget)
         }
     }
 
@@ -107,29 +134,35 @@ final class WindowChoreographyService {
         activeSlotID: String?,
         layout: LayoutPlan?,
         stageViewportFrame: CGRect?
-    ) async {
+    ) async -> StageResult {
         if let adapter = adapter(for: slot) {
             let didHandle = await applyAdapterAction(
                 adapter,
                 action: action,
                 slot: slot,
-                shouldFocus: slot.id == activeSlotID || action.kind == .reveal
+                shouldFocus: false
             )
             if didHandle {
-                return
+                if action.kind == .show || action.kind == .reveal,
+                   slot.id == activeSlotID {
+                    return StageResult(focusTarget: .adapter(adapter, slot))
+                }
+                return StageResult()
             }
         }
 
         switch action.kind {
         case .show, .reveal:
-            await stageVisibleWindow(
+            let resolvedCandidate = await stageVisibleWindow(
                 slot: slot,
                 action: action,
                 candidate: candidate,
-                shouldFocus: slot.id == activeSlotID || action.kind == .reveal,
                 layout: layout,
                 stageViewportFrame: stageViewportFrame
             )
+            if slot.id == activeSlotID, let resolvedCandidate {
+                return StageResult(focusTarget: .native(resolvedCandidate))
+            }
         case .park:
             await parkWindow(slot: slot, action: action, candidate: candidate)
         case .minimize:
@@ -155,22 +188,23 @@ final class WindowChoreographyService {
         case .detach:
             logger.notice("Detach requested for slot \(slot.id, privacy: .public); leaving window unmanaged.")
         }
+
+        return StageResult()
     }
 
     private func stageVisibleWindow(
         slot: Slot,
         action: VisibilityAction,
         candidate: WindowCandidate?,
-        shouldFocus: Bool,
         layout: LayoutPlan?,
         stageViewportFrame: CGRect?
-    ) async {
+    ) async -> WindowCandidate? {
         guard let candidate else {
             do {
                 try openTarget(for: slot)
             } catch {
                 logger.debug("Unable to open target for slot \(slot.id, privacy: .public): \(error.localizedDescription, privacy: .public)")
-                return
+                return nil
             }
 
             if let reacquiredCandidate = await waitForCandidate(for: slot, action: action) {
@@ -178,31 +212,30 @@ final class WindowChoreographyService {
                     slot: slot,
                     action: action,
                     candidate: reacquiredCandidate,
-                    shouldFocus: shouldFocus,
                     layout: layout,
                     stageViewportFrame: stageViewportFrame
                 )
+                return reacquiredCandidate
             } else {
                 logger.debug("No live window candidate appeared after activating slot \(slot.id, privacy: .public).")
             }
-            return
+            return nil
         }
 
         await applyResolvedWindowFrame(
             slot: slot,
             action: action,
             candidate: candidate,
-            shouldFocus: shouldFocus,
             layout: layout,
             stageViewportFrame: stageViewportFrame
         )
+        return candidate
     }
 
     private func applyResolvedWindowFrame(
         slot: Slot,
         action: VisibilityAction,
         candidate: WindowCandidate,
-        shouldFocus: Bool,
         layout: LayoutPlan?,
         stageViewportFrame: CGRect?
     ) async {
@@ -236,14 +269,6 @@ final class WindowChoreographyService {
                 )
             } catch {
                 logger.debug("Unable to set frame for slot \(slot.id, privacy: .public): \(error.localizedDescription, privacy: .public)")
-            }
-        }
-
-        if shouldFocus {
-            do {
-                try await windowRegistry.focusWindow(processID: candidate.processID, windowID: candidate.windowID)
-            } catch {
-                logger.debug("Unable to focus window for slot \(slot.id, privacy: .public): \(error.localizedDescription, privacy: .public)")
             }
         }
     }
@@ -384,7 +409,7 @@ final class WindowChoreographyService {
         }
 
         let x = stageViewportFrame.minX + (slotLayout.frame.x - layout.scrollOffset)
-        let y = stageViewportFrame.maxY - ChromeMetrics.slotHeaderHeight - slotLayout.frame.height
+        let y = stageViewportFrame.maxY - ChromeMetrics.slotHeaderHeight - slotLayout.frame.y
 
         return RectValue(
             x: x,
@@ -472,4 +497,30 @@ final class WindowChoreographyService {
             }
         }
     }
+
+    private func focus(_ target: FocusTarget) async {
+        switch target {
+        case .native(let candidate):
+            do {
+                try await windowRegistry.focusWindow(processID: candidate.processID, windowID: candidate.windowID)
+            } catch {
+                logger.debug("Unable to focus window for slot candidate \(candidate.id, privacy: .public): \(error.localizedDescription, privacy: .public)")
+            }
+        case .adapter(let adapter, let slot):
+            do {
+                try await adapter.activate(slot: slot)
+            } catch {
+                logger.debug("Unable to activate adapter-managed slot \(slot.id, privacy: .public): \(error.localizedDescription, privacy: .public)")
+            }
+        }
+    }
+}
+
+private struct StageResult {
+    var focusTarget: FocusTarget?
+}
+
+private enum FocusTarget {
+    case native(WindowCandidate)
+    case adapter(any NexusAdapter, Slot)
 }

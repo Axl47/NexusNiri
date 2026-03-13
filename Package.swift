@@ -90,5 +90,9 @@ let package = Package(
             name: "VisibilityEngineTests",
             dependencies: ["VisibilityEngine", "SharedTypes"]
         ),
+        .testTarget(
+            name: "NexusAppTests",
+            dependencies: ["NexusApp", "SharedTypes", "AdapterBus", "VisibilityEngine", "LayoutEngine", "WorkspaceEngine"]
+        ),
     ]
 )

@@ -8,8 +8,17 @@ public protocol WorkspaceStore: Sendable {
     func saveState(_ state: PersistedWorkspaceState) async throws
 }
 
-public protocol WindowRegistryService {
+public protocol WindowRegistryService: Sendable {
     func snapshot() async throws -> WindowRegistrySnapshot
+}
+
+public protocol WindowControlling: Sendable {
+    func setWindowFrame(processID: Int, windowID: Int?, to frame: RectValue) async throws
+    func setWindowMinimized(processID: Int, windowID: Int?, to minimized: Bool) async throws
+    func setApplicationHidden(processID: Int, to hidden: Bool) async throws
+    func activateApplication(processID: Int) async throws
+    func raiseWindow(processID: Int, windowID: Int?) async throws
+    func focusWindow(processID: Int, windowID: Int?) async throws
 }
 
 public protocol LayoutComputing {

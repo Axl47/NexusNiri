@@ -16,13 +16,13 @@ import WorkspaceEngine
 final class AppEnvironment {
     let workspaceStore: JSONWorkspaceStore
     let session: WorkspaceSession
-    let windowRegistry: AXWindowRegistry
+    let windowRegistry: any WindowRegistryService
     let layoutEngine: StripLayoutEngine
     let visibilityCoordinator: VisibilityCoordinator
     let adapterRegistry: AdapterRegistry
     let diagnosticsCenter: DiagnosticsCenter
     let diagnosticsPanelController: DiagnosticsPanelController
-    let choreographyService: WindowChoreographyService
+    let choreographyService: any WindowChoreographing
 
     private(set) var diagnosticsSnapshot: DiagnosticsSnapshot
     private var started = false
@@ -32,18 +32,28 @@ final class AppEnvironment {
     private var pendingChoreographyRequest: ChoreographyRequest?
     private var choreographyProcessorTask: Task<Void, Never>?
     private var stageViewportFrame: CGRect?
+    private var latestLayoutContext: LayoutContext?
 
-    init() {
-        let workspaceStore = JSONWorkspaceStore()
+    init(
+        workspaceStore: JSONWorkspaceStore = JSONWorkspaceStore(),
+        windowRegistry: any WindowRegistryService & WindowControlling = AXWindowRegistry(),
+        layoutEngine: StripLayoutEngine = StripLayoutEngine(),
+        visibilityCoordinator: VisibilityCoordinator = VisibilityCoordinator(),
+        adapterRegistry: AdapterRegistry = AdapterRegistry(),
+        diagnosticsCenter: DiagnosticsCenter = DiagnosticsCenter(),
+        diagnosticsPanelController: DiagnosticsPanelController = DiagnosticsPanelController(),
+        choreographyService: (any WindowChoreographing)? = nil,
+        registerDefaultAdapters: Bool = true
+    ) {
         self.workspaceStore = workspaceStore
         self.session = WorkspaceSession(store: workspaceStore)
-        self.windowRegistry = AXWindowRegistry()
-        self.layoutEngine = StripLayoutEngine()
-        self.visibilityCoordinator = VisibilityCoordinator()
-        self.adapterRegistry = AdapterRegistry()
-        self.diagnosticsCenter = DiagnosticsCenter()
-        self.diagnosticsPanelController = DiagnosticsPanelController()
-        self.choreographyService = WindowChoreographyService(
+        self.windowRegistry = windowRegistry
+        self.layoutEngine = layoutEngine
+        self.visibilityCoordinator = visibilityCoordinator
+        self.adapterRegistry = adapterRegistry
+        self.diagnosticsCenter = diagnosticsCenter
+        self.diagnosticsPanelController = diagnosticsPanelController
+        self.choreographyService = choreographyService ?? WindowChoreographyService(
             windowRegistry: windowRegistry,
             visibilityCoordinator: visibilityCoordinator,
             adapterRegistry: adapterRegistry
@@ -53,10 +63,12 @@ final class AppEnvironment {
             logDirectory: workspaceStore.logDirectoryURL.path
         )
 
-        adapterRegistry.register(GenericAXAdapter())
+        if registerDefaultAdapters {
+            adapterRegistry.register(GenericAXAdapter())
 
-        let tetherBaseURL = URL(string: "http://127.0.0.1:3773")!
-        adapterRegistry.register(TetherAdapter(baseURL: tetherBaseURL))
+            let tetherBaseURL = URL(string: "http://127.0.0.1:3773")!
+            adapterRegistry.register(TetherAdapter(baseURL: tetherBaseURL))
+        }
     }
 
     func start() async {
@@ -94,22 +106,8 @@ final class AppEnvironment {
     }
 
     func applyChoreography(for workspace: Workspace, layout: LayoutPlan) async {
-        let signature = ChoreographySignature(
-            workspaceID: workspace.id,
-            activeSlotID: workspace.activeSlotID,
-            visibleSlotIDs: layout.visibleSlotIDs,
-            contentWidth: Int(layout.contentWidth.rounded()),
-            scrollOffset: Int(layout.scrollOffset.rounded()),
-            slotFrames: layout.slotLayouts.map { layout in
-                ChoreographyFrame(
-                    slotID: layout.slotID,
-                    x: Int(layout.frame.x.rounded()),
-                    y: Int(layout.frame.y.rounded()),
-                    width: Int(layout.frame.width.rounded()),
-                    height: Int(layout.frame.height.rounded())
-                )
-            }
-        )
+        latestLayoutContext = LayoutContext(workspace: workspace, layout: layout)
+        let signature = choreographySignature(for: workspace, layout: layout, stageViewportFrame: stageViewportFrame)
         guard signature != lastChoreographySignature else { return }
 
         pendingChoreographyRequest = ChoreographyRequest(
@@ -137,7 +135,28 @@ final class AppEnvironment {
     }
 
     func updateStageViewportFrame(_ frame: CGRect) {
-        stageViewportFrame = frame
+        let integralFrame = frame.integral
+        guard integralFrame != stageViewportFrame?.integral else { return }
+        stageViewportFrame = integralFrame
+
+        guard let latestLayoutContext else { return }
+        let signature = choreographySignature(
+            for: latestLayoutContext.workspace,
+            layout: latestLayoutContext.layout,
+            stageViewportFrame: integralFrame
+        )
+        guard signature != lastChoreographySignature else { return }
+
+        pendingChoreographyRequest = ChoreographyRequest(
+            workspace: latestLayoutContext.workspace,
+            layout: latestLayoutContext.layout,
+            signature: signature
+        )
+        guard choreographyProcessorTask == nil else { return }
+
+        choreographyProcessorTask = Task { @MainActor [weak self] in
+            await self?.processPendingChoreography()
+        }
     }
 
     private func processPendingChoreography() async {
@@ -158,6 +177,7 @@ final class AppEnvironment {
                 stageViewportFrame: stageViewportFrame
             )
 
+            latestLayoutContext = LayoutContext(workspace: request.workspace, layout: request.layout)
             lastChoreographySignature = request.signature
             lastChoreographedWorkspace = request.workspace
             await refreshDiagnostics()
@@ -178,6 +198,37 @@ final class AppEnvironment {
             }
         }
     }
+
+    private func choreographySignature(
+        for workspace: Workspace,
+        layout: LayoutPlan,
+        stageViewportFrame: CGRect?
+    ) -> ChoreographySignature {
+        ChoreographySignature(
+            workspaceID: workspace.id,
+            activeSlotID: workspace.activeSlotID,
+            visibleSlotIDs: layout.visibleSlotIDs,
+            contentWidth: Int(layout.contentWidth.rounded()),
+            scrollOffset: Int(layout.scrollOffset.rounded()),
+            slotFrames: layout.slotLayouts.map { layout in
+                ChoreographyFrame(
+                    slotID: layout.slotID,
+                    x: Int(layout.frame.x.rounded()),
+                    y: Int(layout.frame.y.rounded()),
+                    width: Int(layout.frame.width.rounded()),
+                    height: Int(layout.frame.height.rounded())
+                )
+            },
+            viewportFrame: stageViewportFrame.map {
+                ChoreographyViewportFrame(
+                    x: Int($0.origin.x.rounded()),
+                    y: Int($0.origin.y.rounded()),
+                    width: Int($0.size.width.rounded()),
+                    height: Int($0.size.height.rounded())
+                )
+            }
+        )
+    }
 }
 
 private struct ChoreographySignature: Equatable {
@@ -187,6 +238,7 @@ private struct ChoreographySignature: Equatable {
     let contentWidth: Int
     let scrollOffset: Int
     let slotFrames: [ChoreographyFrame]
+    let viewportFrame: ChoreographyViewportFrame?
 }
 
 private struct ChoreographyFrame: Equatable {
@@ -197,10 +249,22 @@ private struct ChoreographyFrame: Equatable {
     let height: Int
 }
 
+private struct ChoreographyViewportFrame: Equatable {
+    let x: Int
+    let y: Int
+    let width: Int
+    let height: Int
+}
+
 private struct ChoreographyRequest {
     let workspace: Workspace
     let layout: LayoutPlan
     let signature: ChoreographySignature
+}
+
+private struct LayoutContext {
+    let workspace: Workspace
+    let layout: LayoutPlan
 }
 
 private extension Array {
