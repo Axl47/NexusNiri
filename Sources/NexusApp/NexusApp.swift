@@ -19,7 +19,8 @@ struct NexusApplication: App {
                     }
                 },
                 onRevealAll: environment.revealAll,
-                onLayoutDidUpdate: environment.applyChoreography
+                onLayoutDidUpdate: environment.applyChoreography,
+                onStageViewportFrameChanged: environment.updateStageViewportFrame
             )
             .task {
                 await environment.start()

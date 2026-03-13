@@ -14,6 +14,7 @@ public struct StageChromeView: View {
     private let onRefreshDiagnostics: () -> Void
     private let onRevealAll: () -> Void
     private let onLayoutDidUpdate: (Workspace, LayoutPlan) async -> Void
+    private let onStageViewportFrameChanged: (CGRect) -> Void
 
     public init(
         session: WorkspaceSession,
@@ -22,7 +23,8 @@ public struct StageChromeView: View {
         onOpenDiagnostics: @escaping () -> Void,
         onRefreshDiagnostics: @escaping () -> Void,
         onRevealAll: @escaping () -> Void,
-        onLayoutDidUpdate: @escaping (Workspace, LayoutPlan) async -> Void
+        onLayoutDidUpdate: @escaping (Workspace, LayoutPlan) async -> Void,
+        onStageViewportFrameChanged: @escaping (CGRect) -> Void
     ) {
         self.session = session
         self.layoutEngine = layoutEngine
@@ -31,6 +33,7 @@ public struct StageChromeView: View {
         self.onRefreshDiagnostics = onRefreshDiagnostics
         self.onRevealAll = onRevealAll
         self.onLayoutDidUpdate = onLayoutDidUpdate
+        self.onStageViewportFrameChanged = onStageViewportFrameChanged
     }
 
     public var body: some View {
@@ -157,21 +160,22 @@ public struct StageChromeView: View {
             let workspace = session.selectedWorkspace
             let layout = workspace.map { layoutEngine.planLayout(for: $0, in: geometry) }
 
-            ZStack(alignment: .bottom) {
-                Color.clear
-
+            Group {
                 if let workspace, let layout {
-                    StageStripView(
+                    StageViewportView(
                         session: session,
                         workspace: workspace,
                         layout: layout,
-                        stageWidth: geometry.stageWidth,
+                        geometry: geometry,
                         onLayoutDidUpdate: onLayoutDidUpdate
                     )
                 } else {
                     emptyState
                 }
             }
+            .background(
+                ScreenSpaceFrameReporter(onChange: onStageViewportFrameChanged)
+            )
             .frame(maxWidth: .infinity, maxHeight: .infinity)
         }
     }
@@ -190,6 +194,7 @@ public struct StageChromeView: View {
     private var metadataText: String {
         guard let workspace = session.selectedWorkspace else { return "0 apps" }
         let count = workspace.slotOrder.count
+        guard count > 0 else { return "0 apps" }
         let index = min(workspace.slotOrder.count, session.selectedSlotIndex + 1)
         return count == 1 ? "1 app" : "\(count) apps · \(index) / \(count)"
     }
@@ -253,75 +258,174 @@ private struct UtilityButton: View {
     }
 }
 
-private struct StageStripView: View {
+private struct StageViewportView: View {
     @Bindable var session: WorkspaceSession
     let workspace: Workspace
     let layout: LayoutPlan
-    let stageWidth: Double
+    let geometry: StageGeometry
     let onLayoutDidUpdate: (Workspace, LayoutPlan) async -> Void
 
-    var body: some View {
-        ScrollViewReader { proxy in
-            VStack(spacing: 0) {
-                ScrollView(.horizontal, showsIndicators: false) {
-                    HStack(alignment: .top, spacing: ChromeMetrics.slotGap) {
-                        ForEach(workspace.orderedSlots) { slot in
-                            let slotLayout = layout.slotLayouts.first(where: { $0.slotID == slot.id })
-                            SlotCard(
-                                slot: slot,
-                                width: slotLayout?.frame.width ?? 420,
-                                isFocused: workspace.activeSlotID == slot.id,
-                                onResize: { width, persist in
-                                    session.resizeSlot(
-                                        id: slot.id,
-                                        to: width,
-                                        viewportWidth: stageWidth,
-                                        persist: persist
-                                    )
-                                }
-                            )
-                            .id(slot.id)
-                            .onTapGesture {
-                                session.selectSlot(id: slot.id)
-                            }
-                        }
-                    }
-                    .padding(.horizontal, 0)
-                    .padding(.vertical, 0)
-                }
-                .task(id: LayoutTaskKey(layout: layout, workspaceID: workspace.id, activeSlotID: workspace.activeSlotID)) {
-                    session.updateVisibility(using: layout)
-                    await onLayoutDidUpdate(workspace, layout)
-                    guard let activeSlotID = workspace.activeSlotID else { return }
-                    withAnimation(.timingCurve(0.25, 0.1, 0.25, 1, duration: 0.4)) {
-                        proxy.scrollTo(activeSlotID, anchor: .center)
-                    }
-                }
+    @State private var layoutUpdateTask: Task<Void, Never>?
 
-                StripIndicatorView(layout: layout)
-                    .padding(.top, 10)
-                    .padding(.horizontal, 18)
-                    .opacity(workspace.slotOrder.count == 1 ? 0 : 1)
+    var body: some View {
+        ZStack(alignment: .bottom) {
+            StageSurfaceView(workspace: workspace, layout: layout)
+
+            if workspace.orderedSlots.isEmpty {
+                EmptyWorkspaceOverlay()
             }
-            .padding(.top, 0)
-            .padding(.bottom, 10)
+
+            if workspace.slotOrder.count != 1 {
+                StripIndicatorView(
+                    layout: layout,
+                    viewportWidth: geometry.stageWidth,
+                    showThumb: !workspace.orderedSlots.isEmpty
+                )
+                .padding(.horizontal, 18)
+                .padding(.bottom, 10)
+            }
+        }
+        .overlay(alignment: .topLeading) {
+            SlotHeaderStripView(
+                workspace: workspace,
+                layout: layout
+            ) { slotID in
+                session.selectSlot(id: slotID)
+            }
+        }
+        .clipped()
+        .onAppear {
+            scheduleLayoutUpdate()
+        }
+        .onChange(of: layoutTaskKey) { _, _ in
+            scheduleLayoutUpdate()
+        }
+        .onDisappear {
+            layoutUpdateTask?.cancel()
+            layoutUpdateTask = nil
+        }
+    }
+
+    private var layoutTaskKey: LayoutTaskKey {
+        LayoutTaskKey(layout: layout, workspaceID: workspace.id, activeSlotID: workspace.activeSlotID)
+    }
+
+    private func scheduleLayoutUpdate() {
+        session.updateVisibility(using: layout)
+
+        layoutUpdateTask?.cancel()
+        let workspace = workspace
+        let layout = layout
+
+        layoutUpdateTask = Task { @MainActor in
+            await onLayoutDidUpdate(workspace, layout)
         }
     }
 }
 
-private struct SlotCard: View {
-    let slot: Slot
-    let width: Double
-    let isFocused: Bool
-    let onResize: (Double, Bool) -> Void
-
-    @State private var dragWidth: Double?
+private struct StageSurfaceView: View {
+    let workspace: Workspace
+    let layout: LayoutPlan
 
     var body: some View {
-        VStack(spacing: 0) {
+        GeometryReader { proxy in
+            let stageLaneHeight = max(
+                proxy.size.height - ChromeMetrics.slotHeaderHeight - ChromeMetrics.stripIndicatorHeight,
+                0
+            )
+
+            ZStack(alignment: .topLeading) {
+                ChromeTheme.windowBackground
+                LinearGradient(
+                    colors: [
+                        Color.white.opacity(0.02),
+                        Color.clear,
+                    ],
+                    startPoint: .top,
+                    endPoint: .bottom
+                )
+
+                ForEach(workspace.orderedSlots) { slot in
+                    if let slotLayout = layout.slotLayout(for: slot.id) {
+                        StageSlotPresenceView(
+                            slot: slot,
+                            isFocused: workspace.activeSlotID == slot.id,
+                            isVisible: layout.visibleSlotIDs.contains(slot.id)
+                        )
+                        .frame(width: slotLayout.frame.width, height: stageLaneHeight)
+                        .offset(
+                            x: slotLayout.frame.x - layout.scrollOffset,
+                            y: ChromeMetrics.slotHeaderHeight
+                        )
+                    }
+                }
+            }
+            .animation(.timingCurve(0.25, 0.1, 0.25, 1, duration: 0.4), value: layout.scrollOffset)
+            .animation(.easeOut(duration: 0.3), value: workspace.activeSlotID)
+        }
+    }
+}
+
+private struct StageSlotPresenceView: View {
+    let slot: Slot
+    let isFocused: Bool
+    let isVisible: Bool
+
+    var body: some View {
+        Rectangle()
+            .fill(isFocused ? ChromeTheme.stageSurfaceFocused : ChromeTheme.stageSurface)
+            .overlay {
+                Rectangle()
+                    .stroke(ChromeTheme.border, lineWidth: 0.5)
+            }
+            .overlay(alignment: .bottomLeading) {
+                Rectangle()
+                    .fill(slotTintColor(for: slot).opacity(isFocused ? 0.5 : 0.22))
+                    .frame(width: min(72, max(24, CGFloat(slot.label.count) * 8)), height: 2)
+                    .padding(.leading, 16)
+                    .padding(.bottom, 16)
+            }
+            .opacity(isFocused ? 1.0 : (isVisible ? 0.5 : 0.18))
+        .animation(.easeOut(duration: 0.3), value: isFocused)
+    }
+}
+
+private struct SlotHeaderStripView: View {
+    let workspace: Workspace
+    let layout: LayoutPlan
+    let onSelectSlot: (String) -> Void
+
+    var body: some View {
+        ZStack(alignment: .topLeading) {
+            ForEach(workspace.orderedSlots) { slot in
+                if let slotLayout = layout.slotLayout(for: slot.id) {
+                    SlotHeaderView(
+                        slot: slot,
+                        isFocused: workspace.activeSlotID == slot.id
+                    ) {
+                        onSelectSlot(slot.id)
+                    }
+                    .frame(width: slotLayout.frame.width, height: ChromeMetrics.slotHeaderHeight)
+                    .offset(x: slotLayout.frame.x - layout.scrollOffset)
+                }
+            }
+        }
+        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
+        .animation(.timingCurve(0.25, 0.1, 0.25, 1, duration: 0.4), value: layout.scrollOffset)
+        .animation(.easeOut(duration: 0.3), value: workspace.activeSlotID)
+    }
+}
+
+private struct SlotHeaderView: View {
+    let slot: Slot
+    let isFocused: Bool
+    let action: () -> Void
+
+    var body: some View {
+        Button(action: action) {
             HStack(spacing: 8) {
                 RoundedRectangle(cornerRadius: 3)
-                    .fill(appColor)
+                    .fill(slotTintColor(for: slot))
                     .frame(width: 14, height: 14)
                     .overlay {
                         Text(String(slot.label.prefix(1)).uppercased())
@@ -331,113 +435,43 @@ private struct SlotCard: View {
 
                 Text(slot.label)
                     .font(.system(size: 11, weight: .medium))
-                    .foregroundStyle(ChromeTheme.textSecondary)
+                    .foregroundStyle(isFocused ? ChromeTheme.textPrimary : ChromeTheme.textSecondary)
 
                 Spacer(minLength: 0)
             }
             .padding(.horizontal, 12)
+            .frame(maxWidth: .infinity, alignment: .leading)
             .frame(height: ChromeMetrics.slotHeaderHeight)
-            .background(ChromeTheme.surface.opacity(0.8))
+            .background(isFocused ? ChromeTheme.surfaceHover : ChromeTheme.surface.opacity(0.82))
             .overlay(alignment: .bottom) {
                 Rectangle()
                     .fill(ChromeTheme.border)
                     .frame(height: 0.5)
             }
-
-            VStack(alignment: .leading, spacing: 12) {
-                Text(slot.appBinding?.bundleID ?? "Unbound slot")
-                    .font(.system(size: 11, weight: .regular, design: .monospaced))
-                    .foregroundStyle(ChromeTheme.textTertiary)
-
-                Text(slot.layoutRole.rawValue.capitalized)
-                    .font(.system(size: 24, weight: .medium))
-                    .foregroundStyle(ChromeTheme.textPrimary)
-
-                Text(slot.kind.rawValue)
-                    .font(.system(size: 11, weight: .regular))
-                    .foregroundStyle(ChromeTheme.textSecondary)
-
-                Spacer(minLength: 0)
-
-                if slot.adapterID == "tether" {
-                    Text("First-class adapter target")
-                        .font(.system(size: 11, weight: .medium))
-                        .foregroundStyle(ChromeTheme.accent)
-                } else {
-                    Text("Generic staged app")
-                        .font(.system(size: 11, weight: .medium))
-                        .foregroundStyle(ChromeTheme.textSecondary)
-                }
+            .overlay(alignment: .trailing) {
+                Rectangle()
+                    .fill(ChromeTheme.border.opacity(0.55))
+                    .frame(width: 0.5)
             }
-            .padding(18)
-            .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
-            .background(RoundedRectangle(cornerRadius: 0).fill(Color.white.opacity(0.025)))
+            .contentShape(Rectangle())
         }
-        .frame(width: dragWidth ?? width)
-        .frame(maxHeight: .infinity)
+        .buttonStyle(.plain)
         .opacity(isFocused ? 1.0 : 0.5)
         .animation(.easeOut(duration: 0.3), value: isFocused)
-        .overlay(alignment: .trailing) {
-            ResizeHandle(isActive: isFocused)
-                .padding(.vertical, 20)
-                .gesture(resizeGesture)
-        }
-    }
-
-    private var appColor: Color {
-        switch slot.label.lowercased() {
-        case "editor":
-            return Color(red: 0.16, green: 0.56, blue: 0.98)
-        case "zed":
-            return Color(red: 0.34, green: 0.82, blue: 0.76)
-        case "zen":
-            return Color(red: 0.91, green: 0.56, blue: 0.20)
-        case "tether":
-            return ChromeTheme.accent
-        default:
-            return Color.white.opacity(0.4)
-        }
-    }
-
-    private var resizeGesture: some Gesture {
-        DragGesture(minimumDistance: 1)
-            .onChanged { value in
-                let proposedWidth = max(260, width + value.translation.width)
-                dragWidth = proposedWidth
-                onResize(proposedWidth, false)
-            }
-            .onEnded { value in
-                let proposedWidth = max(260, width + value.translation.width)
-                dragWidth = nil
-                onResize(proposedWidth, true)
-            }
     }
 }
 
-private struct ResizeHandle: View {
-    let isActive: Bool
-
+private struct EmptyWorkspaceOverlay: View {
     var body: some View {
-        ZStack {
-            Capsule()
-                .fill(ChromeTheme.border)
-                .frame(width: 1)
-
-            RoundedRectangle(cornerRadius: 4)
-                .fill(isActive ? ChromeTheme.accent.opacity(0.9) : ChromeTheme.surfaceHover)
-                .frame(width: 8, height: 56)
-                .overlay {
-                    VStack(spacing: 4) {
-                        ForEach(0..<3, id: \.self) { _ in
-                            Capsule()
-                                .fill(Color.white.opacity(0.7))
-                                .frame(width: 2, height: 8)
-                        }
-                    }
-                }
+        VStack(spacing: 8) {
+            Text("No apps in this workspace")
+                .font(.system(size: 12, weight: .medium))
+                .foregroundStyle(ChromeTheme.textSecondary)
+            Text("Use the plus button in the sidebar to add a workspace.")
+                .font(.system(size: 11, weight: .regular))
+                .foregroundStyle(ChromeTheme.textTertiary)
         }
-        .frame(width: 12)
-        .contentShape(Rectangle())
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
     }
 }
 
@@ -445,47 +479,146 @@ private struct LayoutTaskKey: Hashable {
     let workspaceID: String
     let activeSlotID: String?
     let contentWidth: Int
-    let slotWidths: [Int]
+    let scrollOffset: Int
+    let slotFrames: [LayoutFrameSignature]
 
     init(layout: LayoutPlan, workspaceID: String, activeSlotID: String?) {
         self.workspaceID = workspaceID
         self.activeSlotID = activeSlotID
         self.contentWidth = Int(layout.contentWidth.rounded())
-        self.slotWidths = layout.slotLayouts.map { Int($0.frame.width.rounded()) }
+        self.scrollOffset = Int(layout.scrollOffset.rounded())
+        self.slotFrames = layout.slotLayouts.map {
+            LayoutFrameSignature(
+                slotID: $0.slotID,
+                x: Int($0.frame.x.rounded()),
+                y: Int($0.frame.y.rounded()),
+                width: Int($0.frame.width.rounded()),
+                height: Int($0.frame.height.rounded())
+            )
+        }
+    }
+}
+
+private struct LayoutFrameSignature: Hashable {
+    let slotID: String
+    let x: Int
+    let y: Int
+    let width: Int
+    let height: Int
+}
+
+private func slotTintColor(for slot: Slot) -> Color {
+    switch slot.label.lowercased() {
+    case "editor":
+        return Color(red: 0.16, green: 0.56, blue: 0.98)
+    case "zed":
+        return Color(red: 0.34, green: 0.82, blue: 0.76)
+    case "zen":
+        return Color(red: 0.91, green: 0.56, blue: 0.20)
+    case "tether":
+        return ChromeTheme.accent
+    default:
+        return Color.white.opacity(0.4)
+    }
+}
+
+private extension LayoutPlan {
+    func slotLayout(for slotID: String) -> SlotLayout? {
+        slotLayouts.first(where: { $0.slotID == slotID })
+    }
+}
+
+private struct ScreenSpaceFrameReporter: NSViewRepresentable {
+    let onChange: (CGRect) -> Void
+
+    func makeNSView(context: Context) -> ReporterView {
+        let view = ReporterView()
+        view.onChange = onChange
+        return view
+    }
+
+    func updateNSView(_ nsView: ReporterView, context: Context) {
+        nsView.onChange = onChange
+        nsView.reportFrameIfNeeded()
+    }
+}
+
+final class ReporterView: NSView {
+    var onChange: ((CGRect) -> Void)?
+    private var lastReportedFrame: CGRect = .null
+
+    override func viewDidMoveToWindow() {
+        super.viewDidMoveToWindow()
+        reportFrameIfNeeded()
+    }
+
+    override func layout() {
+        super.layout()
+        reportFrameIfNeeded()
+    }
+
+    func reportFrameIfNeeded() {
+        guard let window else { return }
+        let rectInWindow = convert(bounds, to: nil)
+        let rectOnScreen = window.convertToScreen(rectInWindow)
+        guard rectOnScreen.integral != lastReportedFrame.integral else { return }
+        lastReportedFrame = rectOnScreen
+        DispatchQueue.main.async { [onChange, rectOnScreen] in
+            onChange?(rectOnScreen)
+        }
     }
 }
 
 private struct StripIndicatorView: View {
     let layout: LayoutPlan
+    let viewportWidth: Double
+    let showThumb: Bool
 
     var body: some View {
         GeometryReader { proxy in
-            let trackWidth = proxy.size.width
-            let thumbWidth = max(12, trackWidth * CGFloat(thumbRatio))
-            let xOffset = (trackWidth - thumbWidth) * CGFloat(offsetRatio)
+            let trackWidth = Double(proxy.size.width)
+            let thumbWidth = StripIndicatorMetrics.thumbWidth(
+                trackWidth: trackWidth,
+                contentWidth: layout.contentWidth,
+                viewportWidth: viewportWidth
+            )
+            let xOffset = StripIndicatorMetrics.offsetRatio(
+                scrollOffset: layout.scrollOffset,
+                contentWidth: layout.contentWidth,
+                viewportWidth: viewportWidth
+            ) * max(trackWidth - thumbWidth, 0)
 
             ZStack(alignment: .leading) {
                 Capsule()
                     .fill(Color.white.opacity(0.06))
                     .frame(height: 2)
-                Capsule()
-                    .fill(ChromeTheme.accent.opacity(0.6))
-                    .frame(width: thumbWidth, height: 2)
-                    .offset(x: xOffset)
+                if showThumb {
+                    Capsule()
+                        .fill(ChromeTheme.accent.opacity(0.6))
+                        .frame(width: thumbWidth, height: 2)
+                        .offset(x: xOffset)
+                }
             }
             .frame(maxHeight: .infinity)
         }
         .frame(height: ChromeMetrics.stripIndicatorHeight)
     }
+}
 
-    private var thumbRatio: Double {
-        guard layout.contentWidth > 0 else { return 1 }
-        return min(1, 1 / max(1, layout.contentWidth / 1200))
+enum StripIndicatorMetrics {
+    static func thumbWidth(trackWidth: Double, contentWidth: Double, viewportWidth: Double) -> Double {
+        guard trackWidth > 0 else { return 0 }
+        guard contentWidth > 0, viewportWidth > 0 else { return trackWidth }
+
+        let ratio = min(1, viewportWidth / max(contentWidth, viewportWidth))
+        let scaledWidth = trackWidth * ratio
+        return min(trackWidth, max(12, scaledWidth))
     }
 
-    private var offsetRatio: Double {
-        let maxOffset = max(layout.contentWidth - 1200, 1)
-        return min(max(layout.scrollOffset / maxOffset, 0), 1)
+    static func offsetRatio(scrollOffset: Double, contentWidth: Double, viewportWidth: Double) -> Double {
+        guard contentWidth > viewportWidth, viewportWidth > 0 else { return 0 }
+        let maxOffset = max(contentWidth - viewportWidth, 1)
+        return min(max(scrollOffset / maxOffset, 0), 1)
     }
 }
 

@@ -3,6 +3,7 @@ import AdapterBus
 import Foundation
 import OSLog
 import SharedTypes
+import StageChrome
 import VisibilityEngine
 import WindowRegistry
 
@@ -27,7 +28,8 @@ final class WindowChoreographyService {
     func apply(
         workspace: Workspace,
         previousWorkspace: Workspace?,
-        layout: LayoutPlan
+        layout: LayoutPlan,
+        stageViewportFrame: CGRect?
     ) async {
         do {
             let snapshot = try await windowRegistry.snapshot()
@@ -39,6 +41,8 @@ final class WindowChoreographyService {
             )
             await apply(
                 actions: actions,
+                layout: layout,
+                stageViewportFrame: stageViewportFrame,
                 currentWorkspace: workspace,
                 previousWorkspace: previousWorkspace,
                 windows: snapshot.windows
@@ -48,13 +52,15 @@ final class WindowChoreographyService {
         }
     }
 
-    func revealAll(currentWorkspace: Workspace?, previousWorkspace: Workspace?) async {
+    func revealAll(currentWorkspace: Workspace?, previousWorkspace: Workspace?, stageViewportFrame: CGRect?) async {
         do {
             try await visibilityCoordinator.panicRevealAll()
             let snapshot = try await windowRegistry.snapshot()
             let actions = await visibilityCoordinator.currentActions()
             await apply(
                 actions: actions,
+                layout: nil,
+                stageViewportFrame: stageViewportFrame,
                 currentWorkspace: currentWorkspace,
                 previousWorkspace: previousWorkspace,
                 windows: snapshot.windows
@@ -66,6 +72,8 @@ final class WindowChoreographyService {
 
     private func apply(
         actions: [VisibilityAction],
+        layout: LayoutPlan?,
+        stageViewportFrame: CGRect?,
         currentWorkspace: Workspace?,
         previousWorkspace: Workspace?,
         windows: [WindowCandidate]
@@ -85,7 +93,9 @@ final class WindowChoreographyService {
                 action: action,
                 slot: slot,
                 candidate: candidate,
-                activeSlotID: currentWorkspace?.activeSlotID
+                activeSlotID: currentWorkspace?.activeSlotID,
+                layout: layout,
+                stageViewportFrame: stageViewportFrame
             )
         }
     }
@@ -94,7 +104,9 @@ final class WindowChoreographyService {
         action: VisibilityAction,
         slot: Slot,
         candidate: WindowCandidate?,
-        activeSlotID: String?
+        activeSlotID: String?,
+        layout: LayoutPlan?,
+        stageViewportFrame: CGRect?
     ) async {
         if let adapter = adapter(for: slot) {
             let didHandle = await applyAdapterAction(
@@ -114,7 +126,9 @@ final class WindowChoreographyService {
                 slot: slot,
                 action: action,
                 candidate: candidate,
-                shouldFocus: slot.id == activeSlotID || action.kind == .reveal
+                shouldFocus: slot.id == activeSlotID || action.kind == .reveal,
+                layout: layout,
+                stageViewportFrame: stageViewportFrame
             )
         case .park:
             await parkWindow(slot: slot, action: action, candidate: candidate)
@@ -147,17 +161,51 @@ final class WindowChoreographyService {
         slot: Slot,
         action: VisibilityAction,
         candidate: WindowCandidate?,
-        shouldFocus: Bool
+        shouldFocus: Bool,
+        layout: LayoutPlan?,
+        stageViewportFrame: CGRect?
     ) async {
         guard let candidate else {
             do {
                 try openTarget(for: slot)
             } catch {
                 logger.debug("Unable to open target for slot \(slot.id, privacy: .public): \(error.localizedDescription, privacy: .public)")
+                return
+            }
+
+            if let reacquiredCandidate = await waitForCandidate(for: slot, action: action) {
+                await applyResolvedWindowFrame(
+                    slot: slot,
+                    action: action,
+                    candidate: reacquiredCandidate,
+                    shouldFocus: shouldFocus,
+                    layout: layout,
+                    stageViewportFrame: stageViewportFrame
+                )
+            } else {
+                logger.debug("No live window candidate appeared after activating slot \(slot.id, privacy: .public).")
             }
             return
         }
 
+        await applyResolvedWindowFrame(
+            slot: slot,
+            action: action,
+            candidate: candidate,
+            shouldFocus: shouldFocus,
+            layout: layout,
+            stageViewportFrame: stageViewportFrame
+        )
+    }
+
+    private func applyResolvedWindowFrame(
+        slot: Slot,
+        action: VisibilityAction,
+        candidate: WindowCandidate,
+        shouldFocus: Bool,
+        layout: LayoutPlan?,
+        stageViewportFrame: CGRect?
+    ) async {
         do {
             try await windowRegistry.setApplicationHidden(processID: candidate.processID, to: false)
         } catch {
@@ -174,7 +222,12 @@ final class WindowChoreographyService {
             logger.debug("Unable to restore minimized window for slot \(slot.id, privacy: .public): \(error.localizedDescription, privacy: .public)")
         }
 
-        if let targetFrame = action.targetFrame {
+        if let targetFrame = resolvedStageFrame(
+            for: slot,
+            action: action,
+            layout: layout,
+            stageViewportFrame: stageViewportFrame
+        ) {
             do {
                 try await windowRegistry.setWindowFrame(
                     processID: candidate.processID,
@@ -315,6 +368,55 @@ final class WindowChoreographyService {
         default:
             return bundleID
         }
+    }
+
+    private func resolvedStageFrame(
+        for slot: Slot,
+        action: VisibilityAction,
+        layout: LayoutPlan?,
+        stageViewportFrame: CGRect?
+    ) -> RectValue? {
+        guard action.kind == .show || action.kind == .reveal,
+              let layout,
+              let slotLayout = layout.slotLayouts.first(where: { $0.slotID == slot.id }),
+              let stageViewportFrame else {
+            return action.targetFrame
+        }
+
+        let x = stageViewportFrame.minX + (slotLayout.frame.x - layout.scrollOffset)
+        let y = stageViewportFrame.maxY - ChromeMetrics.slotHeaderHeight - slotLayout.frame.height
+
+        return RectValue(
+            x: x,
+            y: y,
+            width: slotLayout.frame.width,
+            height: slotLayout.frame.height
+        )
+    }
+
+    private func waitForCandidate(
+        for slot: Slot,
+        action: VisibilityAction,
+        attempts: Int = 4,
+        delayNanoseconds: UInt64 = 150_000_000
+    ) async -> WindowCandidate? {
+        guard attempts > 0 else { return nil }
+
+        for attempt in 0..<attempts {
+            if attempt > 0 {
+                try? await Task.sleep(nanoseconds: delayNanoseconds)
+            }
+
+            guard let snapshot = try? await windowRegistry.snapshot() else {
+                continue
+            }
+
+            if let candidate = resolveCandidate(for: slot, action: action, windows: snapshot.windows) {
+                return candidate
+            }
+        }
+
+        return nil
     }
 
     private func adapter(for slot: Slot) -> (any NexusAdapter)? {

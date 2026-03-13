@@ -25,6 +25,8 @@ That command should build the Swift package, bundle the executable into `build/N
 - [x] (2026-03-13 00:18Z) Repair Swift 6.3 concurrency and compile issues across the bootstrap targets so `rtk swift test` passes again.
 - [x] (2026-03-13 00:19Z) Verify the CLI app-bundle workflow with `rtk proxy bash ./scripts/dev-build.sh` and record the `rtk proxy` requirement for nested shell scripts.
 - [x] (2026-03-13 00:31Z) Implement the first live window choreography slice so stage layout updates now stage, park, and reveal real app windows through the AX registry.
+- [x] (2026-03-13 02:56Z) Rewrite `StageChrome` from the horizontal `ScrollView` prototype into a layout-driven overlay viewport with centered active-slot navigation, header-only strip chrome, and indicator feedback driven by `LayoutPlan.scrollOffset`.
+- [x] (2026-03-13 02:56Z) Remove stage-level resize handles and direct strip dragging from the shell UI for this v1 slice, leaving width-policy mutation dormant in the model layer for a later geometry pass.
 - [ ] Harden window rematching and runtime binding persistence across live multi-workspace switching against the registry.
 - [ ] Implement the first fully working deep Tether restore flow once the sibling app exposes the `nexus.*` contract.
 
@@ -42,6 +44,10 @@ That command should build the Swift package, bundle the executable into `build/N
   Evidence: local implementation on 2026-03-13 was able to add a single async `onLayoutDidUpdate` callback in `Sources/StageChrome/StageChromeView.swift` and route both sidebar taps and command-menu workspace or slot changes into the same choreography path without rewriting the session model.
 - Observation: AX write helpers can live inside the existing registry actor without changing the discovery API surface, which keeps discovery and mutation logic together while preserving the app-layer choreography boundary.
   Evidence: local implementation on 2026-03-13 added frame, minimize, hide, and raise helpers in `Sources/WindowRegistry/AXWindowRegistry.swift` while keeping `WindowRegistryService` unchanged for the current package tests.
+- Observation: The stage `GeometryReader` already measures the visible viewport, so `ChromeMetrics.stageGeometry(for:)` has to add the sidebar and topbar dimensions back before constructing `StageGeometry`; otherwise the layout engine sees a double-subtracted viewport and active-slot centering drifts.
+  Evidence: local rewrite on 2026-03-13 initially under-sized the layout plan until `Sources/StageChrome/ChromeTheme.swift` began re-inflating the chrome dimensions before calling into `StripLayoutEngine`.
+- Observation: The horizontal `ScrollView` stage prototype was creating a second source of strip position truth that obscured whether motion came from workspace state or SwiftUI scrolling.
+  Evidence: local rewrite on 2026-03-13 was able to remove `ScrollViewReader`, `proxy.scrollTo`, and shell resize handles while preserving slot/workspace navigation and window choreography by rendering the strip as a clipped overlay driven only by `LayoutPlan.scrollOffset`.
 
 ## Decision Log
 
@@ -69,10 +75,15 @@ That command should build the Swift package, bundle the executable into `build/N
 - Decision: Use direct AX registry mutations plus app launch or activation fallback for the first live choreography slice, postponing deeper adapter-driven restore semantics.
   Rationale: this proves real staging, parking, and reveal-all behavior for normal apps immediately, while Tether-specific restore remains blocked on the sibling repo's future `nexus.*` contract.
   Date/Author: 2026-03-13 / Codex
+- Decision: Replace the horizontal `ScrollView` stage prototype with a clipped overlay stage driven only by `LayoutPlan.scrollOffset`, and remove stage-level resize affordances from the v1 shell.
+  Rationale: the product spec calls for deterministic focus-driven strip navigation and app-owned viewport input; keeping the prototype scroll container and resize handles would keep implying behaviors that this slice explicitly defers.
+  Date/Author: 2026-03-13 / Codex
 
 ## Outcomes & Retrospective
 
-The repository is no longer empty. It now has a native CLI-first app shape, a working shell UI, clean subsystem boundaries, persistence, diagnostics, and adapter scaffolding. The bootstrap is compiling again under Swift 6.3, `rtk swift test` is passing, and the CLI bundling workflow has been re-verified with the correct `rtk proxy bash` invocation. The shell is also no longer fully mocked: stage layout updates now trigger real AX-backed window staging, parking, and reveal-all replay through the new app-layer choreographer. The next implementation milestone is to harden runtime rematching and deep adapter restore, especially for Tether once the sibling repo grows a dedicated Nexus namespace.
+The repository is no longer empty. It now has a native CLI-first app shape, a working shell UI, clean subsystem boundaries, persistence, diagnostics, and adapter scaffolding. The bootstrap is compiling again under Swift 6.3, `rtk swift test` is passing, and the CLI bundling workflow has been re-verified with the correct `rtk proxy bash` invocation. The shell is also no longer fully mocked: stage layout updates now trigger real AX-backed window staging, parking, and reveal-all replay through the new app-layer choreographer.
+
+The latest shell slice replaces the old horizontally scrollable card prototype with a focus-driven stage model. The active slot is centered by layout state, the strip indicator and header movement are driven directly by `LayoutPlan.scrollOffset`, and the viewport no longer behaves like a user-draggable `ScrollView`. Stage-level resize handles were intentionally removed in this slice so the UI matches the spec while native size conformance is deferred for a later geometry pass. The next implementation milestone is to harden runtime rematching and deep adapter restore, especially for Tether once the sibling repo grows a dedicated Nexus namespace.
 
 ## Context and Orientation
 
@@ -104,7 +115,7 @@ The expected build flow is:
 
 ## Validation and Acceptance
 
-Run `rtk swift test` and expect all package tests to pass. Then run `rtk proxy bash ./scripts/dev-run.sh` and expect a native `Nexus.app` to launch. The sidebar should show numbered workspaces, the topbar should show the active workspace and slot metadata, the strip should center the focused slot, and the diagnostics button should open a panel that shows permission states and environment paths. With Accessibility granted, switching slots or workspaces should now attempt to move visible windows into the active stage, park offstage windows, and replay reveal-all against the most recent staged set. Quitting and relaunching the app should still preserve workspace additions, renames, and active-slot selection, though runtime window rematching remains an open follow-up.
+Run `rtk swift test` and expect all package tests to pass. Then run `rtk proxy bash ./scripts/dev-run.sh` and expect a native `Nexus.app` to launch. The sidebar should show numbered workspaces, the topbar should show the active workspace and slot metadata, the strip should center the focused slot, and the diagnostics button should open a panel that shows permission states and environment paths. Slot changes should come from header clicks, topbar arrows, or keyboard shortcuts rather than direct strip dragging. With Accessibility granted, switching slots or workspaces should now attempt to move visible windows into the active stage, park offstage windows, and replay reveal-all against the most recent staged set. Quitting and relaunching the app should still preserve workspace additions, renames, and active-slot selection, though runtime window rematching and native size conformance remain open follow-ups.
 
 ## Idempotence and Recovery
 
@@ -172,4 +183,4 @@ The package exposes one executable target, `NexusApp`, and the following interna
       StageChromeView
       DiagnosticsPanelController
 
-Plan revision note: this revision records the verified `rtk proxy bash` shell workflow, the targeted Swift 6.3 concurrency fixes, and the first live AX-backed choreography slice that connects stage layout updates to real window staging and reveal-all behavior.
+Plan revision note: this revision records the verified `rtk proxy bash` shell workflow, the targeted Swift 6.3 concurrency fixes, the first live AX-backed choreography slice that connects stage layout updates to real window staging and reveal-all behavior, and the follow-up stage-model rewrite that replaces the horizontal `ScrollView` prototype with focus-driven strip chrome while deferring resize.

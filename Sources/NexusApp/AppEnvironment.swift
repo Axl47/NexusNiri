@@ -29,6 +29,9 @@ final class AppEnvironment {
     private var lastChoreographedWorkspace: Workspace?
     private var lastTransitionSourceWorkspace: Workspace?
     private var lastChoreographySignature: ChoreographySignature?
+    private var pendingChoreographyRequest: ChoreographyRequest?
+    private var choreographyProcessorTask: Task<Void, Never>?
+    private var stageViewportFrame: CGRect?
 
     init() {
         let workspaceStore = JSONWorkspaceStore()
@@ -94,28 +97,30 @@ final class AppEnvironment {
         let signature = ChoreographySignature(
             workspaceID: workspace.id,
             activeSlotID: workspace.activeSlotID,
-            visibleSlotIDs: layout.visibleSlotIDs
+            visibleSlotIDs: layout.visibleSlotIDs,
+            contentWidth: Int(layout.contentWidth.rounded()),
+            scrollOffset: Int(layout.scrollOffset.rounded()),
+            slotFrames: layout.slotLayouts.map { layout in
+                ChoreographyFrame(
+                    slotID: layout.slotID,
+                    x: Int(layout.frame.x.rounded()),
+                    y: Int(layout.frame.y.rounded()),
+                    width: Int(layout.frame.width.rounded()),
+                    height: Int(layout.frame.height.rounded())
+                )
+            }
         )
         guard signature != lastChoreographySignature else { return }
 
-        let previousWorkspace = lastChoreographedWorkspace
-        lastChoreographySignature = signature
-        lastTransitionSourceWorkspace = previousWorkspace
-
-        await choreographyService.apply(
+        pendingChoreographyRequest = ChoreographyRequest(
             workspace: workspace,
-            previousWorkspace: previousWorkspace,
-            layout: layout
+            layout: layout,
+            signature: signature
         )
+        guard choreographyProcessorTask == nil else { return }
 
-        lastChoreographedWorkspace = workspace
-        await refreshDiagnostics()
-
-        if previousWorkspace?.id == workspace.id {
-            let activeSlotLabel = workspace.orderedSlots[safe: layout.activeSlotIndex]?.label ?? "slot"
-            session.refreshStatus("Focused \(activeSlotLabel).")
-        } else {
-            session.refreshStatus("Staged workspace \(workspace.name).")
+        choreographyProcessorTask = Task { @MainActor [weak self] in
+            await self?.processPendingChoreography()
         }
     }
 
@@ -123,10 +128,54 @@ final class AppEnvironment {
         Task {
             await choreographyService.revealAll(
                 currentWorkspace: lastChoreographedWorkspace ?? session.selectedWorkspace,
-                previousWorkspace: lastTransitionSourceWorkspace
+                previousWorkspace: lastTransitionSourceWorkspace,
+                stageViewportFrame: stageViewportFrame
             )
             await refreshDiagnostics()
             session.refreshStatus("Panic reveal-all enabled. Use slot or workspace navigation to re-stage windows.")
+        }
+    }
+
+    func updateStageViewportFrame(_ frame: CGRect) {
+        stageViewportFrame = frame
+    }
+
+    private func processPendingChoreography() async {
+        while let request = pendingChoreographyRequest {
+            pendingChoreographyRequest = nil
+
+            guard request.signature != lastChoreographySignature else {
+                continue
+            }
+
+            let previousWorkspace = lastChoreographedWorkspace
+            lastTransitionSourceWorkspace = previousWorkspace
+
+            await choreographyService.apply(
+                workspace: request.workspace,
+                previousWorkspace: previousWorkspace,
+                layout: request.layout,
+                stageViewportFrame: stageViewportFrame
+            )
+
+            lastChoreographySignature = request.signature
+            lastChoreographedWorkspace = request.workspace
+            await refreshDiagnostics()
+
+            if previousWorkspace?.id == request.workspace.id {
+                let activeSlotLabel = request.workspace.orderedSlots[safe: request.layout.activeSlotIndex]?.label ?? "slot"
+                session.refreshStatus("Focused \(activeSlotLabel).")
+            } else {
+                session.refreshStatus("Staged workspace \(request.workspace.name).")
+            }
+        }
+
+        choreographyProcessorTask = nil
+
+        if pendingChoreographyRequest != nil {
+            choreographyProcessorTask = Task { @MainActor [weak self] in
+                await self?.processPendingChoreography()
+            }
         }
     }
 }
@@ -135,6 +184,23 @@ private struct ChoreographySignature: Equatable {
     let workspaceID: String
     let activeSlotID: String?
     let visibleSlotIDs: [String]
+    let contentWidth: Int
+    let scrollOffset: Int
+    let slotFrames: [ChoreographyFrame]
+}
+
+private struct ChoreographyFrame: Equatable {
+    let slotID: String
+    let x: Int
+    let y: Int
+    let width: Int
+    let height: Int
+}
+
+private struct ChoreographyRequest {
+    let workspace: Workspace
+    let layout: LayoutPlan
+    let signature: ChoreographySignature
 }
 
 private extension Array {

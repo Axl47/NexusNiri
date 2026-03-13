@@ -146,7 +146,7 @@ public actor AXWindowRegistry: WindowRegistryService {
         for app in NSWorkspace.shared.runningApplications {
             guard let bundleID = app.bundleIdentifier else { continue }
             let appElement = AXUIElementCreateApplication(app.processIdentifier)
-            let focusedWindowID = focusedWindowIdentifier(for: appElement)
+            let focusedWindow = focusedWindowElement(for: appElement)
             let windows = windowElements(for: appElement)
 
             let appCandidates = windows.map { windowElement -> WindowCandidate in
@@ -171,7 +171,7 @@ public actor AXWindowRegistry: WindowRegistryService {
                     windowID: windowID,
                     frame: frame,
                     displayID: displayID(for: frame),
-                    isFocused: windowID != nil && windowID == focusedWindowID,
+                    isFocused: focusedWindow.map { CFEqual($0, windowElement) } ?? false,
                     isMinimized: minimized,
                     source: .accessibility
                 )
@@ -196,13 +196,21 @@ public actor AXWindowRegistry: WindowRegistryService {
             return exactMatch
         }
 
-        if windows.count == 1, let firstWindow = windows.first {
-            return firstWindow
+        if let focusedWindow = focusedWindowElement(for: appElement),
+           windows.contains(where: { CFEqual($0, focusedWindow) }) {
+            return focusedWindow
         }
 
-        if let focusedWindowID = focusedWindowIdentifier(for: appElement),
-           let focusedWindow = windows.first(where: { intValue(for: $0, attribute: "AXWindowNumber" as CFString) == focusedWindowID }) {
-            return focusedWindow
+        if let mainStandardWindow = windows.first(where: { isPrimaryStandardWindow($0) }) {
+            return mainStandardWindow
+        }
+
+        if let standardWindow = preferredStandardWindow(from: windows) {
+            return standardWindow
+        }
+
+        if windows.count == 1, let firstWindow = windows.first {
+            return firstWindow
         }
 
         if let firstWindow = windows.first {
@@ -236,11 +244,48 @@ public actor AXWindowRegistry: WindowRegistryService {
         return value as? [AXUIElement] ?? []
     }
 
-    private func focusedWindowIdentifier(for applicationElement: AXUIElement) -> Int? {
-        guard let focusedWindow = copyAttributeValue(for: applicationElement, attribute: kAXFocusedWindowAttribute as CFString) else {
+    private func focusedWindowElement(for applicationElement: AXUIElement) -> AXUIElement? {
+        guard let focusedWindow = copyAttributeValue(for: applicationElement, attribute: kAXFocusedWindowAttribute as CFString),
+              CFGetTypeID(focusedWindow) == AXUIElementGetTypeID() else {
             return nil
         }
-        return intValue(from: focusedWindow, attribute: "AXWindowNumber" as CFString)
+        return unsafeDowncast(focusedWindow, to: AXUIElement.self)
+    }
+
+    private func isPrimaryStandardWindow(_ element: AXUIElement) -> Bool {
+        stringValue(for: element, attribute: kAXRoleAttribute as CFString) == (kAXWindowRole as String) &&
+        stringValue(for: element, attribute: kAXSubroleAttribute as CFString) == (kAXStandardWindowSubrole as String) &&
+        boolValue(for: element, attribute: kAXMainAttribute as CFString) == true &&
+        boolValue(for: element, attribute: kAXMinimizedAttribute as CFString) != true
+    }
+
+    private func preferredStandardWindow(from windows: [AXUIElement]) -> AXUIElement? {
+        let candidates = windows
+            .filter { boolValue(for: $0, attribute: kAXMinimizedAttribute as CFString) != true }
+            .sorted { lhs, rhs in
+                preferredWindowScore(lhs) > preferredWindowScore(rhs)
+            }
+
+        return candidates.first
+    }
+
+    private func preferredWindowScore(_ element: AXUIElement) -> Double {
+        let role = stringValue(for: element, attribute: kAXRoleAttribute as CFString)
+        let subrole = stringValue(for: element, attribute: kAXSubroleAttribute as CFString)
+        let size = sizeValue(for: element, attribute: kAXSizeAttribute as CFString) ?? .zero
+        let area = size.width * size.height
+
+        var score = area
+        if role == (kAXWindowRole as String) {
+            score += 10_000
+        }
+        if subrole == (kAXStandardWindowSubrole as String) {
+            score += 20_000
+        }
+        if boolValue(for: element, attribute: kAXMainAttribute as CFString) == true {
+            score += 30_000
+        }
+        return score
     }
 
     private func copyAttributeValue(for element: AXUIElement, attribute: CFString) -> CFTypeRef? {
@@ -263,11 +308,6 @@ public actor AXWindowRegistry: WindowRegistryService {
             return nil
         }
         return number.intValue
-    }
-
-    private func intValue(from value: CFTypeRef, attribute: CFString) -> Int? {
-        guard CFGetTypeID(value) == AXUIElementGetTypeID() else { return nil }
-        return intValue(for: unsafeDowncast(value, to: AXUIElement.self), attribute: attribute)
     }
 
     private func pointValue(for element: AXUIElement, attribute: CFString) -> CGPoint? {

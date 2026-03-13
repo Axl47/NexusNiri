@@ -47,12 +47,23 @@ public final class TetherAdapter: @unchecked Sendable, NexusAdapter {
     }
 
     public func stage(slot: Slot, action: VisibilityAction) async throws {
+        var payload: [String: Any] = [
+            "slotId": slot.id,
+            "action": action.kind.rawValue,
+        ]
+
+        if let targetFrame = action.targetFrame {
+            payload["targetFrame"] = [
+                "x": targetFrame.x,
+                "y": targetFrame.y,
+                "width": targetFrame.width,
+                "height": targetFrame.height,
+            ]
+        }
+
         _ = try await transport(
             "nexus.state.stage",
-            [
-                "slotId": slot.id,
-                "action": action.kind.rawValue,
-            ]
+            payload
         )
     }
 
