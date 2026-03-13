@@ -334,6 +334,15 @@ final class WindowChoreographyService: WindowChoreographing {
                 logger.debug("Unable to set frame for slot \(slot.id, privacy: .public): \(error.localizedDescription, privacy: .public)")
             }
         }
+
+        do {
+            try await windowRegistry.raiseWindow(
+                processID: candidate.processID,
+                windowID: candidate.windowID
+            )
+        } catch {
+            logger.debug("Unable to raise visible window for slot \(slot.id, privacy: .public): \(error.localizedDescription, privacy: .public)")
+        }
     }
 
     private func parkWindow(
@@ -472,7 +481,11 @@ final class WindowChoreographyService: WindowChoreographing {
         }
 
         let x = stageViewportFrame.minX + (slotLayout.frame.x - layout.scrollOffset)
-        let y = stageViewportFrame.maxY - ChromeMetrics.slotHeaderHeight - slotLayout.frame.y
+        let topEdgeInScreenSpace = stageViewportFrame.maxY - ChromeMetrics.slotHeaderHeight - slotLayout.frame.y
+        let y = accessibilityScreenY(
+            forTopEdgeInScreenSpace: topEdgeInScreenSpace,
+            stageViewportFrame: stageViewportFrame
+        )
 
         return RectValue(
             x: x,
@@ -480,6 +493,23 @@ final class WindowChoreographyService: WindowChoreographing {
             width: slotLayout.frame.width,
             height: slotLayout.frame.height
         )
+    }
+
+    private func accessibilityScreenY(
+        forTopEdgeInScreenSpace topEdgeInScreenSpace: Double,
+        stageViewportFrame: CGRect
+    ) -> Double {
+        let matchingScreen = NSScreen.screens
+            .max { lhs, rhs in
+                lhs.frame.intersection(stageViewportFrame).area < rhs.frame.intersection(stageViewportFrame).area
+            }
+            ?? NSScreen.main
+
+        guard let screenFrame = matchingScreen?.frame else {
+            return topEdgeInScreenSpace
+        }
+
+        return screenFrame.maxY - topEdgeInScreenSpace
     }
 
     private func waitForCandidate(
@@ -576,6 +606,13 @@ final class WindowChoreographyService: WindowChoreographing {
                 logger.debug("Unable to activate adapter-managed slot \(slot.id, privacy: .public): \(error.localizedDescription, privacy: .public)")
             }
         }
+    }
+}
+
+private extension CGRect {
+    var area: CGFloat {
+        guard isNull == false, isEmpty == false else { return 0 }
+        return width * height
     }
 }
 

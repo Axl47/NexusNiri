@@ -1,8 +1,10 @@
 import AdapterBus
+import AppKit
 import Diagnostics
 import Foundation
 import LayoutEngine
 import SharedTypes
+import StageChrome
 import Testing
 import VisibilityEngine
 import WorkspaceEngine
@@ -98,9 +100,27 @@ func visibleSlotStagingWritesFramesForEachVisibleWindowAndFocusesOnlyAtTheEnd() 
         return nil
     }
 
+    let screenFrame = (NSScreen.screens.max { lhs, rhs in
+        lhs.frame.intersection(viewportFrame).area < rhs.frame.intersection(viewportFrame).area
+    } ?? NSScreen.main)?.frame ?? CGRect(x: 0, y: 0, width: 1512, height: 982)
+    let expectedTopEdge = viewportFrame.maxY - ChromeMetrics.slotHeaderHeight
+    let expectedAXY = Double(screenFrame.maxY - expectedTopEdge)
+
     #expect(frameOperations.count == 2)
-    #expect(frameOperations.contains(.setFrame(processID: 101, windowID: 1, frame: RectValue(x: 100, y: 892, width: 720, height: 640))))
-    #expect(frameOperations.contains(.setFrame(processID: 202, windowID: 2, frame: RectValue(x: 822, y: 892, width: 478, height: 640))))
+    #expect(frameOperations.contains(.setFrame(processID: 101, windowID: 1, frame: RectValue(x: 100, y: expectedAXY, width: 720, height: 640))))
+    #expect(frameOperations.contains(.setFrame(processID: 202, windowID: 2, frame: RectValue(x: 822, y: expectedAXY, width: 478, height: 640))))
+
+    let raiseOperations = operations.compactMap { operation -> RecordingWindowRegistry.Operation? in
+        if case .raise = operation {
+            return operation
+        }
+        return nil
+    }
+
+    #expect(raiseOperations == [
+        .raise(processID: 101, windowID: 1),
+        .raise(processID: 202, windowID: 2),
+    ])
 
     let focusOperations = operations.compactMap { operation -> RecordingWindowRegistry.Operation? in
         if case .focus = operation {
@@ -118,6 +138,13 @@ func visibleSlotStagingWritesFramesForEachVisibleWindowAndFocusesOnlyAtTheEnd() 
     }))
     let focusIndex = try #require(operations.firstIndex(of: .focus(processID: 101, windowID: 1)))
     #expect(focusIndex > lastFrameIndex)
+}
+
+private extension CGRect {
+    var area: CGFloat {
+        guard isNull == false, isEmpty == false else { return 0 }
+        return width * height
+    }
 }
 
 @MainActor
