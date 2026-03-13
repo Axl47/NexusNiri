@@ -16,7 +16,7 @@ public final class TetherAdapter: NexusAdapter {
     public typealias Transport = (_ method: String, _ payload: [String: Any]) async throws -> Any
 
     public let id = "tether"
-    public let supportedBundleIDs = ["dev.tether.desktop"]
+    public let supportedBundleIDs = ["com.t3tools.tether", "dev.tether.desktop"]
 
     public let baseURL: URL
     public let webSocketURL: URL
@@ -38,7 +38,7 @@ public final class TetherAdapter: NexusAdapter {
 
     public func discover(in snapshot: WindowRegistrySnapshot) async -> [WindowCandidate] {
         snapshot.windows.filter { candidate in
-            candidate.bundleID == "dev.tether.desktop" || candidate.appName.localizedCaseInsensitiveContains("tether")
+            supportedBundleIDs.contains(candidate.bundleID ?? "") || candidate.appName.localizedCaseInsensitiveContains("tether")
         }
     }
 
@@ -91,7 +91,7 @@ public final class TetherAdapter: NexusAdapter {
             "nexus.openTarget",
             [
                 "slotId": slot.id,
-                "bundleId": slot.appBinding?.bundleID ?? "dev.tether.desktop",
+                "bundleId": slot.appBinding?.bundleID ?? "com.t3tools.tether",
             ]
         )
     }

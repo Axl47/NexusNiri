@@ -184,7 +184,7 @@ final class WindowChoreographyService {
         action: VisibilityAction,
         candidate: WindowCandidate?
     ) async {
-        if let candidate, let targetFrame = action.targetFrame {
+        if let candidate, let targetFrame = action.targetFrame, !shouldMinimizeWhenParking(slot: slot, targetFrame: targetFrame) {
             do {
                 try await windowRegistry.setApplicationHidden(processID: candidate.processID, to: false)
                 try await windowRegistry.setWindowMinimized(
@@ -231,17 +231,17 @@ final class WindowChoreographyService {
         action: VisibilityAction,
         windows: [WindowCandidate]
     ) -> WindowCandidate? {
-        let bundleID = slot.appBinding?.bundleID
+        let bundleID = canonicalBundleID(slot.appBinding?.bundleID)
         let titleHints = slot.appBinding?.titleHints ?? []
 
         if let windowID = action.windowID,
-           let exactMatch = windows.first(where: { $0.windowID == windowID && (bundleID == nil || $0.bundleID == bundleID) }) {
+           let exactMatch = windows.first(where: { $0.windowID == windowID && (bundleID == nil || canonicalBundleID($0.bundleID) == bundleID) }) {
             return exactMatch
         }
 
         let candidates = windows.filter { candidate in
             if let bundleID {
-                return candidate.bundleID == bundleID
+                return canonicalBundleID(candidate.bundleID) == bundleID
             }
             return true
         }
@@ -275,6 +275,23 @@ final class WindowChoreographyService {
         }
 
         return score
+    }
+
+    private func shouldMinimizeWhenParking(slot: Slot, targetFrame: RectValue) -> Bool {
+        if slot.adapterID == "tether" {
+            return false
+        }
+
+        return targetFrame.width <= 24 || targetFrame.height <= 280
+    }
+
+    private func canonicalBundleID(_ bundleID: String?) -> String? {
+        switch bundleID {
+        case "dev.tether.desktop":
+            return "com.t3tools.tether"
+        default:
+            return bundleID
+        }
     }
 
     private func openTarget(for slot: Slot) throws {

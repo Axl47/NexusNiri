@@ -115,7 +115,7 @@
         "kind": "hybrid",
         "label": "Tether",
         "appBinding": {
-          "bundleID": "dev.tether.desktop",
+          "bundleID": "com.t3tools.tether",
           "preferredProcessStrategy": "reuse",
           "titleHints": ["Tether"],
           "urlHints": [],
@@ -267,7 +267,7 @@
         "kind": "hybrid",
         "label": "Tether",
         "appBinding": {
-          "bundleID": "dev.tether.desktop",
+          "bundleID": "com.t3tools.tether",
           "preferredProcessStrategy": "reuse",
           "titleHints": ["Tether"],
           "urlHints": [],

@@ -30,10 +30,10 @@ public final class WorkspaceSession {
 
     public func load(seedWorkspaces: [Workspace]) async {
         do {
-            let loaded = try await store.loadState()
+            let loaded = normalizeLegacyBundleIDs(in: try await store.loadState())
             if loaded.workspaces.isEmpty {
                 let seeded = PersistedWorkspaceState(
-                    workspaces: seedWorkspaces,
+                    workspaces: normalizeLegacyBundleIDs(in: seedWorkspaces),
                     selectedWorkspaceID: seedWorkspaces.first?.id,
                     recentWorkspaceIDs: seedWorkspaces.map(\.id),
                     adapterStates: [],
@@ -88,7 +88,7 @@ public final class WorkspaceSession {
                 kind: .hybrid,
                 label: "Tether",
                 appBinding: AppBinding(
-                    bundleID: "dev.tether.desktop",
+                    bundleID: "com.t3tools.tether",
                     adapterHints: ["baseURL": "http://127.0.0.1:3773", "wsURL": "ws://127.0.0.1:3773"]
                 ),
                 widthPolicy: SizePolicy(mode: .fraction, value: 0.40, minimum: 460),
@@ -245,6 +245,27 @@ public final class WorkspaceSession {
         let state = currentPersistedState()
         Task {
             try? await store.saveState(state)
+        }
+    }
+
+    private func normalizeLegacyBundleIDs(in state: PersistedWorkspaceState) -> PersistedWorkspaceState {
+        var normalized = state
+        normalized.workspaces = normalizeLegacyBundleIDs(in: state.workspaces)
+        return normalized
+    }
+
+    private func normalizeLegacyBundleIDs(in workspaces: [Workspace]) -> [Workspace] {
+        workspaces.map { workspace in
+            var workspace = workspace
+            workspace.slots = workspace.slots.map { slot in
+                var slot = slot
+                if slot.appBinding?.bundleID == "dev.tether.desktop" {
+                    slot.appBinding?.bundleID = "com.t3tools.tether"
+                    slot.updatedAt = .now
+                }
+                return slot
+            }
+            return workspace
         }
     }
 }
