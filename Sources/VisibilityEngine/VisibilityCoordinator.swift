@@ -20,10 +20,11 @@ public actor VisibilityCoordinator: VisibilityCoordinating {
 
         let windowsBySlotBundleID = Dictionary(grouping: windows, by: { $0.bundleID ?? "" })
         var actions: [VisibilityAction] = []
+        let activeSlotID = nextWorkspace.activeSlotID ?? nextWorkspace.orderedSlots.first?.id
 
         for slot in nextWorkspace.orderedSlots {
             let window = windowsBySlotBundleID[slot.appBinding?.bundleID ?? ""]?.first
-            if layout.visibleSlotIDs.contains(slot.id),
+            if slot.id == activeSlotID,
                let layoutFrame = layout.slotLayouts.first(where: { $0.slotID == slot.id })?.frame {
                 actions.append(
                     VisibilityAction(

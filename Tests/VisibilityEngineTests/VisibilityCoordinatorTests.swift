@@ -65,6 +65,44 @@ func transitionStagesVisibleSlotsAndParksOutgoingWorkspaceSlots() async throws {
 }
 
 @Test
+func transitionParksNonActiveSlotsEvenWhenTheyRemainInLayoutNeighborhood() async throws {
+    let slots = [
+        Slot(id: "editor", workspaceID: "w", kind: .externalWindow, label: "Editor", appBinding: AppBinding(bundleID: "com.example.editor"), widthPolicy: SizePolicy(mode: .fraction, value: 0.55), layoutRole: .primary),
+        Slot(id: "browser", workspaceID: "w", kind: .externalWindow, label: "Browser", appBinding: AppBinding(bundleID: "com.example.browser"), widthPolicy: SizePolicy(mode: .fraction, value: 0.45), layoutRole: .secondary),
+    ]
+    let workspace = Workspace(
+        id: "w",
+        name: "Main",
+        activeSlotID: "browser",
+        slotOrder: slots.map(\.id),
+        slots: slots
+    )
+    let layout = LayoutPlan(
+        slotLayouts: [
+            SlotLayout(slotID: "editor", frame: RectValue(x: 0, y: 0, width: 760, height: 700), isFocused: false),
+            SlotLayout(slotID: "browser", frame: RectValue(x: 762, y: 0, width: 620, height: 700), isFocused: true),
+        ],
+        contentWidth: 1382,
+        scrollOffset: 120,
+        visibleSlotIDs: ["editor", "browser"],
+        parkedSlotIDs: [],
+        activeSlotIndex: 1
+    )
+    let windows = [
+        WindowCandidate(bundleID: "com.example.editor", appName: "Editor", windowTitle: "Project", processID: 300, windowID: 30, frame: .zero, source: .accessibility),
+        WindowCandidate(bundleID: "com.example.browser", appName: "Browser", windowTitle: "Docs", processID: 301, windowID: 31, frame: .zero, source: .accessibility),
+    ]
+    let coordinator = VisibilityCoordinator()
+
+    let actions = try await coordinator.transition(from: nil, to: workspace, layout: layout, windows: windows)
+    let editorAction = actions.first(where: { $0.slotID == "editor" })
+    let browserAction = actions.first(where: { $0.slotID == "browser" })
+
+    #expect(editorAction?.kind == .park)
+    #expect(browserAction?.kind == .show)
+}
+
+@Test
 func panicRevealAllRewritesLastPlannedActionsAndNextTransitionResumesNormally() async throws {
     let slots = [
         Slot(id: "editor", workspaceID: "w", kind: .externalWindow, label: "Editor", appBinding: AppBinding(bundleID: "com.example.editor"), widthPolicy: SizePolicy(mode: .fraction, value: 0.6), layoutRole: .primary),
