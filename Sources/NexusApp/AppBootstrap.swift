@@ -13,7 +13,7 @@ enum AppBootstrap {
         return (try? decoder.decode([Workspace].self, from: data)) ?? []
     }
 
-    private static var resourceBundle: Bundle {
+    static var resourceBundle: Bundle {
 #if SWIFT_PACKAGE
         Bundle.module
 #else

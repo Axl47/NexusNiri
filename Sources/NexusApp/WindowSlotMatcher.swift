@@ -133,8 +133,9 @@ struct WindowSlotMatcher {
         let runtimeProcessMatch = slot.runtimeBinding?.processID == candidate.processID
         let bundleMatch = bundleMatches(slot: slot, candidate: candidate)
         let titleMatch = titleMatches(slot: slot, candidate: candidate)
+        let bundleMatchAllowed = bundleMatch && (slot.targetingMode == .application || titleMatch)
 
-        guard exactPreferredWindow || exactRuntimeWindow || runtimeProcessMatch || bundleMatch else {
+        guard exactPreferredWindow || exactRuntimeWindow || runtimeProcessMatch || bundleMatchAllowed else {
             return nil
         }
 
@@ -142,7 +143,7 @@ struct WindowSlotMatcher {
         if exactPreferredWindow { score += 1_000 }
         if exactRuntimeWindow { score += 900 }
         if runtimeProcessMatch { score += 250 }
-        if bundleMatch { score += 120 }
+        if bundleMatchAllowed { score += 120 }
         if titleMatch { score += 80 }
         if candidate.source == .accessibility { score += 30 }
         if candidate.isFocused { score += 20 }
@@ -160,15 +161,16 @@ struct WindowSlotMatcher {
         let runtimeProcessMatch = slot.runtimeBinding?.processID == candidate.processID
         let bundleMatch = bundleMatches(slot: slot, candidate: candidate)
         let titleMatch = titleMatches(slot: slot, candidate: candidate)
+        let bundleMatchAllowed = bundleMatch && (slot.targetingMode == .application || titleMatch)
 
-        guard exactWindowBindingMatch || runtimeProcessMatch || bundleMatch else {
+        guard exactWindowBindingMatch || runtimeProcessMatch || bundleMatchAllowed else {
             return nil
         }
 
         var score = 0
         if exactWindowBindingMatch { score += 1_000 }
         if runtimeProcessMatch { score += 260 }
-        if bundleMatch { score += 120 }
+        if bundleMatchAllowed { score += 120 }
         if titleMatch { score += 80 }
         if candidate.source == .accessibility { score += 30 }
         if slot.runtimeBinding?.state == .attached { score += 15 }
@@ -181,7 +183,11 @@ struct WindowSlotMatcher {
         return (
             score,
             exactWindowBindingMatch,
-            bundleMatch && exactWindowBindingMatch == false && runtimeProcessMatch == false && titleMatch == false
+            slot.targetingMode == .application &&
+                bundleMatchAllowed &&
+                exactWindowBindingMatch == false &&
+                runtimeProcessMatch == false &&
+                titleMatch == false
         )
     }
 

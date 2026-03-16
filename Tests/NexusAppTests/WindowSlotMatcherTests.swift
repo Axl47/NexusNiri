@@ -169,6 +169,40 @@ func windowSlotMatcherRejectsAmbiguousSameBundleMatchesWithoutStrongerHints() {
 }
 
 @Test
+func windowSlotMatcherRejectsBundleOnlyReverseMatchesForWindowTargetedSlots() {
+    let matcher = WindowSlotMatcher()
+    let slot = Slot(
+        id: "captured-browser",
+        workspaceID: "workspace",
+        kind: .externalWindow,
+        targetingMode: .window,
+        label: "Docs",
+        appBinding: AppBinding(bundleID: "com.example.browser"),
+        widthPolicy: SizePolicy(mode: .fraction, value: 0.5),
+        layoutRole: .primary
+    )
+    let workspace = Workspace(id: "workspace", name: "Main", activeSlotID: slot.id, slotOrder: [slot.id], slots: [slot])
+
+    let match = matcher.bestSlotMatch(
+        for: WindowCandidate(
+            bundleID: "com.example.browser",
+            appName: "Browser",
+            windowTitle: "Random Window",
+            processID: 303,
+            windowID: 11,
+            frame: .zero,
+            isFocused: true,
+            source: .accessibility
+        ),
+        in: [workspace],
+        ignoringBundleID: nil,
+        ignoringProcessID: 999
+    )
+
+    #expect(match == nil)
+}
+
+@Test
 func windowSlotMatcherPrefersPreferredWorkspaceWhenDuplicateSharedProcessMatchesTie() {
     let matcher = WindowSlotMatcher()
     let apiSlot = Slot(

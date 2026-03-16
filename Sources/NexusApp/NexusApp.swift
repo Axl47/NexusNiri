@@ -11,9 +11,18 @@ struct NexusApplication: App {
             StageChromeView(
                 session: environment.session,
                 layoutEngine: environment.layoutEngine,
+                workspaceTemplateOptions: environment.workspaceTemplateOptions,
                 diagnosticsSnapshot: environment.diagnosticsSnapshot,
                 shellPresentationMode: environment.shellPresentationMode,
                 shellDisplayLayout: environment.shellDisplayLayout,
+                onCreateWorkspace: environment.createWorkspace,
+                onAddFocusedWindow: {
+                    Task {
+                        await environment.addFocusedWindowToSelectedWorkspace()
+                    }
+                },
+                onRemoveSelectedSlot: environment.session.removeSelectedSlot,
+                onToggleAutoAdd: environment.toggleSelectedWorkspaceAutoAdd,
                 onOpenDiagnostics: environment.openDiagnosticsPanel,
                 onRequestAccessibility: {
                     Task {
@@ -50,6 +59,18 @@ struct NexusApplication: App {
 
                 Divider()
 
+                ForEach(environment.workspaceTemplateOptions) { option in
+                    Button("New \(option.title)") {
+                        environment.createWorkspace(from: option.id)
+                    }
+                }
+
+                Divider()
+
+                Button(environment.session.selectedWorkspace?.autoAddPolicy == .focusedStandardWindow ? "Disable Auto-add" : "Enable Auto-add") {
+                    environment.toggleSelectedWorkspaceAutoAdd()
+                }
+
                 ForEach(Array(environment.session.workspaces.prefix(9).enumerated()), id: \.element.id) { index, workspace in
                     Button(workspace.name) {
                         environment.session.selectWorkspace(at: index)
@@ -59,6 +80,30 @@ struct NexusApplication: App {
             }
 
             CommandMenu("Slots") {
+                Button("Add Focused Window") {
+                    Task {
+                        await environment.addFocusedWindowToSelectedWorkspace()
+                    }
+                }
+
+                Button("Remove Selected Slot") {
+                    environment.session.removeSelectedSlot()
+                }
+
+                Divider()
+
+                Button("Move Slot Left") {
+                    _ = environment.session.moveSelectedSlotLeft()
+                }
+                .keyboardShortcut(.leftArrow, modifiers: [.command, .option, .shift])
+
+                Button("Move Slot Right") {
+                    _ = environment.session.moveSelectedSlotRight()
+                }
+                .keyboardShortcut(.rightArrow, modifiers: [.command, .option, .shift])
+
+                Divider()
+
                 Button("Next Slot") {
                     environment.session.selectNextSlot()
                 }

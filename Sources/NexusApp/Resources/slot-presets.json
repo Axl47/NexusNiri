@@ -1,0 +1,65 @@
+[
+  {
+    "bundleID": "com.microsoft.VSCode",
+    "defaultLabel": "Editor",
+    "kind": "externalWindow",
+    "widthPolicy": {
+      "mode": "fraction",
+      "value": 0.55,
+      "minimum": 540,
+      "maximum": null
+    },
+    "layoutRole": "primary",
+    "warmPreference": "hot",
+    "adapterID": null,
+    "adapterHints": {}
+  },
+  {
+    "bundleID": "dev.zed.Zed",
+    "defaultLabel": "Zed",
+    "kind": "externalWindow",
+    "widthPolicy": {
+      "mode": "fraction",
+      "value": 0.50,
+      "minimum": 520,
+      "maximum": null
+    },
+    "layoutRole": "primary",
+    "warmPreference": "hot",
+    "adapterID": null,
+    "adapterHints": {}
+  },
+  {
+    "bundleID": "app.zen-browser.zen",
+    "defaultLabel": "Zen",
+    "kind": "externalWindow",
+    "widthPolicy": {
+      "mode": "fraction",
+      "value": 0.45,
+      "minimum": 500,
+      "maximum": null
+    },
+    "layoutRole": "secondary",
+    "warmPreference": "warm",
+    "adapterID": null,
+    "adapterHints": {}
+  },
+  {
+    "bundleID": "com.t3tools.tether",
+    "defaultLabel": "Tether",
+    "kind": "hybrid",
+    "widthPolicy": {
+      "mode": "fraction",
+      "value": 0.40,
+      "minimum": 460,
+      "maximum": null
+    },
+    "layoutRole": "support",
+    "warmPreference": "hot",
+    "adapterID": "tether",
+    "adapterHints": {
+      "baseURL": "http://127.0.0.1:3773",
+      "wsURL": "ws://127.0.0.1:3773"
+    }
+  }
+]

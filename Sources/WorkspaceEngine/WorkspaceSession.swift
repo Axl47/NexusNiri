@@ -65,64 +65,134 @@ public final class WorkspaceSession {
         statusMessage = message
     }
 
-    public func addWorkspace(named name: String? = nil) {
-        let index = workspaces.count + 1
-        let workspaceName = (name?.isEmpty == false ? name : nil) ?? "Workspace \(index)"
-        let workspaceID = UUID().uuidString
-        let now = Date()
-
-        let slots = [
-            Slot(
-                workspaceID: workspaceID,
-                kind: .externalWindow,
-                label: "Editor",
-                appBinding: AppBinding(bundleID: "com.microsoft.VSCode"),
-                widthPolicy: SizePolicy(mode: .fraction, value: 0.55, minimum: 540),
-                layoutRole: .primary,
-                warmPreference: .hot
-            ),
-            Slot(
-                workspaceID: workspaceID,
-                kind: .externalWindow,
-                label: "Zen",
-                appBinding: AppBinding(bundleID: "app.zen-browser.zen"),
-                widthPolicy: SizePolicy(mode: .fraction, value: 0.45, minimum: 500),
-                layoutRole: .secondary,
-                warmPreference: .warm
-            ),
-            Slot(
-                workspaceID: workspaceID,
-                kind: .hybrid,
-                label: "Tether",
-                appBinding: AppBinding(
-                    bundleID: "com.t3tools.tether",
-                    adapterHints: ["baseURL": "http://127.0.0.1:3773", "wsURL": "ws://127.0.0.1:3773"]
-                ),
-                widthPolicy: SizePolicy(mode: .fraction, value: 0.40, minimum: 460),
-                layoutRole: .support,
-                adapterID: "tether",
-                warmPreference: .hot
-            ),
-        ]
-
-        let slotOrder = slots.map(\.id)
-        let workspace = Workspace(
-            id: workspaceID,
-            name: workspaceName,
-            description: "User-created workspace",
-            activeSlotID: slotOrder.first,
-            slotOrder: slotOrder,
-            layoutState: LayoutState(activeIndex: 0, centeredSlotID: slotOrder.first, visibleSlotIDs: slotOrder.prefix(2).map { $0 }),
-            createdAt: now,
-            updatedAt: now,
-            slots: slots
-        )
-
-        workspaces.append(workspace)
-        selectedWorkspaceID = workspace.id
-        appendRecent(workspace.id)
-        statusMessage = "Added \(workspace.name)."
+    public func addWorkspace(_ workspace: Workspace) {
+        let normalizedWorkspace = normalizedWorkspaceForInsertion(workspace)
+        workspaces.append(normalizedWorkspace)
+        selectedWorkspaceID = normalizedWorkspace.id
+        appendRecent(normalizedWorkspace.id)
+        statusMessage = "Added \(normalizedWorkspace.name)."
         persistSoon()
+    }
+
+    @discardableResult
+    public func addSlot(
+        _ slot: Slot,
+        to workspaceID: String,
+        afterSlotID: String? = nil,
+        selecting: Bool,
+        origin: SelectionOrigin = .nexusNavigation
+    ) -> Bool {
+        guard let workspaceIndex = workspaces.firstIndex(where: { $0.id == workspaceID }) else {
+            return false
+        }
+
+        var slot = slot
+        let now = Date()
+        slot.workspaceID = workspaceID
+        slot.createdAt = now
+        slot.updatedAt = now
+
+        guard workspaces[workspaceIndex].slots.contains(where: { $0.id == slot.id }) == false else {
+            return false
+        }
+
+        workspaces[workspaceIndex].slots.append(slot)
+        let insertIndex: Int
+        if let afterSlotID,
+           let orderedIndex = workspaces[workspaceIndex].slotOrder.firstIndex(of: afterSlotID) {
+            insertIndex = orderedIndex + 1
+        } else {
+            insertIndex = workspaces[workspaceIndex].slotOrder.count
+        }
+
+        workspaces[workspaceIndex].slotOrder.insert(slot.id, at: insertIndex)
+
+        let shouldSelect = selecting || workspaces[workspaceIndex].activeSlotID == nil
+        if shouldSelect {
+            lastSelectionOrigin = origin
+            workspaces[workspaceIndex].activeSlotID = slot.id
+        }
+
+        workspaces[workspaceIndex].updatedAt = now
+        updateSelectionState(forWorkspaceAt: workspaceIndex)
+        if shouldSelect {
+            selectedWorkspaceID = workspaceID
+            appendRecent(workspaceID)
+        }
+
+        statusMessage = "Added \(slot.label)."
+        persistSoon()
+        return true
+    }
+
+    public func removeSelectedSlot() {
+        guard let selectedWorkspaceID,
+              let workspaceIndex = workspaces.firstIndex(where: { $0.id == selectedWorkspaceID }),
+              let activeSlotID = workspaces[workspaceIndex].activeSlotID,
+              let orderedIndex = workspaces[workspaceIndex].slotOrder.firstIndex(of: activeSlotID) else {
+            return
+        }
+
+        workspaces[workspaceIndex].slots.removeAll { $0.id == activeSlotID }
+        workspaces[workspaceIndex].slotOrder.removeAll { $0 == activeSlotID }
+
+        let nextActiveSlotID: String?
+        if workspaces[workspaceIndex].slotOrder.isEmpty {
+            nextActiveSlotID = nil
+        } else {
+            let fallbackIndex = max(0, min(orderedIndex - 1, workspaces[workspaceIndex].slotOrder.count - 1))
+            nextActiveSlotID = workspaces[workspaceIndex].slotOrder[safe: fallbackIndex]
+                ?? workspaces[workspaceIndex].slotOrder.first
+        }
+
+        workspaces[workspaceIndex].activeSlotID = nextActiveSlotID
+        workspaces[workspaceIndex].updatedAt = .now
+        updateSelectionState(forWorkspaceAt: workspaceIndex)
+        statusMessage = nextActiveSlotID == nil ? "Removed the last slot." : "Removed slot."
+        persistSoon()
+    }
+
+    @discardableResult
+    public func moveSelectedSlotLeft() -> Bool {
+        guard let workspace = selectedWorkspace,
+              let activeSlotID = workspace.activeSlotID,
+              let currentIndex = workspace.slotOrder.firstIndex(of: activeSlotID) else {
+            return false
+        }
+
+        return moveSlot(id: activeSlotID, in: workspace.id, to: currentIndex - 1)
+    }
+
+    @discardableResult
+    public func moveSelectedSlotRight() -> Bool {
+        guard let workspace = selectedWorkspace,
+              let activeSlotID = workspace.activeSlotID,
+              let currentIndex = workspace.slotOrder.firstIndex(of: activeSlotID) else {
+            return false
+        }
+
+        return moveSlot(id: activeSlotID, in: workspace.id, to: currentIndex + 1)
+    }
+
+    @discardableResult
+    public func toggleSelectedWorkspaceAutoAddPolicy() -> AutoAddPolicy? {
+        guard let selectedWorkspaceID,
+              let workspaceIndex = workspaces.firstIndex(where: { $0.id == selectedWorkspaceID }) else {
+            return nil
+        }
+
+        let nextPolicy: AutoAddPolicy = switch workspaces[workspaceIndex].autoAddPolicy {
+        case .disabled:
+            .focusedStandardWindow
+        case .focusedStandardWindow:
+            .disabled
+        }
+
+        workspaces[workspaceIndex].autoAddPolicy = nextPolicy
+        workspaces[workspaceIndex].updatedAt = .now
+        statusMessage = nextPolicy == .disabled ? "Auto-add disabled." : "Auto-add enabled."
+        persistSoon()
+        return nextPolicy
     }
 
     public func removeSelectedWorkspace() {
@@ -404,6 +474,79 @@ public final class WorkspaceSession {
         recentWorkspaceIDs.removeAll { $0 == workspaceID }
         recentWorkspaceIDs.insert(workspaceID, at: 0)
         recentWorkspaceIDs = Array(recentWorkspaceIDs.prefix(12))
+    }
+
+    @discardableResult
+    private func moveSlot(id: String, in workspaceID: String, to destinationIndex: Int) -> Bool {
+        guard let workspaceIndex = workspaces.firstIndex(where: { $0.id == workspaceID }),
+              let sourceIndex = workspaces[workspaceIndex].slotOrder.firstIndex(of: id),
+              workspaces[workspaceIndex].slotOrder.isEmpty == false else {
+            return false
+        }
+
+        let clampedDestinationIndex = min(max(destinationIndex, 0), workspaces[workspaceIndex].slotOrder.count - 1)
+        guard clampedDestinationIndex != sourceIndex else { return false }
+
+        let movedID = workspaces[workspaceIndex].slotOrder.remove(at: sourceIndex)
+        workspaces[workspaceIndex].slotOrder.insert(movedID, at: clampedDestinationIndex)
+        workspaces[workspaceIndex].updatedAt = .now
+        updateSelectionState(forWorkspaceAt: workspaceIndex)
+        statusMessage = "Moved slot."
+        persistSoon()
+        return true
+    }
+
+    private func normalizedWorkspaceForInsertion(_ workspace: Workspace) -> Workspace {
+        var workspace = workspace
+        let now = Date()
+        workspace.updatedAt = now
+        if workspace.createdAt > now {
+            workspace.createdAt = now
+        }
+        workspace.slots = workspace.orderedSlots.enumerated().map { index, slot in
+            var slot = slot
+            slot.workspaceID = workspace.id
+            slot.updatedAt = now
+            if slot.createdAt > now {
+                slot.createdAt = now
+            }
+            if workspace.slotOrder.isEmpty {
+                workspace.slotOrder.append(slot.id)
+            } else if workspace.slotOrder.contains(slot.id) == false {
+                workspace.slotOrder.append(slot.id)
+            }
+            if workspace.layoutState.visibleSlotIDs.isEmpty && index < 2 {
+                workspace.layoutState.visibleSlotIDs.append(slot.id)
+            }
+            return slot
+        }
+        if workspace.activeSlotID == nil {
+            workspace.activeSlotID = workspace.slotOrder.first
+        }
+        updateSelectionState(for: &workspace)
+        return workspace
+    }
+
+    private func updateSelectionState(forWorkspaceAt index: Int) {
+        updateSelectionState(for: &workspaces[index])
+    }
+
+    private func updateSelectionState(for workspace: inout Workspace) {
+        if let activeSlotID = workspace.activeSlotID,
+           let activeIndex = workspace.slotOrder.firstIndex(of: activeSlotID) {
+            workspace.layoutState.activeIndex = activeIndex
+            workspace.layoutState.centeredSlotID = activeSlotID
+        } else if let firstSlotID = workspace.slotOrder.first {
+            workspace.activeSlotID = firstSlotID
+            workspace.layoutState.activeIndex = 0
+            workspace.layoutState.centeredSlotID = firstSlotID
+        } else {
+            workspace.activeSlotID = nil
+            workspace.layoutState.activeIndex = 0
+            workspace.layoutState.centeredSlotID = nil
+            workspace.layoutState.visibleSlotIDs = []
+            workspace.layoutState.parkedSlotIDs = []
+        }
     }
 
     @discardableResult

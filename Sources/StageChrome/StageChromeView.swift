@@ -9,9 +9,14 @@ import WorkspaceEngine
 public struct StageChromeView: View {
     @Bindable private var session: WorkspaceSession
     private let layoutEngine: any LayoutComputing
+    private let workspaceTemplateOptions: [WorkspaceTemplateOption]
     private let diagnosticsSnapshot: DiagnosticsSnapshot
     private let shellPresentationMode: ShellPresentationMode
     private let shellDisplayLayout: ShellDisplayLayout?
+    private let onCreateWorkspace: (String) -> Void
+    private let onAddFocusedWindow: () -> Void
+    private let onRemoveSelectedSlot: () -> Void
+    private let onToggleAutoAdd: () -> Void
     private let onOpenDiagnostics: () -> Void
     private let onRequestAccessibility: () -> Void
     private let onRefreshDiagnostics: () -> Void
@@ -23,9 +28,14 @@ public struct StageChromeView: View {
     public init(
         session: WorkspaceSession,
         layoutEngine: any LayoutComputing,
+        workspaceTemplateOptions: [WorkspaceTemplateOption],
         diagnosticsSnapshot: DiagnosticsSnapshot,
         shellPresentationMode: ShellPresentationMode,
         shellDisplayLayout: ShellDisplayLayout?,
+        onCreateWorkspace: @escaping (String) -> Void,
+        onAddFocusedWindow: @escaping () -> Void,
+        onRemoveSelectedSlot: @escaping () -> Void,
+        onToggleAutoAdd: @escaping () -> Void,
         onOpenDiagnostics: @escaping () -> Void,
         onRequestAccessibility: @escaping () -> Void,
         onRefreshDiagnostics: @escaping () -> Void,
@@ -36,9 +46,14 @@ public struct StageChromeView: View {
     ) {
         self.session = session
         self.layoutEngine = layoutEngine
+        self.workspaceTemplateOptions = workspaceTemplateOptions
         self.diagnosticsSnapshot = diagnosticsSnapshot
         self.shellPresentationMode = shellPresentationMode
         self.shellDisplayLayout = shellDisplayLayout
+        self.onCreateWorkspace = onCreateWorkspace
+        self.onAddFocusedWindow = onAddFocusedWindow
+        self.onRemoveSelectedSlot = onRemoveSelectedSlot
+        self.onToggleAutoAdd = onToggleAutoAdd
         self.onOpenDiagnostics = onOpenDiagnostics
         self.onRequestAccessibility = onRequestAccessibility
         self.onRefreshDiagnostics = onRefreshDiagnostics
@@ -104,9 +119,11 @@ public struct StageChromeView: View {
                 Spacer(minLength: 12)
 
                 VStack(spacing: 8) {
-                    UtilityButton(symbol: "plus", action: {
-                        session.addWorkspace()
-                    })
+                    UtilityMenuButton(
+                        symbol: "plus",
+                        options: workspaceTemplateOptions,
+                        onSelect: onCreateWorkspace
+                    )
                     UtilityButton(symbol: "arrow.clockwise", action: onRefreshDiagnostics)
                     UtilityButton(symbol: "exclamationmark.triangle", action: onRevealAll)
                     UtilityButton(symbol: "slider.horizontal.3", action: onOpenDiagnostics)
@@ -151,6 +168,11 @@ public struct StageChromeView: View {
 
                 Spacer(minLength: 12)
 
+                AutoAddChip(
+                    isEnabled: session.selectedWorkspace?.autoAddPolicy == .focusedStandardWindow,
+                    action: onToggleAutoAdd
+                )
+
                 if let status = accessibilityPermissionStatus, status.state != .granted {
                     Text(accessibilityWarningText(for: status))
                         .font(.system(size: 11, weight: .medium))
@@ -182,6 +204,11 @@ public struct StageChromeView: View {
                     .foregroundStyle(ChromeTheme.textSecondary)
                 }
                 .font(.system(size: 11, weight: .medium))
+
+                HStack(spacing: 6) {
+                    CompactChromeButton(symbol: "plus", action: onAddFocusedWindow)
+                    CompactChromeButton(symbol: "minus", action: onRemoveSelectedSlot)
+                }
             }
             .padding(.horizontal, 14)
         }
@@ -232,6 +259,12 @@ public struct StageChromeView: View {
                     workspace: workspace,
                     layout: layout,
                     geometry: geometry,
+                    onMoveSlotLeft: {
+                        _ = session.moveSelectedSlotLeft()
+                    },
+                    onMoveSlotRight: {
+                        _ = session.moveSelectedSlotRight()
+                    },
                     onLayoutDidUpdate: onLayoutDidUpdate
                 )
             } else {
@@ -269,9 +302,11 @@ public struct StageChromeView: View {
             }
 
             HStack(spacing: 8) {
-                UtilityButton(symbol: "plus", action: {
-                    session.addWorkspace()
-                })
+                UtilityMenuButton(
+                    symbol: "plus",
+                    options: workspaceTemplateOptions,
+                    onSelect: onCreateWorkspace
+                )
                 UtilityButton(symbol: "arrow.clockwise", action: onRefreshDiagnostics)
                 UtilityButton(symbol: "exclamationmark.triangle", action: onRevealAll)
                 UtilityButton(symbol: "slider.horizontal.3", action: onOpenDiagnostics)
@@ -285,6 +320,11 @@ public struct StageChromeView: View {
 
     private var notchTrailingChrome: some View {
         HStack(spacing: 10) {
+            AutoAddChip(
+                isEnabled: session.selectedWorkspace?.autoAddPolicy == .focusedStandardWindow,
+                action: onToggleAutoAdd
+            )
+
             Text(metadataText)
                 .font(.system(size: 11, weight: .regular))
                 .foregroundStyle(ChromeTheme.textSecondary)
@@ -316,6 +356,11 @@ public struct StageChromeView: View {
                 .foregroundStyle(ChromeTheme.textSecondary)
             }
             .font(.system(size: 11, weight: .medium))
+
+            HStack(spacing: 6) {
+                CompactChromeButton(symbol: "plus", action: onAddFocusedWindow)
+                CompactChromeButton(symbol: "minus", action: onRemoveSelectedSlot)
+            }
         }
         .padding(.horizontal, 12)
         .padding(.vertical, 6)
@@ -355,7 +400,7 @@ public struct StageChromeView: View {
             Text("No apps in this workspace")
                 .font(.system(size: 12, weight: .medium))
                 .foregroundStyle(ChromeTheme.textSecondary)
-            Text("Use the plus button in the sidebar to add a workspace.")
+            Text("Use the add button in the top bar to capture the last focused app window.")
                 .font(.system(size: 11, weight: .regular))
                 .foregroundStyle(ChromeTheme.textTertiary)
         }
@@ -446,11 +491,79 @@ private struct UtilityButton: View {
     }
 }
 
+private struct UtilityMenuButton: View {
+    let symbol: String
+    let options: [WorkspaceTemplateOption]
+    let onSelect: (String) -> Void
+
+    var body: some View {
+        Menu {
+            ForEach(options) { option in
+                Button(option.title) {
+                    onSelect(option.id)
+                }
+            }
+        } label: {
+            Image(systemName: symbol)
+                .font(.system(size: 11, weight: .medium))
+                .foregroundStyle(ChromeTheme.textSecondary)
+                .frame(width: ChromeMetrics.workspaceIndicatorSize, height: ChromeMetrics.workspaceIndicatorSize)
+                .background(
+                    RoundedRectangle(cornerRadius: 8)
+                        .fill(ChromeTheme.surface)
+                )
+        }
+        .menuStyle(.borderlessButton)
+        .fixedSize()
+    }
+}
+
+private struct CompactChromeButton: View {
+    let symbol: String
+    let action: () -> Void
+
+    var body: some View {
+        Button(action: action) {
+            Image(systemName: symbol)
+                .font(.system(size: 10, weight: .medium))
+                .foregroundStyle(ChromeTheme.textSecondary)
+                .frame(width: 24, height: 24)
+                .background(
+                    RoundedRectangle(cornerRadius: 7)
+                        .fill(ChromeTheme.surface)
+                )
+        }
+        .buttonStyle(.plain)
+    }
+}
+
+private struct AutoAddChip: View {
+    let isEnabled: Bool
+    let action: () -> Void
+
+    var body: some View {
+        Button(action: action) {
+            Text("Auto-add")
+                .font(.system(size: 11, weight: .medium))
+                .foregroundStyle(isEnabled ? ChromeTheme.accent : ChromeTheme.textSecondary)
+                .padding(.horizontal, 9)
+                .padding(.vertical, 4)
+                .background(
+                    RoundedRectangle(cornerRadius: 8)
+                        .fill(isEnabled ? ChromeTheme.accentDim : ChromeTheme.surface)
+                )
+        }
+        .buttonStyle(.plain)
+    }
+}
+
 private struct StageViewportView: View {
     @Bindable var session: WorkspaceSession
     let workspace: Workspace
     let layout: LayoutPlan
     let geometry: StageGeometry
+    let onMoveSlotLeft: () -> Void
+    let onMoveSlotRight: () -> Void
     let onLayoutDidUpdate: (Workspace, LayoutPlan) async -> Void
 
     @State private var layoutUpdateTask: Task<Void, Never>?
@@ -476,7 +589,9 @@ private struct StageViewportView: View {
         .overlay(alignment: .topLeading) {
             SlotHeaderStripView(
                 workspace: workspace,
-                layout: layout
+                layout: layout,
+                onMoveSlotLeft: onMoveSlotLeft,
+                onMoveSlotRight: onMoveSlotRight
             ) { slotID in
                 session.selectSlot(id: slotID)
             }
@@ -581,15 +696,21 @@ private struct StageSlotPresenceView: View {
 private struct SlotHeaderStripView: View {
     let workspace: Workspace
     let layout: LayoutPlan
+    let onMoveSlotLeft: () -> Void
+    let onMoveSlotRight: () -> Void
     let onSelectSlot: (String) -> Void
 
     var body: some View {
         ZStack(alignment: .topLeading) {
-            ForEach(workspace.orderedSlots) { slot in
+            ForEach(Array(workspace.orderedSlots.enumerated()), id: \.element.id) { index, slot in
                 if let slotLayout = layout.slotLayout(for: slot.id) {
                     SlotHeaderView(
                         slot: slot,
-                        isFocused: workspace.activeSlotID == slot.id
+                        isFocused: workspace.activeSlotID == slot.id,
+                        canMoveLeft: index > 0,
+                        canMoveRight: index < (workspace.orderedSlots.count - 1),
+                        onMoveLeft: onMoveSlotLeft,
+                        onMoveRight: onMoveSlotRight
                     ) {
                         onSelectSlot(slot.id)
                     }
@@ -607,48 +728,83 @@ private struct SlotHeaderStripView: View {
 private struct SlotHeaderView: View {
     let slot: Slot
     let isFocused: Bool
+    let canMoveLeft: Bool
+    let canMoveRight: Bool
+    let onMoveLeft: () -> Void
+    let onMoveRight: () -> Void
+    let action: () -> Void
+
+    var body: some View {
+        HStack(spacing: 0) {
+            Button(action: action) {
+                HStack(spacing: 8) {
+                    RoundedRectangle(cornerRadius: 3)
+                        .fill(slotTintColor(for: slot))
+                        .frame(width: 14, height: 14)
+                        .overlay {
+                            Text(String(slot.label.prefix(1)).uppercased())
+                                .font(.system(size: 8, weight: .medium))
+                                .foregroundStyle(.white)
+                        }
+
+                    Text(slot.label)
+                        .font(.system(size: 11, weight: .medium))
+                        .foregroundStyle(isFocused ? ChromeTheme.textPrimary : ChromeTheme.textSecondary)
+
+                    Spacer(minLength: 0)
+                }
+                .padding(.horizontal, 12)
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .frame(height: ChromeMetrics.slotHeaderHeight)
+                .contentShape(Rectangle())
+            }
+            .buttonStyle(.plain)
+
+            if isFocused {
+                HStack(spacing: 4) {
+                    CompactHeaderButton(symbol: "arrow.left", isEnabled: canMoveLeft, action: onMoveLeft)
+                    CompactHeaderButton(symbol: "arrow.right", isEnabled: canMoveRight, action: onMoveRight)
+                }
+                .padding(.trailing, 8)
+            }
+        }
+        .background {
+            ChromeTheme.chromeOcclusion
+                .overlay(isFocused ? ChromeTheme.surfaceHover : ChromeTheme.surface.opacity(0.82))
+        }
+        .overlay(alignment: .bottom) {
+            Rectangle()
+                .fill(ChromeTheme.border)
+                .frame(height: 0.5)
+        }
+        .overlay(alignment: .trailing) {
+            Rectangle()
+                .fill(ChromeTheme.border.opacity(0.55))
+                .frame(width: 0.5)
+        }
+        .opacity(isFocused ? 1.0 : 0.5)
+        .animation(.easeOut(duration: 0.3), value: isFocused)
+    }
+}
+
+private struct CompactHeaderButton: View {
+    let symbol: String
+    let isEnabled: Bool
     let action: () -> Void
 
     var body: some View {
         Button(action: action) {
-            HStack(spacing: 8) {
-                RoundedRectangle(cornerRadius: 3)
-                    .fill(slotTintColor(for: slot))
-                    .frame(width: 14, height: 14)
-                    .overlay {
-                        Text(String(slot.label.prefix(1)).uppercased())
-                            .font(.system(size: 8, weight: .medium))
-                            .foregroundStyle(.white)
-                    }
-
-                Text(slot.label)
-                    .font(.system(size: 11, weight: .medium))
-                    .foregroundStyle(isFocused ? ChromeTheme.textPrimary : ChromeTheme.textSecondary)
-
-                Spacer(minLength: 0)
-            }
-            .padding(.horizontal, 12)
-            .frame(maxWidth: .infinity, alignment: .leading)
-            .frame(height: ChromeMetrics.slotHeaderHeight)
-            .background {
-                ChromeTheme.chromeOcclusion
-                    .overlay(isFocused ? ChromeTheme.surfaceHover : ChromeTheme.surface.opacity(0.82))
-            }
-            .overlay(alignment: .bottom) {
-                Rectangle()
-                    .fill(ChromeTheme.border)
-                    .frame(height: 0.5)
-            }
-            .overlay(alignment: .trailing) {
-                Rectangle()
-                    .fill(ChromeTheme.border.opacity(0.55))
-                    .frame(width: 0.5)
-            }
-            .contentShape(Rectangle())
+            Image(systemName: symbol)
+                .font(.system(size: 9, weight: .medium))
+                .foregroundStyle(isEnabled ? ChromeTheme.textSecondary : ChromeTheme.textTertiary)
+                .frame(width: 18, height: 18)
+                .background(
+                    RoundedRectangle(cornerRadius: 5)
+                        .fill(ChromeTheme.surface.opacity(0.92))
+                )
         }
         .buttonStyle(.plain)
-        .opacity(isFocused ? 1.0 : 0.5)
-        .animation(.easeOut(duration: 0.3), value: isFocused)
+        .disabled(isEnabled == false)
     }
 }
 

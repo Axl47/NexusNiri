@@ -12,7 +12,10 @@
 		13607A5BC10CFA6EED415BBD /* libSharedTypes.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 1EECF3EF38E390AA92C7CEA1 /* libSharedTypes.a */; };
 		1610166A53F786EC473C631C /* AppBootstrap.swift in Sources */ = {isa = PBXBuildFile; fileRef = 31F350A9617D8AC426A8452E /* AppBootstrap.swift */; };
 		17B2B2179FF416CF71409B60 /* libTetherAdapter.a in Frameworks */ = {isa = PBXBuildFile; fileRef = EC9A7D6163591348C95B873F /* libTetherAdapter.a */; };
+		1B53A3D310298C8DF3A96803 /* workspace-templates.json in Resources */ = {isa = PBXBuildFile; fileRef = 00F72571933AF6E5E74C25DE /* workspace-templates.json */; };
 		1DCF8ED935B18E86DDC6D6AB /* FocusedWindowAttributionTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = E6ABAE200A2EB57773279644 /* FocusedWindowAttributionTests.swift */; };
+		200E03B8A975DF28244D5BCB /* SlotPresetCatalog.swift in Sources */ = {isa = PBXBuildFile; fileRef = E800CD78C2602B7802A6A19C /* SlotPresetCatalog.swift */; };
+		2586ED4C3AE6B8C484AE5A4D /* WorkspaceTemplateCatalog.swift in Sources */ = {isa = PBXBuildFile; fileRef = 14383A4A0E1C620AA967A1F4 /* WorkspaceTemplateCatalog.swift */; };
 		29A695697796115145F7598D /* NexusApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5E7C4DD289F7471AD2FC39B7 /* NexusApp.swift */; };
 		33734EE6A89BCD612ED1539A /* DiagnosticsCenter.swift in Sources */ = {isa = PBXBuildFile; fileRef = F1FAEEC43979A39625B24B05 /* DiagnosticsCenter.swift */; };
 		3C559A39A0AC35BCB2A97854 /* WindowSlotMatcherTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = C04E44915316C5268D52CFB1 /* WindowSlotMatcherTests.swift */; };
@@ -27,6 +30,7 @@
 		55502A856E005BCE65D4D5E9 /* libSharedTypes.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 1EECF3EF38E390AA92C7CEA1 /* libSharedTypes.a */; };
 		5569F0BA04B7FEC050B07BCB /* libTetherAdapter.a in Frameworks */ = {isa = PBXBuildFile; fileRef = EC9A7D6163591348C95B873F /* libTetherAdapter.a */; };
 		5B3D28535540D55591B64AF7 /* SharedTypesTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = CCA36D42CBB05CE4EEA49CFD /* SharedTypesTests.swift */; };
+		5C9F662673740706017CA2A4 /* WorkspaceSlotEvolutionTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1636704CBCF5A18C7BC844CE /* WorkspaceSlotEvolutionTests.swift */; };
 		5D1E408EDEE9C8CABCD0A1A9 /* libSharedTypes.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 1EECF3EF38E390AA92C7CEA1 /* libSharedTypes.a */; };
 		5F3B59B9BE32EE408F5F45C6 /* AppEnvironment.swift in Sources */ = {isa = PBXBuildFile; fileRef = BD2FCEB5FF7E413243E580FC /* AppEnvironment.swift */; };
 		6096CCBF9DB52AEB48F25CDB /* LayoutEngineTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = F9B5C42C27BB41BF4A6EAA81 /* LayoutEngineTests.swift */; };
@@ -51,6 +55,7 @@
 		A575C686AE9C57680E36253D /* JSONWorkspaceStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = 35E05CB2947451426DEC9A14 /* JSONWorkspaceStore.swift */; };
 		A76DF07AE83F1D9F02C2701C /* libVisibilityEngine.a in Frameworks */ = {isa = PBXBuildFile; fileRef = F5D447A4A639BCEB6BBF25CC /* libVisibilityEngine.a */; };
 		A89FE544DC4D10B1249BF2AC /* libSharedTypes.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 1EECF3EF38E390AA92C7CEA1 /* libSharedTypes.a */; };
+		AC4AE216DADE1123B7956153 /* FocusedWindowSlotFactory.swift in Sources */ = {isa = PBXBuildFile; fileRef = A196C9A21A2BB97325E09AA0 /* FocusedWindowSlotFactory.swift */; };
 		ADC3951FD82C83171222C082 /* WindowSlotMatcher.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0AAC62664E34816C73FF44CE /* WindowSlotMatcher.swift */; };
 		B092BA9233B4FD6D47C0B4FC /* libWorkspaceEngine.a in Frameworks */ = {isa = PBXBuildFile; fileRef = DCE56EB9979E483A8533429B /* libWorkspaceEngine.a */; };
 		B0B5AAEF2F5F724360D8B7BE /* DomainModels.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5C9E884AABCCD3D199C8F225 /* DomainModels.swift */; };
@@ -61,6 +66,7 @@
 		B8C3FA38412F20289D6B4FBE /* libStageChrome.a in Frameworks */ = {isa = PBXBuildFile; fileRef = A49624C5727B36CC623F61F0 /* libStageChrome.a */; };
 		BAE29123A2F317B1FCBF31E0 /* libWindowRegistry.a in Frameworks */ = {isa = PBXBuildFile; fileRef = D0E546FCC1D43F7F194B80BC /* libWindowRegistry.a */; };
 		BC0DFE484C49CAF3106F35C5 /* ChromeTheme.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8692C4C4B7851CB9F1459DAD /* ChromeTheme.swift */; };
+		BDE8A24C9844DF40F7AC8E83 /* slot-presets.json in Resources */ = {isa = PBXBuildFile; fileRef = B66F126D6E0F60532457F57D /* slot-presets.json */; };
 		BE53A4B7D65D176DAD3DFF73 /* libSharedTypes.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 1EECF3EF38E390AA92C7CEA1 /* libSharedTypes.a */; };
 		C56A3E994E806DCBDC01361D /* libGenericAXAdapter.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 01D00732FAFF41EE051F1747 /* libGenericAXAdapter.a */; };
 		C580F174675813078FE547A4 /* WindowChoreographyService.swift in Sources */ = {isa = PBXBuildFile; fileRef = ADD8B96390872C8012000F63 /* WindowChoreographyService.swift */; };
@@ -423,11 +429,14 @@
 /* End PBXContainerItemProxy section */
 
 /* Begin PBXFileReference section */
+		00F72571933AF6E5E74C25DE /* workspace-templates.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; path = "workspace-templates.json"; sourceTree = "<group>"; };
 		01D00732FAFF41EE051F1747 /* libGenericAXAdapter.a */ = {isa = PBXFileReference; explicitFileType = archive.ar; includeInIndex = 0; path = libGenericAXAdapter.a; sourceTree = BUILT_PRODUCTS_DIR; };
 		05CC05125F65EA32F39D933C /* libAdapterBus.a */ = {isa = PBXFileReference; explicitFileType = archive.ar; includeInIndex = 0; path = libAdapterBus.a; sourceTree = BUILT_PRODUCTS_DIR; };
 		0AAC62664E34816C73FF44CE /* WindowSlotMatcher.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WindowSlotMatcher.swift; sourceTree = "<group>"; };
 		11A5F47A418AD924DC64F3B2 /* Nexus.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = Nexus.entitlements; sourceTree = "<group>"; };
+		14383A4A0E1C620AA967A1F4 /* WorkspaceTemplateCatalog.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WorkspaceTemplateCatalog.swift; sourceTree = "<group>"; };
 		15EC86B903D2DE076FF9A061 /* ChromeThemeTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ChromeThemeTests.swift; sourceTree = "<group>"; };
+		1636704CBCF5A18C7BC844CE /* WorkspaceSlotEvolutionTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WorkspaceSlotEvolutionTests.swift; sourceTree = "<group>"; };
 		1A01E41DF5E86B332CBCDB74 /* WindowChoreographyServiceTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WindowChoreographyServiceTests.swift; sourceTree = "<group>"; };
 		1D0BA48F117A6CCCF9467FE6 /* dev-run.sh */ = {isa = PBXFileReference; lastKnownFileType = text.script.sh; path = "dev-run.sh"; sourceTree = "<group>"; };
 		1EECF3EF38E390AA92C7CEA1 /* libSharedTypes.a */ = {isa = PBXFileReference; explicitFileType = archive.ar; includeInIndex = 0; path = libSharedTypes.a; sourceTree = BUILT_PRODUCTS_DIR; };
@@ -459,12 +468,14 @@
 		97F79F3A6B26B745BC6D78D2 /* libLayoutEngine.a */ = {isa = PBXFileReference; explicitFileType = archive.ar; includeInIndex = 0; path = libLayoutEngine.a; sourceTree = BUILT_PRODUCTS_DIR; };
 		9BFB6060B38A95BE87355D5E /* libDiagnostics.a */ = {isa = PBXFileReference; explicitFileType = archive.ar; includeInIndex = 0; path = libDiagnostics.a; sourceTree = BUILT_PRODUCTS_DIR; };
 		9CE1FAB394EBCD7EC201B2E6 /* NexusAppTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = NexusAppTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
+		A196C9A21A2BB97325E09AA0 /* FocusedWindowSlotFactory.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FocusedWindowSlotFactory.swift; sourceTree = "<group>"; };
 		A2A2264F9266F5536FEC37C6 /* LayoutEngineTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = LayoutEngineTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		A49624C5727B36CC623F61F0 /* libStageChrome.a */ = {isa = PBXFileReference; explicitFileType = archive.ar; includeInIndex = 0; path = libStageChrome.a; sourceTree = BUILT_PRODUCTS_DIR; };
 		ABF982C5E5BA59795ADBD04F /* WorkspaceEngineTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WorkspaceEngineTests.swift; sourceTree = "<group>"; };
 		ADD8B96390872C8012000F63 /* WindowChoreographyService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WindowChoreographyService.swift; sourceTree = "<group>"; };
 		B36E8DB0A43A1502BFAFC102 /* AppDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppDelegate.swift; sourceTree = "<group>"; };
 		B4EA293DBCC5E2C4B70980DC /* VisibilityCoordinator.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VisibilityCoordinator.swift; sourceTree = "<group>"; };
+		B66F126D6E0F60532457F57D /* slot-presets.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; path = "slot-presets.json"; sourceTree = "<group>"; };
 		B87FAB6666B481B8D6572407 /* SharedTypesTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = SharedTypesTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		BD2FCEB5FF7E413243E580FC /* AppEnvironment.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppEnvironment.swift; sourceTree = "<group>"; };
 		C04E44915316C5268D52CFB1 /* WindowSlotMatcherTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WindowSlotMatcherTests.swift; sourceTree = "<group>"; };
@@ -476,6 +487,7 @@
 		D35305EB92F2A478D5EAD72D /* default-workspaces.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; path = "default-workspaces.json"; sourceTree = "<group>"; };
 		DCE56EB9979E483A8533429B /* libWorkspaceEngine.a */ = {isa = PBXFileReference; explicitFileType = archive.ar; includeInIndex = 0; path = libWorkspaceEngine.a; sourceTree = BUILT_PRODUCTS_DIR; };
 		E6ABAE200A2EB57773279644 /* FocusedWindowAttributionTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FocusedWindowAttributionTests.swift; sourceTree = "<group>"; };
+		E800CD78C2602B7802A6A19C /* SlotPresetCatalog.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SlotPresetCatalog.swift; sourceTree = "<group>"; };
 		E88850232A3EBE0D63A6D221 /* WorkspaceSession.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WorkspaceSession.swift; sourceTree = "<group>"; };
 		E8F936D7BE7E08C2F83A9AF5 /* ServiceProtocols.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ServiceProtocols.swift; sourceTree = "<group>"; };
 		EB54D1DEEA6D8663E593ABEF /* make-app-bundle.sh */ = {isa = PBXFileReference; lastKnownFileType = text.script.sh; path = "make-app-bundle.sh"; sourceTree = "<group>"; };
@@ -688,6 +700,8 @@
 			isa = PBXGroup;
 			children = (
 				D35305EB92F2A478D5EAD72D /* default-workspaces.json */,
+				B66F126D6E0F60532457F57D /* slot-presets.json */,
+				00F72571933AF6E5E74C25DE /* workspace-templates.json */,
 			);
 			path = Resources;
 			sourceTree = "<group>";
@@ -733,6 +747,7 @@
 			children = (
 				1A01E41DF5E86B332CBCDB74 /* WindowChoreographyServiceTests.swift */,
 				C04E44915316C5268D52CFB1 /* WindowSlotMatcherTests.swift */,
+				1636704CBCF5A18C7BC844CE /* WorkspaceSlotEvolutionTests.swift */,
 			);
 			path = NexusAppTests;
 			sourceTree = "<group>";
@@ -793,11 +808,14 @@
 				31F350A9617D8AC426A8452E /* AppBootstrap.swift */,
 				B36E8DB0A43A1502BFAFC102 /* AppDelegate.swift */,
 				BD2FCEB5FF7E413243E580FC /* AppEnvironment.swift */,
+				A196C9A21A2BB97325E09AA0 /* FocusedWindowSlotFactory.swift */,
 				5E7C4DD289F7471AD2FC39B7 /* NexusApp.swift */,
 				FED150AEF5D93DBFB7D750A7 /* ShellWindowManager.swift */,
+				E800CD78C2602B7802A6A19C /* SlotPresetCatalog.swift */,
 				5AF77F8B4CC3AE3C532EAC05 /* StageMaskCoordinator.swift */,
 				ADD8B96390872C8012000F63 /* WindowChoreographyService.swift */,
 				0AAC62664E34816C73FF44CE /* WindowSlotMatcher.swift */,
+				14383A4A0E1C620AA967A1F4 /* WorkspaceTemplateCatalog.swift */,
 			);
 			path = NexusApp;
 			sourceTree = "<group>";
@@ -1406,6 +1424,8 @@
 			buildActionMask = 2147483647;
 			files = (
 				8DBD840EAA288A1F9B9824A8 /* default-workspaces.json in Resources */,
+				BDE8A24C9844DF40F7AC8E83 /* slot-presets.json in Resources */,
+				1B53A3D310298C8DF3A96803 /* workspace-templates.json in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -1643,6 +1663,7 @@
 			files = (
 				CB8337D1CBC94648FC7C79D5 /* WindowChoreographyServiceTests.swift in Sources */,
 				3C559A39A0AC35BCB2A97854 /* WindowSlotMatcherTests.swift in Sources */,
+				5C9F662673740706017CA2A4 /* WorkspaceSlotEvolutionTests.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -1726,11 +1747,14 @@
 				1610166A53F786EC473C631C /* AppBootstrap.swift in Sources */,
 				B3A83AF9ECBF59EC8A3696E2 /* AppDelegate.swift in Sources */,
 				5F3B59B9BE32EE408F5F45C6 /* AppEnvironment.swift in Sources */,
+				AC4AE216DADE1123B7956153 /* FocusedWindowSlotFactory.swift in Sources */,
 				29A695697796115145F7598D /* NexusApp.swift in Sources */,
 				7EA8C94419E89D54D389FF5F /* ShellWindowManager.swift in Sources */,
+				200E03B8A975DF28244D5BCB /* SlotPresetCatalog.swift in Sources */,
 				8CBC3C3B9607A5E76B649B6B /* StageMaskCoordinator.swift in Sources */,
 				C580F174675813078FE547A4 /* WindowChoreographyService.swift in Sources */,
 				ADC3951FD82C83171222C082 /* WindowSlotMatcher.swift in Sources */,
+				2586ED4C3AE6B8C484AE5A4D /* WorkspaceTemplateCatalog.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

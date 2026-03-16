@@ -22,6 +22,9 @@ final class AppEnvironment {
     private static let widthObservationTolerance: Double = 2
 
     private let focusSyncLogger = Logger(subsystem: "dev.nexusniri.Nexus", category: "focusSync")
+    private let slotPresetCatalog: SlotPresetCatalog
+    private let workspaceTemplateCatalog: WorkspaceTemplateCatalog
+    private let focusedWindowSlotFactory: FocusedWindowSlotFactory
     let workspaceStore: JSONWorkspaceStore
     let session: WorkspaceSession
     let windowRegistry: any WindowRegistryService
@@ -52,6 +55,7 @@ final class AppEnvironment {
     private var pendingFocusedWindowWidthObservation: PendingFocusedWindowWidthObservation?
     private var lastAppliedFocusedWindowWidthObservation: AppliedFocusedWindowWidthObservation?
     private var suppressedFocusSyncUntil: Date?
+    private var lastObservedExternalWindowCandidate: WindowCandidate?
     private let userDefaults: UserDefaults
     private var shellPersistenceKey: String
     private weak var shellWindow: NSWindow?
@@ -71,7 +75,11 @@ final class AppEnvironment {
         registerDefaultAdapters: Bool = true
     ) {
         let initialShellPersistenceKey = ShellPresentationPersistence.key(for: NSScreen.main)
+        let slotPresetCatalog = SlotPresetCatalog()
 
+        self.slotPresetCatalog = slotPresetCatalog
+        self.workspaceTemplateCatalog = WorkspaceTemplateCatalog(presets: slotPresetCatalog)
+        self.focusedWindowSlotFactory = FocusedWindowSlotFactory(presets: slotPresetCatalog)
         self.workspaceStore = workspaceStore
         self.session = WorkspaceSession(store: workspaceStore)
         self.windowRegistry = windowRegistry
@@ -114,6 +122,10 @@ final class AppEnvironment {
                 await self?.refreshDiagnostics()
             }
         }
+    }
+
+    var workspaceTemplateOptions: [WorkspaceTemplateOption] {
+        workspaceTemplateCatalog.options
     }
 
     func start() async {
@@ -265,6 +277,59 @@ final class AppEnvironment {
         case .notchFill:
             "Exit Over-Notch Mode"
         }
+    }
+
+    func createWorkspace(from templateID: String) {
+        let nextDefaultName = suggestedWorkspaceName(forTemplateID: templateID)
+        guard let workspace = workspaceTemplateCatalog.instantiate(
+            templateID: templateID,
+            workspaceName: nextDefaultName
+        ) else {
+            session.refreshStatus("Unable to create workspace from template.")
+            return
+        }
+
+        session.addWorkspace(workspace)
+    }
+
+    func addFocusedWindowToSelectedWorkspace() async {
+        guard let workspace = session.selectedWorkspace else {
+            session.refreshStatus("Select a workspace before adding a window.")
+            return
+        }
+
+        guard let candidate = focusedWindowCandidateForExplicitAdd() else {
+            session.refreshStatus("Focus an app window, then return to Nexus to add it.")
+            return
+        }
+
+        if let exactMatch = exactManagedWindowMatch(for: candidate) {
+            session.selectWorkspace(id: exactMatch.workspaceID, origin: .nexusNavigation)
+            session.selectSlot(id: exactMatch.slotID, origin: .nexusNavigation)
+            return
+        }
+
+        let existingLabels = Set(workspace.slots.map(\.label))
+        guard let slot = focusedWindowSlotFactory.makeSlot(
+            from: candidate,
+            workspaceID: workspace.id,
+            existingLabels: existingLabels
+        ) else {
+            session.refreshStatus("That window cannot be added to the current workspace.")
+            return
+        }
+
+        _ = session.addSlot(
+            slot,
+            to: workspace.id,
+            afterSlotID: workspace.activeSlotID,
+            selecting: true,
+            origin: .nexusNavigation
+        )
+    }
+
+    func toggleSelectedWorkspaceAutoAdd() {
+        _ = session.toggleSelectedWorkspaceAutoAddPolicy()
     }
 
     private func processPendingChoreography() async {
@@ -510,6 +575,7 @@ final class AppEnvironment {
 
         guard candidate.isMinimized == false else { return }
         guard isFocusSyncSuppressed == false else { return }
+        lastObservedExternalWindowCandidate = candidate
 
         guard let match = windowSlotMatcher.bestSlotMatch(
             for: candidate,
@@ -518,6 +584,9 @@ final class AppEnvironment {
             ignoringBundleID: Bundle.main.bundleIdentifier,
             ignoringProcessID: Int(ProcessInfo.processInfo.processIdentifier)
         ) else {
+            if await autoAddFocusedWindowIfNeeded(candidate) {
+                return
+            }
             focusSyncLogger.debug(
                 "Reverse focus ignored candidate bundle=\(candidate.bundleID ?? "nil", privacy: .public) pid=\(candidate.processID, privacy: .public) windowID=\(String(describing: candidate.windowID), privacy: .public) title=\(candidate.windowTitle, privacy: .public) source=\(String(describing: candidate.source), privacy: .public) reason=noSlotMatch"
             )
@@ -667,6 +736,78 @@ final class AppEnvironment {
             observation: observation,
             firstObservedAt: now,
             observationCount: 1
+        )
+    }
+
+    private func suggestedWorkspaceName(forTemplateID templateID: String) -> String? {
+        switch templateID {
+        case "starter", "blank":
+            let existingWorkspaceNumbers = session.workspaces.compactMap { workspace -> Int? in
+                guard workspace.name.hasPrefix("Workspace ") else { return nil }
+                return Int(workspace.name.dropFirst("Workspace ".count))
+            }
+            return "Workspace \((existingWorkspaceNumbers.max() ?? 0) + 1)"
+        default:
+            return nil
+        }
+    }
+
+    private func focusedWindowCandidateForExplicitAdd() -> WindowCandidate? {
+        if let lastObservedExternalWindowCandidate,
+           candidateIsAllowedForManagement(lastObservedExternalWindowCandidate) {
+            return lastObservedExternalWindowCandidate
+        }
+
+        return nil
+    }
+
+    private func candidateIsAllowedForManagement(_ candidate: WindowCandidate) -> Bool {
+        guard candidate.isMinimized == false else { return false }
+        guard let bundleID = SlotPresetCatalog.canonicalBundleID(candidate.bundleID) else { return false }
+        guard bundleID != Bundle.main.bundleIdentifier?.lowercased() else { return false }
+        return true
+    }
+
+    private func exactManagedWindowMatch(
+        for candidate: WindowCandidate
+    ) -> WindowSlotMatcher.SlotMatch? {
+        guard let match = windowSlotMatcher.bestSlotMatch(
+            for: candidate,
+            in: session.workspaces,
+            preferredWorkspaceID: session.selectedWorkspaceID,
+            ignoringBundleID: nil,
+            ignoringProcessID: -1
+        ),
+        match.confidence == 1 else {
+            return nil
+        }
+
+        return match
+    }
+
+    private func autoAddFocusedWindowIfNeeded(_ candidate: WindowCandidate) async -> Bool {
+        guard candidateIsAllowedForManagement(candidate),
+              exactManagedWindowMatch(for: candidate) == nil,
+              let workspace = session.selectedWorkspace,
+              workspace.autoAddPolicy == .focusedStandardWindow else {
+            return false
+        }
+
+        let existingLabels = Set(workspace.slots.map(\.label))
+        guard let slot = focusedWindowSlotFactory.makeSlot(
+            from: candidate,
+            workspaceID: workspace.id,
+            existingLabels: existingLabels
+        ) else {
+            return false
+        }
+
+        return session.addSlot(
+            slot,
+            to: workspace.id,
+            afterSlotID: workspace.activeSlotID,
+            selecting: true,
+            origin: .nativeFocusSync
         )
     }
 }

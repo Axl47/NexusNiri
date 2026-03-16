@@ -119,6 +119,16 @@ public enum HotkeyCommand: String, Codable, Sendable, CaseIterable {
     case revealAll
 }
 
+public enum SlotTargetingMode: String, Codable, Sendable, CaseIterable {
+    case application
+    case window
+}
+
+public enum AutoAddPolicy: String, Codable, Sendable, CaseIterable {
+    case disabled
+    case focusedStandardWindow
+}
+
 public struct SizePolicy: Codable, Equatable, Sendable {
     public var mode: WidthMode
     public var value: Double?
@@ -283,6 +293,7 @@ public struct Slot: Codable, Equatable, Identifiable, Sendable {
     public var id: String
     public var workspaceID: String
     public var kind: SlotKind
+    public var targetingMode: SlotTargetingMode
     public var label: String
     public var appBinding: AppBinding?
     public var widthPolicy: SizePolicy
@@ -301,6 +312,7 @@ public struct Slot: Codable, Equatable, Identifiable, Sendable {
         id: String = UUID().uuidString,
         workspaceID: String,
         kind: SlotKind,
+        targetingMode: SlotTargetingMode = .application,
         label: String,
         appBinding: AppBinding? = nil,
         widthPolicy: SizePolicy,
@@ -318,6 +330,7 @@ public struct Slot: Codable, Equatable, Identifiable, Sendable {
         self.id = id
         self.workspaceID = workspaceID
         self.kind = kind
+        self.targetingMode = targetingMode
         self.label = label
         self.appBinding = appBinding
         self.widthPolicy = widthPolicy
@@ -332,6 +345,68 @@ public struct Slot: Codable, Equatable, Identifiable, Sendable {
         self.createdAt = createdAt
         self.updatedAt = updatedAt
     }
+
+    private enum CodingKeys: String, CodingKey {
+        case id
+        case workspaceID
+        case kind
+        case targetingMode
+        case label
+        case appBinding
+        case widthPolicy
+        case heightPolicy
+        case layoutRole
+        case adapterID
+        case adapterStateID
+        case runtimeBinding
+        case lastKnownDisplayID
+        case pinned
+        case warmPreference
+        case createdAt
+        case updatedAt
+    }
+
+    public init(from decoder: any Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        id = try container.decode(String.self, forKey: .id)
+        workspaceID = try container.decode(String.self, forKey: .workspaceID)
+        kind = try container.decode(SlotKind.self, forKey: .kind)
+        targetingMode = try container.decodeIfPresent(SlotTargetingMode.self, forKey: .targetingMode) ?? .application
+        label = try container.decode(String.self, forKey: .label)
+        appBinding = try container.decodeIfPresent(AppBinding.self, forKey: .appBinding)
+        widthPolicy = try container.decode(SizePolicy.self, forKey: .widthPolicy)
+        heightPolicy = try container.decode(HeightPolicy.self, forKey: .heightPolicy)
+        layoutRole = try container.decode(LayoutRole.self, forKey: .layoutRole)
+        adapterID = try container.decodeIfPresent(String.self, forKey: .adapterID)
+        adapterStateID = try container.decodeIfPresent(String.self, forKey: .adapterStateID)
+        runtimeBinding = try container.decodeIfPresent(RuntimeBinding.self, forKey: .runtimeBinding)
+        lastKnownDisplayID = try container.decodeIfPresent(String.self, forKey: .lastKnownDisplayID)
+        pinned = try container.decode(Bool.self, forKey: .pinned)
+        warmPreference = try container.decode(WarmPreference.self, forKey: .warmPreference)
+        createdAt = try container.decode(Date.self, forKey: .createdAt)
+        updatedAt = try container.decode(Date.self, forKey: .updatedAt)
+    }
+
+    public func encode(to encoder: any Encoder) throws {
+        var container = encoder.container(keyedBy: CodingKeys.self)
+        try container.encode(id, forKey: .id)
+        try container.encode(workspaceID, forKey: .workspaceID)
+        try container.encode(kind, forKey: .kind)
+        try container.encode(targetingMode, forKey: .targetingMode)
+        try container.encode(label, forKey: .label)
+        try container.encodeIfPresent(appBinding, forKey: .appBinding)
+        try container.encode(widthPolicy, forKey: .widthPolicy)
+        try container.encode(heightPolicy, forKey: .heightPolicy)
+        try container.encode(layoutRole, forKey: .layoutRole)
+        try container.encodeIfPresent(adapterID, forKey: .adapterID)
+        try container.encodeIfPresent(adapterStateID, forKey: .adapterStateID)
+        try container.encodeIfPresent(runtimeBinding, forKey: .runtimeBinding)
+        try container.encodeIfPresent(lastKnownDisplayID, forKey: .lastKnownDisplayID)
+        try container.encode(pinned, forKey: .pinned)
+        try container.encode(warmPreference, forKey: .warmPreference)
+        try container.encode(createdAt, forKey: .createdAt)
+        try container.encode(updatedAt, forKey: .updatedAt)
+    }
 }
 
 public struct Workspace: Codable, Equatable, Identifiable, Sendable {
@@ -345,6 +420,7 @@ public struct Workspace: Codable, Equatable, Identifiable, Sendable {
     public var slotOrder: [String]
     public var floatingSlotIDs: [String]
     public var layoutState: LayoutState
+    public var autoAddPolicy: AutoAddPolicy
     public var visibilityPolicy: VisibilityPolicy
     public var residencyPolicy: ResidencyPolicy
     public var assignmentRuleIDs: [String]
@@ -366,6 +442,7 @@ public struct Workspace: Codable, Equatable, Identifiable, Sendable {
         slotOrder: [String] = [],
         floatingSlotIDs: [String] = [],
         layoutState: LayoutState = LayoutState(),
+        autoAddPolicy: AutoAddPolicy = .disabled,
         visibilityPolicy: VisibilityPolicy = VisibilityPolicy(),
         residencyPolicy: ResidencyPolicy = ResidencyPolicy(),
         assignmentRuleIDs: [String] = [],
@@ -386,6 +463,7 @@ public struct Workspace: Codable, Equatable, Identifiable, Sendable {
         self.slotOrder = slotOrder
         self.floatingSlotIDs = floatingSlotIDs
         self.layoutState = layoutState
+        self.autoAddPolicy = autoAddPolicy
         self.visibilityPolicy = visibilityPolicy
         self.residencyPolicy = residencyPolicy
         self.assignmentRuleIDs = assignmentRuleIDs
@@ -402,6 +480,89 @@ public struct Workspace: Codable, Equatable, Identifiable, Sendable {
         let ordered = slotOrder.compactMap { slotsByID[$0] }
         let remaining = slots.filter { !slotOrder.contains($0.id) }
         return ordered + remaining
+    }
+
+    private enum CodingKeys: String, CodingKey {
+        case id
+        case name
+        case description
+        case profileID
+        case displayPolicy
+        case preferredDisplayID
+        case activeSlotID
+        case slotOrder
+        case floatingSlotIDs
+        case layoutState
+        case autoAddPolicy
+        case visibilityPolicy
+        case residencyPolicy
+        case assignmentRuleIDs
+        case adapterStateIDs
+        case snapshotIDs
+        case tags
+        case createdAt
+        case updatedAt
+        case slots
+    }
+
+    public init(from decoder: any Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        id = try container.decode(String.self, forKey: .id)
+        name = try container.decode(String.self, forKey: .name)
+        description = try container.decodeIfPresent(String.self, forKey: .description)
+        profileID = try container.decodeIfPresent(String.self, forKey: .profileID)
+        displayPolicy = try container.decode(DisplayPolicy.self, forKey: .displayPolicy)
+        preferredDisplayID = try container.decodeIfPresent(String.self, forKey: .preferredDisplayID)
+        activeSlotID = try container.decodeIfPresent(String.self, forKey: .activeSlotID)
+        slotOrder = try container.decode([String].self, forKey: .slotOrder)
+        floatingSlotIDs = try container.decode([String].self, forKey: .floatingSlotIDs)
+        layoutState = try container.decode(LayoutState.self, forKey: .layoutState)
+        autoAddPolicy = try container.decodeIfPresent(AutoAddPolicy.self, forKey: .autoAddPolicy) ?? .disabled
+        visibilityPolicy = try container.decode(VisibilityPolicy.self, forKey: .visibilityPolicy)
+        residencyPolicy = try container.decode(ResidencyPolicy.self, forKey: .residencyPolicy)
+        assignmentRuleIDs = try container.decode([String].self, forKey: .assignmentRuleIDs)
+        adapterStateIDs = try container.decode([String].self, forKey: .adapterStateIDs)
+        snapshotIDs = try container.decode([String].self, forKey: .snapshotIDs)
+        tags = try container.decode([String].self, forKey: .tags)
+        createdAt = try container.decode(Date.self, forKey: .createdAt)
+        updatedAt = try container.decode(Date.self, forKey: .updatedAt)
+        slots = try container.decode([Slot].self, forKey: .slots)
+    }
+
+    public func encode(to encoder: any Encoder) throws {
+        var container = encoder.container(keyedBy: CodingKeys.self)
+        try container.encode(id, forKey: .id)
+        try container.encode(name, forKey: .name)
+        try container.encodeIfPresent(description, forKey: .description)
+        try container.encodeIfPresent(profileID, forKey: .profileID)
+        try container.encode(displayPolicy, forKey: .displayPolicy)
+        try container.encodeIfPresent(preferredDisplayID, forKey: .preferredDisplayID)
+        try container.encodeIfPresent(activeSlotID, forKey: .activeSlotID)
+        try container.encode(slotOrder, forKey: .slotOrder)
+        try container.encode(floatingSlotIDs, forKey: .floatingSlotIDs)
+        try container.encode(layoutState, forKey: .layoutState)
+        try container.encode(autoAddPolicy, forKey: .autoAddPolicy)
+        try container.encode(visibilityPolicy, forKey: .visibilityPolicy)
+        try container.encode(residencyPolicy, forKey: .residencyPolicy)
+        try container.encode(assignmentRuleIDs, forKey: .assignmentRuleIDs)
+        try container.encode(adapterStateIDs, forKey: .adapterStateIDs)
+        try container.encode(snapshotIDs, forKey: .snapshotIDs)
+        try container.encode(tags, forKey: .tags)
+        try container.encode(createdAt, forKey: .createdAt)
+        try container.encode(updatedAt, forKey: .updatedAt)
+        try container.encode(slots, forKey: .slots)
+    }
+}
+
+public struct WorkspaceTemplateOption: Equatable, Identifiable, Sendable {
+    public var id: String
+    public var title: String
+    public var subtitle: String?
+
+    public init(id: String, title: String, subtitle: String? = nil) {
+        self.id = id
+        self.title = title
+        self.subtitle = subtitle
     }
 }
 

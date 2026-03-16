@@ -1,0 +1,86 @@
+[
+  {
+    "id": "starter",
+    "title": "Starter Workspace",
+    "subtitle": "Editor, browser, and Tether",
+    "defaultName": "Workspace",
+    "description": "User-created workspace",
+    "tags": ["starter"],
+    "slots": [
+      {
+        "bundleID": "com.microsoft.VSCode",
+        "label": "Editor",
+        "titleHints": []
+      },
+      {
+        "bundleID": "app.zen-browser.zen",
+        "label": "Zen",
+        "titleHints": []
+      },
+      {
+        "bundleID": "com.t3tools.tether",
+        "label": "Tether",
+        "titleHints": ["Tether"]
+      }
+    ]
+  },
+  {
+    "id": "api",
+    "title": "API Workspace",
+    "subtitle": "Backend implementation layout",
+    "defaultName": "API",
+    "description": "Backend implementation workspace",
+    "tags": ["api", "default"],
+    "slots": [
+      {
+        "bundleID": "com.microsoft.VSCode",
+        "label": "Editor",
+        "titleHints": ["Nexus"]
+      },
+      {
+        "bundleID": "app.zen-browser.zen",
+        "label": "Zen",
+        "titleHints": ["docs", "Nexus"]
+      },
+      {
+        "bundleID": "com.t3tools.tether",
+        "label": "Tether",
+        "titleHints": ["Tether"]
+      }
+    ]
+  },
+  {
+    "id": "ui",
+    "title": "UI Workspace",
+    "subtitle": "Design and polish layout",
+    "defaultName": "UI",
+    "description": "Design and polish workspace",
+    "tags": ["ui"],
+    "slots": [
+      {
+        "bundleID": "dev.zed.Zed",
+        "label": "Zed",
+        "titleHints": ["Nexus"]
+      },
+      {
+        "bundleID": "app.zen-browser.zen",
+        "label": "Zen",
+        "titleHints": ["figma", "docs"]
+      },
+      {
+        "bundleID": "com.t3tools.tether",
+        "label": "Tether",
+        "titleHints": ["Tether"]
+      }
+    ]
+  },
+  {
+    "id": "blank",
+    "title": "Blank Workspace",
+    "subtitle": "Start empty and add focused windows",
+    "defaultName": "Workspace",
+    "description": "Blank workspace",
+    "tags": ["blank"],
+    "slots": []
+  }
+]

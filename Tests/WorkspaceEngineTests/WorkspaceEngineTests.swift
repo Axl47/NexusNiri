@@ -32,10 +32,135 @@ func workspaceSessionSeedsDefaultsAndAddsWorkspace() async {
     let seed = Workspace(name: "Seed", slots: [])
 
     await session.load(seedWorkspaces: [seed])
-    session.addWorkspace(named: "Fresh")
+    session.addWorkspace(Workspace(name: "Fresh", slots: []))
 
     #expect(session.workspaces.count == 2)
     #expect(session.selectedWorkspace?.name == "Fresh")
+}
+
+@MainActor
+@Test
+func workspaceSessionAddsSlotAfterSelectedSlotAndSelectsIt() async {
+    let tempURL = URL(fileURLWithPath: NSTemporaryDirectory())
+        .appendingPathComponent("NexusWorkspaceAddSlotTests-\(UUID().uuidString)", isDirectory: true)
+    let store = JSONWorkspaceStore(baseDirectoryURL: tempURL)
+    let existingSlot = Slot(
+        id: "editor",
+        workspaceID: "workspace",
+        kind: .externalWindow,
+        label: "Editor",
+        widthPolicy: SizePolicy(mode: .fraction, value: 0.55),
+        layoutRole: .primary
+    )
+    let workspace = Workspace(
+        id: "workspace",
+        name: "Main",
+        activeSlotID: existingSlot.id,
+        slotOrder: [existingSlot.id],
+        layoutState: LayoutState(activeIndex: 0, centeredSlotID: existingSlot.id),
+        slots: [existingSlot]
+    )
+    let session = WorkspaceSession(store: store)
+    await session.load(seedWorkspaces: [workspace])
+
+    let added = session.addSlot(
+        Slot(
+            id: "browser",
+            workspaceID: "workspace",
+            kind: .externalWindow,
+            targetingMode: .window,
+            label: "Browser",
+            appBinding: AppBinding(bundleID: "com.example.browser"),
+            widthPolicy: SizePolicy(mode: .fraction, value: 0.45),
+            layoutRole: .secondary
+        ),
+        to: "workspace",
+        afterSlotID: existingSlot.id,
+        selecting: true,
+        origin: .nexusNavigation
+    )
+
+    #expect(added)
+    #expect(session.selectedWorkspace?.slotOrder == ["editor", "browser"])
+    #expect(session.selectedWorkspace?.activeSlotID == "browser")
+    #expect(session.selectedWorkspace?.layoutState.activeIndex == 1)
+}
+
+@MainActor
+@Test
+func workspaceSessionRemovesSelectedSlotAndSelectsNeighbor() async {
+    let tempURL = URL(fileURLWithPath: NSTemporaryDirectory())
+        .appendingPathComponent("NexusWorkspaceRemoveSlotTests-\(UUID().uuidString)", isDirectory: true)
+    let store = JSONWorkspaceStore(baseDirectoryURL: tempURL)
+    let slots = [
+        Slot(id: "editor", workspaceID: "workspace", kind: .externalWindow, label: "Editor", widthPolicy: SizePolicy(mode: .fraction, value: 0.55), layoutRole: .primary),
+        Slot(id: "browser", workspaceID: "workspace", kind: .externalWindow, label: "Browser", widthPolicy: SizePolicy(mode: .fraction, value: 0.45), layoutRole: .secondary),
+        Slot(id: "tether", workspaceID: "workspace", kind: .hybrid, label: "Tether", widthPolicy: SizePolicy(mode: .fraction, value: 0.40), layoutRole: .support),
+    ]
+    let workspace = Workspace(
+        id: "workspace",
+        name: "Main",
+        activeSlotID: "browser",
+        slotOrder: slots.map(\.id),
+        layoutState: LayoutState(activeIndex: 1, centeredSlotID: "browser"),
+        slots: slots
+    )
+    let session = WorkspaceSession(store: store)
+    await session.load(seedWorkspaces: [workspace])
+
+    session.removeSelectedSlot()
+
+    #expect(session.selectedWorkspace?.slotOrder == ["editor", "tether"])
+    #expect(session.selectedWorkspace?.activeSlotID == "editor")
+    #expect(session.selectedWorkspace?.layoutState.activeIndex == 0)
+}
+
+@MainActor
+@Test
+func workspaceSessionMovesSelectedSlotLeftAndRight() async {
+    let tempURL = URL(fileURLWithPath: NSTemporaryDirectory())
+        .appendingPathComponent("NexusWorkspaceMoveSlotTests-\(UUID().uuidString)", isDirectory: true)
+    let store = JSONWorkspaceStore(baseDirectoryURL: tempURL)
+    let slots = [
+        Slot(id: "editor", workspaceID: "workspace", kind: .externalWindow, label: "Editor", widthPolicy: SizePolicy(mode: .fraction, value: 0.55), layoutRole: .primary),
+        Slot(id: "browser", workspaceID: "workspace", kind: .externalWindow, label: "Browser", widthPolicy: SizePolicy(mode: .fraction, value: 0.45), layoutRole: .secondary),
+        Slot(id: "tether", workspaceID: "workspace", kind: .hybrid, label: "Tether", widthPolicy: SizePolicy(mode: .fraction, value: 0.40), layoutRole: .support),
+    ]
+    let workspace = Workspace(
+        id: "workspace",
+        name: "Main",
+        activeSlotID: "browser",
+        slotOrder: slots.map(\.id),
+        layoutState: LayoutState(activeIndex: 1, centeredSlotID: "browser"),
+        slots: slots
+    )
+    let session = WorkspaceSession(store: store)
+    await session.load(seedWorkspaces: [workspace])
+
+    let movedLeft = session.moveSelectedSlotLeft()
+    let movedRight = session.moveSelectedSlotRight()
+
+    #expect(movedLeft)
+    #expect(movedRight)
+    #expect(session.selectedWorkspace?.slotOrder == ["editor", "browser", "tether"])
+    #expect(session.selectedWorkspace?.layoutState.activeIndex == 1)
+}
+
+@MainActor
+@Test
+func workspaceSessionTogglesSelectedWorkspaceAutoAddPolicy() async {
+    let tempURL = URL(fileURLWithPath: NSTemporaryDirectory())
+        .appendingPathComponent("NexusWorkspaceAutoAddTests-\(UUID().uuidString)", isDirectory: true)
+    let store = JSONWorkspaceStore(baseDirectoryURL: tempURL)
+    let session = WorkspaceSession(store: store)
+    await session.load(seedWorkspaces: [Workspace(id: "workspace", name: "Main", slots: [])])
+
+    let enabledPolicy = session.toggleSelectedWorkspaceAutoAddPolicy()
+    let disabledPolicy = session.toggleSelectedWorkspaceAutoAddPolicy()
+
+    #expect(enabledPolicy == .focusedStandardWindow)
+    #expect(disabledPolicy == .disabled)
+    #expect(session.selectedWorkspace?.autoAddPolicy == .disabled)
 }
 
 @MainActor
